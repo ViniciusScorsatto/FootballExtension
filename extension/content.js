@@ -746,11 +746,17 @@
         (fixture) => `
           <div class="lmi-league-context-card">
             <div class="lmi-league-context-card__teams">
-              <span>${escapeHtml(fixture.teams.home.shortName)}</span>
+              <span class="lmi-league-context-card__team lmi-league-context-card__team--home">
+                ${renderLeagueContextBadge(fixture.teams.home.logo, fixture.teams.home.name)}
+                <span>${escapeHtml(fixture.teams.home.shortName)}</span>
+              </span>
               <span class="lmi-league-context-card__score">${escapeHtml(
                 `${fixture.score.home}-${fixture.score.away}`
               )}</span>
-              <span>${escapeHtml(fixture.teams.away.shortName)}</span>
+              <span class="lmi-league-context-card__team lmi-league-context-card__team--away">
+                <span>${escapeHtml(fixture.teams.away.shortName)}</span>
+                ${renderLeagueContextBadge(fixture.teams.away.logo, fixture.teams.away.name)}
+              </span>
             </div>
             <div class="lmi-league-context-card__meta">
               <span>${escapeHtml(formatLeagueContextStatus(fixture.status, fixture.startsAt))}</span>
@@ -880,6 +886,14 @@
       hour: "2-digit",
       minute: "2-digit"
     });
+  }
+
+  function renderLeagueContextBadge(src, alt) {
+    if (!src) {
+      return "";
+    }
+
+    return `<img class="lmi-league-context-card__badge" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
   }
 
   function escapeHtml(value) {

@@ -195,7 +195,7 @@
         live: "Ao vivo",
         preMatchStatus: "Pré-jogo",
         finished: "Jogo encerrado",
-        finishedShort: "FT",
+        finishedShort: "Final",
         updatedAt: "Atualizado {time}",
         noCompetitionSwing: "Ainda não houve grande mudança na competição.",
         momentumFallback: "O momento está sendo calculado com placar e movimento na tabela.",

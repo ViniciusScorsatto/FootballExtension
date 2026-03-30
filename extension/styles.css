@@ -461,14 +461,6 @@ select.lmi-field__input {
   font-size: 13px;
 }
 
-.lmi-league-context-card__teams span:first-child {
-  text-align: left;
-}
-
-.lmi-league-context-card__teams span:last-child {
-  text-align: right;
-}
-
 .lmi-league-context-card__score {
   font-weight: 700;
 }
@@ -477,6 +469,29 @@ select.lmi-field__input {
   margin-top: 8px;
   font-size: 12px;
   color: var(--lmi-muted);
+}
+
+.lmi-league-context-card__team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lmi-league-context-card__team--home {
+  justify-content: flex-start;
+}
+
+.lmi-league-context-card__team--away {
+  justify-content: flex-end;
+}
+
+.lmi-league-context-card__badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .lmi-mini-card {
