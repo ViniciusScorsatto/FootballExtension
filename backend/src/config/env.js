@@ -84,6 +84,7 @@ function readList(name, fallback = ["*"]) {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
+  adminToken: process.env.ADMIN_TOKEN ?? "",
   port: readNumber("PORT", 3000),
   apiFootballKey: process.env.API_FOOTBALL_KEY ?? process.env.FOOTBALL_API_KEY ?? "",
   apiFootballBaseUrl:

@@ -12,7 +12,7 @@ function getRequestBucket(req) {
     return "analytics";
   }
 
-  if (req.path === "/analytics/summary") {
+  if (req.path === "/analytics/summary" || req.path === "/admin/health") {
     return "admin";
   }
 

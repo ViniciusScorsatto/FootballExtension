@@ -5,6 +5,7 @@ export class ApiFootballClient {
   constructor({ baseUrl, apiKey, timeoutMs }) {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
+    this.lastRequestStatus = null;
     this.client = axios.create({
       baseURL: baseUrl,
       timeout: timeoutMs,
@@ -12,6 +13,57 @@ export class ApiFootballClient {
         "x-apisports-key": apiKey
       }
     });
+  }
+
+  buildRequestMetadata({ ok, endpoint, statusCode = null, errorCode = null, errorMessage = "" }) {
+    return {
+      ok,
+      endpoint,
+      statusCode,
+      errorCode,
+      errorMessage,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async request(path, params = {}) {
+    this.assertConfigured();
+
+    try {
+      const response = await this.client.get(path, {
+        params
+      });
+
+      this.lastRequestStatus = this.buildRequestMetadata({
+        ok: true,
+        endpoint: path,
+        statusCode: response.status
+      });
+
+      return response;
+    } catch (error) {
+      const statusCode = error.response?.status ?? null;
+      const errorCode = error.response?.data?.errors?.requests ?? error.code ?? null;
+      const errorMessage = error.response?.data?.message ?? error.message ?? "Upstream API request failed.";
+
+      this.lastRequestStatus = this.buildRequestMetadata({
+        ok: false,
+        endpoint: path,
+        statusCode,
+        errorCode,
+        errorMessage
+      });
+
+      throw error;
+    }
+  }
+
+  getStatus() {
+    return {
+      configured: Boolean(this.apiKey),
+      baseUrl: this.baseUrl,
+      lastRequestStatus: this.lastRequestStatus
+    };
   }
 
   assertConfigured() {
@@ -23,12 +75,8 @@ export class ApiFootballClient {
   }
 
   async getFixture(fixtureId) {
-    this.assertConfigured();
-
-    const response = await this.client.get("/fixtures", {
-      params: {
-        id: fixtureId
-      }
+    const response = await this.request("/fixtures", {
+      id: fixtureId
     });
 
     const fixture = response.data?.response?.[0];
@@ -43,61 +91,47 @@ export class ApiFootballClient {
   }
 
   async getFixtures(params = {}) {
-    this.assertConfigured();
-
-    const response = await this.client.get("/fixtures", {
-      params
-    });
+    const response = await this.request("/fixtures", params);
 
     return response.data?.response ?? [];
   }
 
   async getEvents(fixtureId) {
-    const response = await this.client.get("/fixtures/events", {
-      params: {
-        fixture: fixtureId
-      }
+    const response = await this.request("/fixtures/events", {
+      fixture: fixtureId
     });
 
     return response.data?.response ?? [];
   }
 
   async getStatistics(fixtureId) {
-    const response = await this.client.get("/fixtures/statistics", {
-      params: {
-        fixture: fixtureId
-      }
+    const response = await this.request("/fixtures/statistics", {
+      fixture: fixtureId
     });
 
     return response.data?.response ?? [];
   }
 
   async getLineups(fixtureId) {
-    const response = await this.client.get("/fixtures/lineups", {
-      params: {
-        fixture: fixtureId
-      }
+    const response = await this.request("/fixtures/lineups", {
+      fixture: fixtureId
     });
 
     return response.data?.response ?? [];
   }
 
   async getInjuries(fixtureId) {
-    const response = await this.client.get("/injuries", {
-      params: {
-        fixture: fixtureId
-      }
+    const response = await this.request("/injuries", {
+      fixture: fixtureId
     });
 
     return response.data?.response ?? [];
   }
 
   async getStandings(leagueId, season) {
-    const response = await this.client.get("/standings", {
-      params: {
-        league: leagueId,
-        season
-      }
+    const response = await this.request("/standings", {
+      league: leagueId,
+      season
     });
 
     return response.data;

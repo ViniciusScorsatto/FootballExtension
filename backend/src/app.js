@@ -41,7 +41,10 @@ const matchDiscoveryService = new MatchDiscoveryService({
 
 const controller = createMatchImpactController({
   matchImpactService,
-  matchDiscoveryService
+  matchDiscoveryService,
+  cacheService,
+  apiFootballClient,
+  env
 });
 
 const app = express();

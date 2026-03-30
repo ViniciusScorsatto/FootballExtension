@@ -25,6 +25,7 @@ Set these in both environments:
 
 ```env
 NODE_ENV=production
+ADMIN_TOKEN=choose_a_long_random_value
 API_FOOTBALL_KEY=your_real_key
 TRUST_PROXY=1
 RATE_LIMIT_ENABLED=true

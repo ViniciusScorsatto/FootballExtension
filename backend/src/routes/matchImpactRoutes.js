@@ -4,6 +4,7 @@ export function createMatchImpactRouter(controller) {
   const router = Router();
 
   router.get("/health", controller.getHealth);
+  router.get("/admin/health", controller.getAdminHealth);
   router.get("/matches/live", controller.getLiveMatches);
   router.get("/matches/upcoming", controller.getUpcomingMatches);
   router.get("/match-impact", controller.getMatchImpact);

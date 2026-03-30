@@ -169,4 +169,12 @@ export class CacheService {
 
     return this.memoryStore.incrementCounter(key, ttlSeconds, amount);
   }
+
+  getStatus() {
+    return {
+      mode: this.redisEnabled ? "redis" : "memory",
+      redisConfigured: Boolean(this.redisUrl),
+      redisEnabled: this.redisEnabled
+    };
+  }
 }

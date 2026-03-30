@@ -43,6 +43,7 @@ Live Match Impact is a production-minded Chrome extension plus Node.js backend t
 The backend exposes:
 
 - `GET /health`
+- `GET /admin/health`
 - `GET /matches/live`
 - `GET /matches/upcoming`
 - `GET /match-impact?fixture_id=12345`
@@ -98,6 +99,12 @@ The backend exposes:
 - `SUPPORTED_LEAGUE_IDS` lets you restrict discovery to a curated allowlist of league IDs.
 - `FEATURED_LEAGUE_IDS` lets you prioritize key leagues in backend discovery and in the extension popup.
 - Unsupported leagues are filtered out of `/matches/live` and `/matches/upcoming`, which keeps the product focused and helps control API usage.
+
+## Admin Health
+
+- `GET /admin/health` returns backend readiness, cache mode, API-Football status, rate-limit config, and current league policy.
+- Add `ADMIN_TOKEN` in staging or production to protect it.
+- Send the token as `x-admin-token: ...` or `Authorization: Bearer ...`.
 
 ## CORS and Allowed Origins
 

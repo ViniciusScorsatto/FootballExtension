@@ -1,12 +1,86 @@
 import { assertFixtureId, parseFixtureId, validateSessionPayload } from "../utils/validators.js";
 
-export function createMatchImpactController({ matchImpactService, matchDiscoveryService }) {
+function isAuthorizedAdminRequest(req, adminToken) {
+  if (!adminToken) {
+    return true;
+  }
+
+  const tokenHeader = req.header("x-admin-token");
+  const authorizationHeader = req.header("authorization");
+  const bearerToken = authorizationHeader?.startsWith("Bearer ")
+    ? authorizationHeader.slice(7).trim()
+    : "";
+
+  return tokenHeader === adminToken || bearerToken === adminToken;
+}
+
+export function createMatchImpactController({
+  matchImpactService,
+  matchDiscoveryService,
+  cacheService,
+  apiFootballClient,
+  env
+}) {
   return {
     getHealth(_req, res) {
       res.json({
         ok: true,
         service: "live-match-impact",
         timestamp: new Date().toISOString()
+      });
+    },
+
+    getAdminHealth(req, res) {
+      if (!isAuthorizedAdminRequest(req, env.adminToken)) {
+        res.status(401).json({
+          error: "Unauthorized."
+        });
+        return;
+      }
+
+      res.json({
+        ok: true,
+        service: "live-match-impact",
+        timestamp: new Date().toISOString(),
+        uptimeSeconds: Math.round(process.uptime()),
+        admin: {
+          protected: Boolean(env.adminToken)
+        },
+        environment: {
+          nodeEnv: env.nodeEnv,
+          trustProxy: env.trustProxy
+        },
+        apiFootball: {
+          ...apiFootballClient.getStatus(),
+          timeoutMs: env.requestTimeoutMs
+        },
+        cache: {
+          ...cacheService.getStatus(),
+          ttlSeconds: {
+            live: env.liveCacheTtlSeconds,
+            upcoming: env.upcomingCacheTtlSeconds,
+            finished: env.finishedCacheTtlSeconds,
+            standings: env.standingsCacheTtlSeconds,
+            statistics: env.statisticsCacheTtlSeconds,
+            injuries: env.injuriesCacheTtlSeconds,
+            events: env.eventsCacheTtlSeconds
+          }
+        },
+        rateLimit: {
+          enabled: env.rateLimitEnabled,
+          windowSeconds: env.rateLimitWindowSeconds,
+          buckets: {
+            freeReads: env.freeReadLimitPerWindow,
+            proReads: env.proReadLimitPerWindow,
+            freeAnalytics: env.freeAnalyticsLimitPerWindow,
+            proAnalytics: env.proAnalyticsLimitPerWindow,
+            admin: env.adminLimitPerWindow
+          }
+        },
+        leagues: {
+          supportedLeagueIds: env.supportedLeagueIds,
+          featuredLeagueIds: env.featuredLeagueIds
+        }
       });
     },
 
