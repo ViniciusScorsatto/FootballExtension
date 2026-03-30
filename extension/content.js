@@ -157,6 +157,11 @@
           <div class="lmi-injuries-grid"></div>
         </div>
 
+        <div class="lmi-section lmi-league-context-section is-hidden">
+          <div class="lmi-section__label lmi-league-context-label">${escapeHtml(translate("panel.otherMatches"))}</div>
+          <div class="lmi-league-context-list"></div>
+        </div>
+
         <div class="lmi-status-row">
           <span class="lmi-connection-status">${escapeHtml(translate("panel.connecting"))}</span>
           <span class="lmi-last-updated"></span>
@@ -191,13 +196,15 @@
       prematchList: root.querySelector(".lmi-prematch-list"),
       lineupsGrid: root.querySelector(".lmi-lineups-grid"),
       injuriesGrid: root.querySelector(".lmi-injuries-grid"),
+      leagueContextSection: root.querySelector(".lmi-league-context-section"),
+      leagueContextLabel: root.querySelector(".lmi-league-context-label"),
+      leagueContextList: root.querySelector(".lmi-league-context-list"),
       connectionStatus: root.querySelector(".lmi-connection-status"),
       lastUpdated: root.querySelector(".lmi-last-updated"),
       eyebrow: root.querySelector(".lmi-expanded__eyebrow"),
       headlineLabel: root.querySelector(".lmi-expanded__headline"),
       collapseButton: root.querySelector('[data-action="collapse"]'),
-      closeButton: root.querySelector('[data-action="close"]'),
-      sectionLabels: root.querySelectorAll(".lmi-section__label")
+      closeButton: root.querySelector('[data-action="close"]')
     };
   }
 
@@ -281,18 +288,14 @@
     elements.collapseButton.textContent = translate("panel.collapse");
     elements.closeButton.textContent = translate("panel.close");
 
-    const [tableLabel, competitionLabel, momentumLabel, preMatchLabel] = elements.sectionLabels;
-    if (tableLabel) {
-      tableLabel.textContent = translate("panel.tableImpact");
-    }
-    if (competitionLabel) {
-      competitionLabel.textContent = translate("panel.competitionImpact");
-    }
-    if (momentumLabel) {
-      momentumLabel.textContent = translate("panel.momentum");
-    }
-    if (preMatchLabel) {
-      preMatchLabel.textContent = translate("panel.preMatch");
+    const labels = elements.root.querySelectorAll(".lmi-section__label");
+    const [tableLabel, competitionLabel, momentumLabel, preMatchLabel] = labels;
+    if (tableLabel) tableLabel.textContent = translate("panel.tableImpact");
+    if (competitionLabel) competitionLabel.textContent = translate("panel.competitionImpact");
+    if (momentumLabel) momentumLabel.textContent = translate("panel.momentum");
+    if (preMatchLabel) preMatchLabel.textContent = translate("panel.preMatch");
+    if (elements.leagueContextLabel) {
+      elements.leagueContextLabel.textContent = translate("panel.otherMatches");
     }
   }
 
@@ -391,7 +394,14 @@
       summary: payload.impact?.summary,
       competition: payload.impact?.competition,
       event: payload.event?.type,
-      eventImpact: payload.event?.impactSummary
+      eventImpact: payload.event?.impactSummary,
+      leagueContext: payload.league_context?.fixtures?.map((fixture) => [
+        fixture.fixtureId,
+        fixture.score?.home,
+        fixture.score?.away,
+        fixture.status?.phase,
+        fixture.status?.minute
+      ])
     });
 
     if (signature === state.lastSignature) {
@@ -522,6 +532,7 @@
     renderCompetitionList(competitionItems);
     renderStatistics(payload.statistics);
     renderPrematch(payload);
+    renderLeagueContext(payload);
     setExpanded(state.isExpanded);
 
     if (payload.event?.type === "GOAL") {
@@ -719,6 +730,37 @@
     }
   }
 
+  function renderLeagueContext(payload) {
+    const context = payload.league_context;
+    const fixtures = context?.fixtures || [];
+
+    if (!fixtures.length) {
+      elements.leagueContextSection.classList.add("is-hidden");
+      elements.leagueContextList.innerHTML = "";
+      return;
+    }
+
+    elements.leagueContextSection.classList.remove("is-hidden");
+    elements.leagueContextList.innerHTML = fixtures
+      .map(
+        (fixture) => `
+          <div class="lmi-league-context-card">
+            <div class="lmi-league-context-card__teams">
+              <span>${escapeHtml(fixture.teams.home.shortName)}</span>
+              <span class="lmi-league-context-card__score">${escapeHtml(
+                `${fixture.score.home}-${fixture.score.away}`
+              )}</span>
+              <span>${escapeHtml(fixture.teams.away.shortName)}</span>
+            </div>
+            <div class="lmi-league-context-card__meta">
+              <span>${escapeHtml(formatLeagueContextStatus(fixture.status, fixture.startsAt))}</span>
+            </div>
+          </div>
+        `
+      )
+      .join("");
+  }
+
   function buildPrematchItems(payload) {
     const items = [];
     const lineups = payload.prematch?.lineups;
@@ -819,6 +861,25 @@
     }
 
     return `${value}${suffix}`;
+  }
+
+  function formatLeagueContextStatus(status, startsAt) {
+    if (status?.phase === "live") {
+      return `${status.minute || 0}'`;
+    }
+
+    if (status?.phase === "finished") {
+      return translate("panel.finishedShort");
+    }
+
+    if (!startsAt) {
+      return "KO";
+    }
+
+    return new Date(startsAt).toLocaleTimeString(state.language === "pt-BR" ? "pt-BR" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 
   function escapeHtml(value) {

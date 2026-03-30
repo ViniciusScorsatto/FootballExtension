@@ -9,6 +9,7 @@ Live Match Impact is a production-minded Chrome extension plus Node.js backend t
 - Deduplicates concurrent requests per fixture so thousands of users can share one upstream API call.
 - Simulates the live table, detects position swings, and generates short consequence summaries.
 - Injects a glanceable floating panel onto any page and auto-expands on goal events.
+- Shows other fixtures from the same round in a compact league-context strip, capped for glanceability.
 - Tracks fixture usage, popular leagues, and session duration for future monetization work.
 
 ## Project structure
@@ -60,10 +61,12 @@ The backend exposes:
 - Statistics cache: 60 seconds per fixture
 - Injuries cache: 4 hours per fixture
 - Events cache: 60 seconds per fixture unless a score change forces a refresh
+- League context cache: 60 seconds live, 5 minutes upcoming, 1 hour finished per league + season + round
 - Lineups: short polling before confirmation, then long-lived once the XI is available
 - Pre-match cadence tightens automatically as kickoff approaches so lineups and injuries refresh more often near match time
 - Shared request dedupe: one upstream request per fixture while a refresh is in flight
 - Long-lived fixture state: stored separately to preserve previous score and baseline standings
+- Same-round league context is limited to 9 fixtures and prefers matches kicking off near the tracked game
 
 ## Extension setup
 

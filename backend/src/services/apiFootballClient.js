@@ -150,6 +150,14 @@ export class ApiFootballClient {
     });
   }
 
+  async getFixturesByRound(leagueId, season, round) {
+    return this.getFixtures({
+      league: leagueId,
+      season,
+      round
+    });
+  }
+
   async fetchFixtureBundle(fixtureId) {
     const fixture = await this.getFixture(fixtureId);
     const phase = getFixturePhase(fixture);

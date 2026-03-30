@@ -14,6 +14,7 @@ function createService(overrides = {}) {
     getInjuries: async () => [],
     getLineups: async () => [],
     getEvents: async () => [],
+    getFixturesByRound: async () => [],
     ...overrides.apiFootballClient
   };
 
@@ -33,18 +34,23 @@ function createService(overrides = {}) {
         standingsCacheTtlSeconds: 3600,
         statisticsCacheTtlSeconds: 60,
         injuriesCacheTtlSeconds: 14400,
-      eventsCacheTtlSeconds: 60,
-      lineupsPendingCacheTtlSeconds: 300,
-      lineupsConfirmedCacheTtlSeconds: 21600,
-      prematchSlowWindowMinutes: 360,
-      prematchMediumWindowMinutes: 90,
-      prematchFastWindowMinutes: 40,
-      prematchSlowCacheTtlSeconds: 3600,
-      prematchMediumCacheTtlSeconds: 900,
-      prematchFastCacheTtlSeconds: 180,
-      stateCacheTtlSeconds: 21600,
-      ...overrides.env
-    }
+        eventsCacheTtlSeconds: 60,
+        leagueContextLiveCacheTtlSeconds: 60,
+        leagueContextUpcomingCacheTtlSeconds: 300,
+        leagueContextFinishedCacheTtlSeconds: 3600,
+        leagueContextMaxFixtures: 9,
+        leagueContextSameWindowMinutes: 30,
+        lineupsPendingCacheTtlSeconds: 300,
+        lineupsConfirmedCacheTtlSeconds: 21600,
+        prematchSlowWindowMinutes: 360,
+        prematchMediumWindowMinutes: 90,
+        prematchFastWindowMinutes: 40,
+        prematchSlowCacheTtlSeconds: 3600,
+        prematchMediumCacheTtlSeconds: 900,
+        prematchFastCacheTtlSeconds: 180,
+        stateCacheTtlSeconds: 21600,
+        ...overrides.env
+      }
     }),
     cacheService,
     apiFootballClient
@@ -185,4 +191,112 @@ test("upcoming fixtures tighten lineup cadence near kickoff", async () => {
   });
 
   assert.equal(calls, 1);
+});
+
+test("league context is cached by league, season, and round", async () => {
+  let calls = 0;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixturesByRound: async () => {
+        calls += 1;
+        return [];
+      }
+    }
+  });
+
+  const fixture = {
+    fixture: {
+      id: 10,
+      timestamp: 1774897200
+    },
+    league: {
+      id: 39,
+      season: 2025,
+      round: "Regular Season - 30"
+    }
+  };
+
+  await service.getLeagueContextResource(fixture, { phase: "live" });
+  await service.getLeagueContextResource(fixture, { phase: "live" });
+
+  assert.equal(calls, 1);
+});
+
+test("league context excludes the tracked fixture and prioritizes same-window matches", async () => {
+  const { service } = createService({
+    env: {
+      leagueContextMaxFixtures: 3,
+      leagueContextSameWindowMinutes: 30
+    },
+    apiFootballClient: {
+      getFixturesByRound: async () => [
+        {
+          fixture: { id: 100, timestamp: 1774897200, date: "2026-03-30T19:00:00+00:00" },
+          league: { round: "Regular Season - 7" },
+          teams: {
+            home: { id: 1, name: "Tracked Home", logo: "" },
+            away: { id: 2, name: "Tracked Away", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        },
+        {
+          fixture: { id: 101, timestamp: 1774897200, date: "2026-03-30T19:00:00+00:00" },
+          teams: {
+            home: { id: 3, name: "Same Time A", logo: "" },
+            away: { id: 4, name: "Same Time B", logo: "" }
+          },
+          goals: { home: 0, away: 0 }
+        },
+        {
+          fixture: { id: 102, timestamp: 1774897500, date: "2026-03-30T19:05:00+00:00" },
+          teams: {
+            home: { id: 5, name: "Same Time C", logo: "" },
+            away: { id: 6, name: "Same Time D", logo: "" }
+          },
+          goals: { home: 1, away: 1 }
+        },
+        {
+          fixture: { id: 103, timestamp: 1774898100, date: "2026-03-30T19:15:00+00:00" },
+          teams: {
+            home: { id: 7, name: "Same Time E", logo: "" },
+            away: { id: 8, name: "Same Time F", logo: "" }
+          },
+          goals: { home: 2, away: 1 }
+        },
+        {
+          fixture: { id: 104, timestamp: 1774904400, date: "2026-03-30T21:00:00+00:00" },
+          teams: {
+            home: { id: 9, name: "Later A", logo: "" },
+            away: { id: 10, name: "Later B", logo: "" }
+          },
+          goals: { home: 0, away: 2 }
+        }
+      ]
+    }
+  });
+
+  const summary = await service.getLeagueContextResource(
+    {
+      fixture: {
+        id: 100,
+        timestamp: 1774897200
+      },
+      league: {
+        id: 39,
+        season: 2025,
+        round: "Regular Season - 7"
+      }
+    },
+    { phase: "live" }
+  );
+
+  assert.equal(summary.available, true);
+  assert.equal(summary.selectionMode, "same-window");
+  assert.equal(summary.totalFixtures, 4);
+  assert.equal(summary.displayedFixtures, 3);
+  assert.equal(summary.fixtures.some((fixture) => fixture.fixtureId === 100), false);
+  assert.deepEqual(
+    summary.fixtures.map((fixture) => fixture.fixtureId),
+    [101, 102, 103]
+  );
 });

@@ -63,7 +63,12 @@ export function createMatchImpactController({
             standings: env.standingsCacheTtlSeconds,
             statistics: env.statisticsCacheTtlSeconds,
             injuries: env.injuriesCacheTtlSeconds,
-            events: env.eventsCacheTtlSeconds
+            events: env.eventsCacheTtlSeconds,
+            leagueContext: {
+              live: env.leagueContextLiveCacheTtlSeconds,
+              upcoming: env.leagueContextUpcomingCacheTtlSeconds,
+              finished: env.leagueContextFinishedCacheTtlSeconds
+            }
           }
         },
         rateLimit: {
@@ -80,6 +85,12 @@ export function createMatchImpactController({
         leagues: {
           supportedLeagueIds: env.supportedLeagueIds,
           featuredLeagueIds: env.featuredLeagueIds
+        },
+        product: {
+          leagueContext: {
+            maxFixtures: env.leagueContextMaxFixtures,
+            sameWindowMinutes: env.leagueContextSameWindowMinutes
+          }
         }
       });
     },

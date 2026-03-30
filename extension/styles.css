@@ -395,7 +395,8 @@ select.lmi-field__input {
 .lmi-stats-grid,
 .lmi-prematch-list,
 .lmi-lineups-grid,
-.lmi-injuries-grid {
+.lmi-injuries-grid,
+.lmi-league-context-list {
   margin-top: 12px;
 }
 
@@ -432,6 +433,50 @@ select.lmi-field__input {
 .lmi-injuries-grid {
   display: grid;
   gap: 10px;
+}
+
+.lmi-league-context-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+}
+
+.lmi-league-context-card {
+  min-width: 134px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  scroll-snap-align: start;
+}
+
+.lmi-league-context-card__teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  color: var(--lmi-text);
+  font-size: 13px;
+}
+
+.lmi-league-context-card__teams span:first-child {
+  text-align: left;
+}
+
+.lmi-league-context-card__teams span:last-child {
+  text-align: right;
+}
+
+.lmi-league-context-card__score {
+  font-weight: 700;
+}
+
+.lmi-league-context-card__meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--lmi-muted);
 }
 
 .lmi-mini-card {
