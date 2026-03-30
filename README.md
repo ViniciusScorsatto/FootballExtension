@@ -55,6 +55,12 @@ The backend exposes:
 - Live fixtures: 15 seconds
 - Upcoming fixtures: 120 seconds
 - Finished fixtures: 1 hour
+- Standings cache: 1 hour per league + season
+- Statistics cache: 60 seconds per fixture
+- Injuries cache: 4 hours per fixture
+- Events cache: 60 seconds per fixture unless a score change forces a refresh
+- Lineups: short polling before confirmation, then long-lived once the XI is available
+- Pre-match cadence tightens automatically as kickoff approaches so lineups and injuries refresh more often near match time
 - Shared request dedupe: one upstream request per fixture while a refresh is in flight
 - Long-lived fixture state: stored separately to preserve previous score and baseline standings
 

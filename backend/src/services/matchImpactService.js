@@ -14,6 +14,26 @@ function buildStateKey(fixtureId) {
   return `match:state:${fixtureId}`;
 }
 
+function buildStandingsKey(leagueId, season) {
+  return `standings:${leagueId}:${season}`;
+}
+
+function buildStatisticsKey(fixtureId) {
+  return `statistics:${fixtureId}`;
+}
+
+function buildInjuriesKey(fixtureId) {
+  return `injuries:${fixtureId}`;
+}
+
+function buildEventsKey(fixtureId) {
+  return `events:${fixtureId}`;
+}
+
+function buildLineupsKey(fixtureId) {
+  return `lineups:${fixtureId}`;
+}
+
 function getCacheTtl(status, env) {
   if (status.phase === "live") {
     return env.liveCacheTtlSeconds;
@@ -60,6 +80,97 @@ function buildRecentEvents(events) {
     player: event.player?.name ?? "",
     assist: event.assist?.name ?? ""
   }));
+}
+
+function buildResourceEnvelope(data, extra = {}) {
+  return {
+    last_updated: new Date().toISOString(),
+    data,
+    ...extra
+  };
+}
+
+function isLineupsConfirmed(lineups) {
+  return lineups.some((entry) => Array.isArray(entry?.startXI) && entry.startXI.length > 0);
+}
+
+function getEventsCacheTtl(status, env) {
+  return status.phase === "finished"
+    ? Math.max(env.eventsCacheTtlSeconds, env.finishedCacheTtlSeconds)
+    : env.eventsCacheTtlSeconds;
+}
+
+function getStatisticsCacheTtl(status, env) {
+  return status.phase === "finished"
+    ? Math.max(env.statisticsCacheTtlSeconds, env.finishedCacheTtlSeconds)
+    : env.statisticsCacheTtlSeconds;
+}
+
+function getLineupsCacheTtl(lineupsConfirmed, status, env) {
+  if (lineupsConfirmed) {
+    return Math.max(
+      env.lineupsConfirmedCacheTtlSeconds,
+      status.phase === "finished" ? env.finishedCacheTtlSeconds : env.stateCacheTtlSeconds
+    );
+  }
+
+  if (status.phase === "finished") {
+    return env.finishedCacheTtlSeconds;
+  }
+
+  return env.lineupsPendingCacheTtlSeconds;
+}
+
+function getMinutesUntilKickoff(fixture) {
+  const kickoffTimestamp = fixture?.fixture?.timestamp;
+
+  if (!kickoffTimestamp) {
+    return null;
+  }
+
+  return Math.floor((kickoffTimestamp * 1000 - Date.now()) / 60000);
+}
+
+function getPrematchCadence(fixture, env) {
+  const minutesUntilKickoff = getMinutesUntilKickoff(fixture);
+
+  if (minutesUntilKickoff === null || minutesUntilKickoff <= 0) {
+    return {
+      minutesUntilKickoff,
+      lineupsTtlSeconds: env.lineupsPendingCacheTtlSeconds,
+      injuriesTtlSeconds: env.injuriesCacheTtlSeconds
+    };
+  }
+
+  if (minutesUntilKickoff > env.prematchSlowWindowMinutes) {
+    return {
+      minutesUntilKickoff,
+      lineupsTtlSeconds: env.prematchSlowCacheTtlSeconds,
+      injuriesTtlSeconds: Math.max(env.injuriesCacheTtlSeconds, env.prematchSlowCacheTtlSeconds)
+    };
+  }
+
+  if (minutesUntilKickoff > env.prematchMediumWindowMinutes) {
+    return {
+      minutesUntilKickoff,
+      lineupsTtlSeconds: env.prematchMediumCacheTtlSeconds,
+      injuriesTtlSeconds: env.prematchMediumCacheTtlSeconds
+    };
+  }
+
+  if (minutesUntilKickoff > env.prematchFastWindowMinutes) {
+    return {
+      minutesUntilKickoff,
+      lineupsTtlSeconds: env.lineupsPendingCacheTtlSeconds,
+      injuriesTtlSeconds: env.prematchMediumCacheTtlSeconds
+    };
+  }
+
+  return {
+    minutesUntilKickoff,
+    lineupsTtlSeconds: env.prematchFastCacheTtlSeconds,
+    injuriesTtlSeconds: env.prematchFastCacheTtlSeconds
+  };
 }
 
 function parseStatisticValue(value) {
@@ -310,6 +421,7 @@ export class MatchImpactService {
     this.analyticsService = analyticsService;
     this.env = env;
     this.pendingRequests = new Map();
+    this.resourcePendingRequests = new Map();
   }
 
   async getMatchImpact(fixtureId) {
@@ -336,16 +448,27 @@ export class MatchImpactService {
     const cacheKey = buildCacheKey(fixtureId);
     const stateKey = buildStateKey(fixtureId);
     const previousState = (await this.cacheService.getJson(stateKey)) ?? {};
-    const { fixture, events, standings, statistics, lineups, injuries } =
-      await this.apiFootballClient.fetchFixtureBundle(fixtureId);
+    const fixture = await this.apiFootballClient.getFixture(fixtureId);
     const status = getMatchStatus(fixture);
     const teams = extractTeams(fixture);
     const score = {
       home: Number(fixture?.goals?.home ?? 0),
       away: Number(fixture?.goals?.away ?? 0)
     };
-    const hasStandingsCoverage = fixture?.league?.standings === true && standings;
     const baseEvent = detectScoreEvent(previousState.previousScore, score, teams);
+    const prematchCadence = getPrematchCadence(fixture, this.env);
+    const [events, standings, statistics, lineups, injuries] = await Promise.all([
+      this.getEventsResource({
+        fixtureId,
+        status,
+        scoreEvent: baseEvent
+      }),
+      this.getStandingsResource(fixture),
+      this.getStatisticsResource(fixtureId, status),
+      this.getLineupsResource(fixtureId, status, prematchCadence),
+      this.getInjuriesResource(fixtureId, status, prematchCadence)
+    ]);
+    const hasStandingsCoverage = fixture?.league?.standings === true && standings;
     const latestGoalEvent = extractLatestGoalEvent(events, baseEvent);
     const event = enrichScoreEvent(baseEvent, latestGoalEvent);
     const lineupsSummary = buildLineupsSummary(lineups, teams);
@@ -388,7 +511,8 @@ export class MatchImpactService {
         metadata: {
           cacheTtlSeconds: getCacheTtl(status, this.env),
           impactBasis: "no-standings-coverage",
-          tableImpactAvailable: false
+          tableImpactAvailable: false,
+          prematchCadence
         }
       };
 
@@ -453,7 +577,8 @@ export class MatchImpactService {
           canUseSavedBaseline || status.phase !== "finished"
             ? "baseline-standings"
             : "estimated-from-current-standings",
-        tableImpactAvailable: true
+        tableImpactAvailable: true,
+        prematchCadence
       }
     };
 
@@ -490,5 +615,138 @@ export class MatchImpactService {
 
   async getAnalyticsSummary() {
     return this.analyticsService.getSummary();
+  }
+
+  async getStandingsResource(fixture) {
+    const leagueId = fixture?.league?.id;
+    const season = fixture?.league?.season;
+
+    if (fixture?.league?.standings !== true || !leagueId || !season) {
+      return null;
+    }
+
+    return this.getCachedResource({
+      key: buildStandingsKey(leagueId, season),
+      ttlSeconds: this.env.standingsCacheTtlSeconds,
+      fetcher: () => this.apiFootballClient.getStandings(leagueId, season)
+    });
+  }
+
+  async getStatisticsResource(fixtureId, status) {
+    if (status.phase === "upcoming") {
+      return [];
+    }
+
+    return this.getCachedResource({
+      key: buildStatisticsKey(fixtureId),
+      ttlSeconds: getStatisticsCacheTtl(status, this.env),
+      fetcher: () => this.apiFootballClient.getStatistics(fixtureId).catch(() => [])
+    });
+  }
+
+  async getInjuriesResource(fixtureId, status, prematchCadence) {
+    const ttlSeconds =
+      status.phase === "upcoming"
+        ? prematchCadence?.injuriesTtlSeconds ?? this.env.injuriesCacheTtlSeconds
+        : this.env.injuriesCacheTtlSeconds;
+
+    return this.getCachedResource({
+      key: buildInjuriesKey(fixtureId),
+      ttlSeconds,
+      fetcher: () => this.apiFootballClient.getInjuries(fixtureId).catch(() => [])
+    });
+  }
+
+  async getLineupsResource(fixtureId, status, prematchCadence) {
+    const cacheKey = buildLineupsKey(fixtureId);
+    const cachedLineups = await this.cacheService.getJson(cacheKey);
+
+    if (cachedLineups) {
+      return cachedLineups.data ?? [];
+    }
+
+    const lineups = await this.getCachedResource({
+      key: cacheKey,
+      ttlSeconds: this.env.lineupsPendingCacheTtlSeconds,
+      fetcher: async () => {
+        const freshLineups = await this.apiFootballClient.getLineups(fixtureId).catch(() => []);
+        const confirmed = isLineupsConfirmed(freshLineups);
+        const pendingTtlSeconds =
+          status.phase === "upcoming"
+            ? prematchCadence?.lineupsTtlSeconds ?? this.env.lineupsPendingCacheTtlSeconds
+            : this.env.lineupsPendingCacheTtlSeconds;
+
+        await this.cacheService.setJson(
+          cacheKey,
+          buildResourceEnvelope(freshLineups, {
+            confirmed
+          }),
+          confirmed
+            ? getLineupsCacheTtl(true, status, this.env)
+            : pendingTtlSeconds
+        );
+
+        return freshLineups;
+      },
+      skipAutomaticCacheWrite: true
+    });
+
+    return lineups;
+  }
+
+  async getEventsResource({ fixtureId, status, scoreEvent }) {
+    if (status.phase === "upcoming") {
+      return [];
+    }
+
+    const cacheKey = buildEventsKey(fixtureId);
+    const cachedEvents = await this.cacheService.getJson(cacheKey);
+
+    if (cachedEvents && scoreEvent.type === "NONE") {
+      return cachedEvents.data ?? [];
+    }
+
+    return this.getCachedResource({
+      key: cacheKey,
+      ttlSeconds: getEventsCacheTtl(status, this.env),
+      fetcher: () => this.apiFootballClient.getEvents(fixtureId).catch(() => []),
+      forceRefresh: scoreEvent.type !== "NONE"
+    });
+  }
+
+  async getCachedResource({
+    key,
+    ttlSeconds,
+    fetcher,
+    forceRefresh = false,
+    skipAutomaticCacheWrite = false
+  }) {
+    if (!forceRefresh) {
+      const cachedValue = await this.cacheService.getJson(key);
+
+      if (cachedValue) {
+        return cachedValue.data;
+      }
+    }
+
+    if (this.resourcePendingRequests.has(key)) {
+      return this.resourcePendingRequests.get(key);
+    }
+
+    const requestPromise = Promise.resolve()
+      .then(fetcher)
+      .then(async (payload) => {
+        if (!skipAutomaticCacheWrite) {
+          await this.cacheService.setJson(key, buildResourceEnvelope(payload), ttlSeconds);
+        }
+
+        return payload;
+      })
+      .finally(() => {
+        this.resourcePendingRequests.delete(key);
+      });
+
+    this.resourcePendingRequests.set(key, requestPromise);
+    return requestPromise;
   }
 }
