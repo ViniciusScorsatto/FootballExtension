@@ -68,6 +68,8 @@
         momentumFallback: "Momentum is currently based on score and table movement.",
         scoreOnlyHome: "{team} live score tracked",
         scoreOnlyAway: "Table impact unavailable for this competition",
+        limitedHome: "Special competition format",
+        limitedAway: "Table impact limited for this fixture",
         eventAssist: "assist {name}",
         eventChangesTable: "{team} changes the table",
         liveFeedDelayed: "Live feed temporarily delayed",
@@ -110,6 +112,8 @@
         dropsOutTop: "{team} drops out of the top {cutoff}",
         climbsOutRelegation: "{team} climbs out of the relegation zone",
         fallsIntoRelegation: "{team} falls into the relegation zone",
+        specialFormatLimited: "Special competition format - table impact limited",
+        scoreOnly: "Live score only",
         goal: "Goal",
         penaltyGoal: "Penalty goal",
         ownGoal: "Own goal",
@@ -201,6 +205,8 @@
         momentumFallback: "O momento está sendo calculado com placar e movimento na tabela.",
         scoreOnlyHome: "{team} com placar ao vivo acompanhado",
         scoreOnlyAway: "Impacto na tabela indisponível para esta competição",
+        limitedHome: "Formato especial de competição",
+        limitedAway: "Impacto na tabela limitado para este jogo",
         eventAssist: "assistência {name}",
         eventChangesTable: "{team} muda a tabela",
         liveFeedDelayed: "Feed ao vivo temporariamente atrasado",
@@ -243,6 +249,8 @@
         dropsOutTop: "{team} sai do top {cutoff}",
         climbsOutRelegation: "{team} sai da zona de rebaixamento",
         fallsIntoRelegation: "{team} entra na zona de rebaixamento",
+        specialFormatLimited: "Formato especial de competição - impacto limitado na tabela",
+        scoreOnly: "Somente placar ao vivo",
         goal: "Gol",
         penaltyGoal: "Gol de pênalti",
         ownGoal: "Gol contra",
@@ -369,7 +377,13 @@
       [/^(.+) breaks into the top (\d+)$/, "impact.breaksTop", ["team", "cutoff"]],
       [/^(.+) drops out of the top (\d+)$/, "impact.dropsOutTop", ["team", "cutoff"]],
       [/^(.+) climbs out of the relegation zone$/, "impact.climbsOutRelegation", ["team"]],
-      [/^(.+) falls into the relegation zone$/, "impact.fallsIntoRelegation", ["team"]]
+      [/^(.+) falls into the relegation zone$/, "impact.fallsIntoRelegation", ["team"]],
+      [
+        /^Cross-group fixtures limit live table impact for this fixture\.$/,
+        "impact.specialFormatLimited",
+        []
+      ],
+      [/^Live score tracked - table impact limited for this fixture\.$/, "impact.specialFormatLimited", []]
     ];
 
     for (const [pattern, key, fields] of patterns) {
@@ -391,6 +405,14 @@
   }
 
   function buildImpactSummary(language, impact, teams) {
+    if (impact?.mode === "limited") {
+      return t(language, "impact.specialFormatLimited");
+    }
+
+    if (impact?.mode === "score-only") {
+      return t(language, "impact.scoreOnly");
+    }
+
     if (!impact?.table?.home || !impact?.table?.away) {
       return t(language, "impact.noMovement");
     }

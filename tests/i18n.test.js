@@ -61,3 +61,11 @@ test("buildImpactSummary renders localized movement summaries", () => {
 
   assert.equal(summary, "Arsenal sobe para 2º (+2)");
 });
+
+test("buildImpactSummary uses safe localized summaries for limited and score-only modes", () => {
+  assert.equal(
+    buildImpactSummary("pt-BR", { mode: "limited" }, {}),
+    "Formato especial de competição - impacto limitado na tabela"
+  );
+  assert.equal(buildImpactSummary("en", { mode: "score-only" }, {}), "Live score only");
+});

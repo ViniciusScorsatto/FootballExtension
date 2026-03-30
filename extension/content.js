@@ -508,6 +508,9 @@
         state.language,
         payload.impact.table.away.newPosition
       )} (${formatMovement(payload.impact.table.away.movement)})`;
+    } else if (payload.impact?.mode === "limited") {
+      elements.homeRow.textContent = translate("panel.limitedHome");
+      elements.awayRow.textContent = translate("panel.limitedAway");
     } else {
       elements.homeRow.textContent = translate("panel.scoreOnlyHome", {
         team: payload.teams.home.name

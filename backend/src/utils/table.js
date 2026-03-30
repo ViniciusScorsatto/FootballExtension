@@ -4,6 +4,24 @@ function cloneRow(row) {
   };
 }
 
+function normalizeStandingRow(row) {
+  return {
+    teamId: row.team.id,
+    name: row.team.name,
+    shortName: row.team.code || row.team.name.slice(0, 3).toUpperCase(),
+    rank: row.rank,
+    liveRank: row.rank,
+    played: row.all?.played ?? 0,
+    points: row.points ?? 0,
+    goalsDiff: row.goalsDiff ?? 0,
+    goalsFor: row.all?.goals?.for ?? 0,
+    goalsAgainst: row.all?.goals?.against ?? 0,
+    won: row.all?.win ?? 0,
+    draw: row.all?.draw ?? 0,
+    lost: row.all?.lose ?? 0
+  };
+}
+
 function rankTable(entries) {
   return entries.map((entry, index) => ({
     ...entry,
@@ -30,30 +48,47 @@ export function sortTable(entries) {
 }
 
 export function normalizeStandings(standingsPayload) {
-  const leagueBlock = standingsPayload?.response?.[0]?.league;
-  const table = leagueBlock?.standings?.[0];
+  const groups = normalizeStandingsGroups(standingsPayload);
 
-  if (!Array.isArray(table) || table.length === 0) {
+  return groups[0].table;
+}
+
+export function normalizeStandingsGroups(standingsPayload) {
+  const leagueBlock = standingsPayload?.response?.[0]?.league;
+  const tables = leagueBlock?.standings;
+
+  if (!Array.isArray(tables) || tables.length === 0) {
     const error = new Error("Standings data is unavailable for this fixture.");
     error.statusCode = 502;
     throw error;
   }
 
-  return table.map((row) => ({
-    teamId: row.team.id,
-    name: row.team.name,
-    shortName: row.team.code || row.team.name.slice(0, 3).toUpperCase(),
-    rank: row.rank,
-    liveRank: row.rank,
-    played: row.all?.played ?? 0,
-    points: row.points ?? 0,
-    goalsDiff: row.goalsDiff ?? 0,
-    goalsFor: row.all?.goals?.for ?? 0,
-    goalsAgainst: row.all?.goals?.against ?? 0,
-    won: row.all?.win ?? 0,
-    draw: row.all?.draw ?? 0,
-    lost: row.all?.lose ?? 0
-  }));
+  const groups = tables
+    .map((table, index) => {
+      if (!Array.isArray(table) || table.length === 0) {
+        return null;
+      }
+
+      const firstRow = table[0];
+      const label =
+        firstRow?.group ??
+        (tables.length > 1 ? `Group ${index + 1}` : leagueBlock?.name ?? "Table");
+
+      return {
+        id: label,
+        name: label,
+        table: table.map(normalizeStandingRow)
+      };
+    })
+    .filter(Boolean);
+
+  if (!groups.length) {
+    const error = new Error("Standings data is unavailable for this fixture.");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  return groups;
 }
 
 export function serializeTable(entries) {

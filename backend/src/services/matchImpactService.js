@@ -1,10 +1,11 @@
-import { serializeTable, normalizeStandings, simulateTable } from "../utils/table.js";
+import { serializeTable, simulateTable } from "../utils/table.js";
 import {
   computeImpact,
   detectScoreEvent,
   formatEventMinute,
   getMatchStatus
 } from "../utils/impact.js";
+import { classifyCompetitionFormat } from "../utils/competitionFormat.js";
 
 function buildCacheKey(fixtureId) {
   return `match:${fixtureId}`;
@@ -536,6 +537,31 @@ function buildScoreOnlyImpact(status, fixture, teams) {
   };
 }
 
+function buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat) {
+  const score = {
+    home: Number(fixture?.goals?.home ?? 0),
+    away: Number(fixture?.goals?.away ?? 0)
+  };
+  const format = competitionFormat?.format ?? "unknown";
+  const isGrouped = format === "grouped_cross_play" || format === "grouped_same_group";
+
+  return {
+    summary: "Special competition format - table impact limited",
+    table: null,
+    competition: [
+      isGrouped
+        ? "Cross-group fixtures limit live table impact for this fixture."
+        : "Live score tracked - table impact limited for this fixture."
+    ],
+    biggestMovement: null,
+    momentum: {
+      home: score.home === score.away ? 50 : score.home > score.away ? 65 : 35,
+      away: score.home === score.away ? 50 : score.away > score.home ? 65 : 35
+    },
+    mode: "limited"
+  };
+}
+
 export class MatchImpactService {
   constructor({ apiFootballClient, cacheService, analyticsService, env }) {
     this.apiFootballClient = apiFootballClient;
@@ -591,20 +617,31 @@ export class MatchImpactService {
       this.getInjuriesResource(fixtureId, status, prematchCadence),
       this.getLeagueContextResource(fixture, status).catch(() => null)
     ]);
-    const hasStandingsCoverage = fixture?.league?.standings === true && standings;
+    const competitionFormat = classifyCompetitionFormat({
+      fixture,
+      standingsPayload: standings
+    });
+    const hasTableImpact =
+      competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group";
     const latestGoalEvent = extractLatestGoalEvent(events, baseEvent);
     const event = enrichScoreEvent(baseEvent, latestGoalEvent);
     const lineupsSummary = buildLineupsSummary(lineups, teams);
     const injuriesSummary = buildInjuriesSummary(injuries, teams);
     const prematch = buildPrematchSummary(status, teams, lineupsSummary, injuriesSummary);
 
-    if (!hasStandingsCoverage) {
-      const impact = buildScoreOnlyImpact(status, fixture, teams);
+    if (!hasTableImpact) {
+      const impact =
+        competitionFormat.impactMode === "limited"
+          ? buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat)
+          : buildScoreOnlyImpact(status, fixture, teams);
       const statisticsSummary = buildStatisticsSummary(statistics, teams, impact.momentum);
       impact.momentum = statisticsSummary.momentum;
 
       if (event.type === "GOAL") {
-        event.impactSummary = "Goal changes the score. Table impact is unavailable.";
+        event.impactSummary =
+          competitionFormat.impactMode === "limited"
+            ? "Goal changes the score. Table impact is limited for this fixture."
+            : "Goal changes the score. Table impact is unavailable.";
       }
 
       const payload = {
@@ -618,7 +655,7 @@ export class MatchImpactService {
           name: fixture?.league?.name ?? "",
           country: fixture?.league?.country ?? "",
           season: fixture?.league?.season ?? null,
-          standings: false,
+          standings: fixture?.league?.standings === true,
           logo: fixture?.league?.logo ?? "",
           flag: fixture?.league?.flag ?? ""
         },
@@ -634,9 +671,15 @@ export class MatchImpactService {
         recent_events: buildRecentEvents(events),
         metadata: {
           cacheTtlSeconds: getCacheTtl(status, this.env),
-          impactBasis: "no-standings-coverage",
+          impactBasis:
+            competitionFormat.impactMode === "limited"
+              ? "special-competition-format"
+              : "no-standings-coverage",
           tableImpactAvailable: false,
-          prematchCadence
+          prematchCadence,
+          competitionFormat: competitionFormat.format,
+          impactMode: competitionFormat.impactMode,
+          groupLabel: competitionFormat.selectedGroup?.name ?? ""
         }
       };
 
@@ -655,7 +698,7 @@ export class MatchImpactService {
       return payload;
     }
 
-    const officialTable = normalizeStandings(standings);
+    const officialTable = competitionFormat.selectedGroup?.table ?? [];
     const canUseSavedBaseline =
       Array.isArray(previousState.baselineStandings) && previousState.baselineStandings.length > 0;
     const baselineStandings = canUseSavedBaseline ? previousState.baselineStandings : officialTable;
@@ -703,7 +746,10 @@ export class MatchImpactService {
             ? "baseline-standings"
             : "estimated-from-current-standings",
         tableImpactAvailable: true,
-        prematchCadence
+        prematchCadence,
+        competitionFormat: competitionFormat.format,
+        impactMode: competitionFormat.impactMode,
+        groupLabel: competitionFormat.selectedGroup?.name ?? ""
       }
     };
 
