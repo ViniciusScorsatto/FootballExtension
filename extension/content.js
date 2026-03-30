@@ -5,16 +5,28 @@
     existingRoot.remove();
   }
 
-  const STORAGE_KEYS = ["fixtureId", "backendUrl", "trackingEnabled"];
+  const STORAGE_KEYS = ["fixtureId", "backendUrl", "trackingEnabled", "language"];
   const DEFAULT_BACKEND_URL = "http://localhost:3000";
+  const DEFAULT_LANGUAGE = globalThis.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
   const MAX_POLL_INTERVAL_MS = 120000;
   const GOAL_MODE_DURATION_MS = 7000;
   const RENDER_DEBOUNCE_MS = 80;
 
+  const {
+    normalizeLanguage,
+    t,
+    formatOrdinal,
+    formatMovement,
+    translateGoalType,
+    translateCompetitionMessage,
+    buildImpactSummary
+  } = globalThis.LMI_I18N;
+
   const state = {
     fixtureId: null,
     backendUrl: DEFAULT_BACKEND_URL,
+    language: DEFAULT_LANGUAGE,
     trackingEnabled: false,
     pollTimer: null,
     renderTimer: null,
@@ -31,6 +43,21 @@
   const elements = createPanel();
   wireUi();
   init();
+
+  function translate(key, values = {}) {
+    return t(state.language, key, values);
+  }
+
+  function setLanguage(language) {
+    state.language = normalizeLanguage(language);
+
+    if (state.lastPayload) {
+      render(state.lastPayload);
+      return;
+    }
+
+    updateStaticCopy();
+  }
 
   function init() {
     chrome.runtime.onMessage.addListener((message) => {
@@ -52,6 +79,10 @@
       if (changes.fixtureId || changes.backendUrl || changes.trackingEnabled) {
         syncSettings(true);
       }
+
+      if (changes.language) {
+        setLanguage(changes.language.newValue ?? DEFAULT_LANGUAGE);
+      }
     });
 
     window.addEventListener("beforeunload", flushSession);
@@ -70,14 +101,14 @@
             <div class="lmi-collapsed-card__score">--</div>
           </div>
         </div>
-        <div class="lmi-collapsed-card__impact">Waiting for live impact</div>
+        <div class="lmi-collapsed-card__impact">${escapeHtml(translate("panel.waitingImpact"))}</div>
       </button>
       <div class="lmi-expanded">
         <div class="lmi-expanded__header">
           <div>
             <div class="lmi-expanded__brand">
               <div>
-                <div class="lmi-expanded__eyebrow">Live Impact</div>
+                <div class="lmi-expanded__eyebrow">${escapeHtml(translate("panel.eyebrow"))}</div>
                 <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
               </div>
             </div>
@@ -86,32 +117,32 @@
               <div class="lmi-badge-divider">vs</div>
               <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
             </div>
-            <div class="lmi-expanded__headline">Waiting for a tracked match</div>
+            <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
           </div>
           <div class="lmi-expanded__actions">
-            <button data-action="collapse" class="lmi-icon-button" type="button">Collapse</button>
-            <button data-action="close" class="lmi-icon-button" type="button">Close</button>
+            <button data-action="collapse" class="lmi-icon-button" type="button">${escapeHtml(translate("panel.collapse"))}</button>
+            <button data-action="close" class="lmi-icon-button" type="button">${escapeHtml(translate("panel.close"))}</button>
           </div>
         </div>
 
         <div class="lmi-event-banner is-hidden">
-          <div class="lmi-event-banner__label">Goal Impact</div>
+          <div class="lmi-event-banner__label">${escapeHtml(translate("panel.goalImpact"))}</div>
           <div class="lmi-event-banner__text">A goal changes the table.</div>
         </div>
 
         <div class="lmi-section">
-          <div class="lmi-section__label">Table Impact</div>
+          <div class="lmi-section__label">${escapeHtml(translate("panel.tableImpact"))}</div>
           <div class="lmi-impact-row lmi-impact-row--home"></div>
           <div class="lmi-impact-row lmi-impact-row--away"></div>
         </div>
 
         <div class="lmi-section">
-          <div class="lmi-section__label">Competition Impact</div>
+          <div class="lmi-section__label">${escapeHtml(translate("panel.competitionImpact"))}</div>
           <div class="lmi-competition-list"></div>
         </div>
 
         <div class="lmi-section">
-          <div class="lmi-section__label">Momentum</div>
+          <div class="lmi-section__label">${escapeHtml(translate("panel.momentum"))}</div>
           <div class="lmi-momentum">
             <div class="lmi-momentum__bar lmi-momentum__bar--home"></div>
             <div class="lmi-momentum__bar lmi-momentum__bar--away"></div>
@@ -120,14 +151,14 @@
         </div>
 
         <div class="lmi-section lmi-prematch-section is-hidden">
-          <div class="lmi-section__label">Pre-Match</div>
+          <div class="lmi-section__label">${escapeHtml(translate("panel.preMatch"))}</div>
           <div class="lmi-prematch-list"></div>
           <div class="lmi-lineups-grid"></div>
           <div class="lmi-injuries-grid"></div>
         </div>
 
         <div class="lmi-status-row">
-          <span class="lmi-connection-status">Connecting…</span>
+          <span class="lmi-connection-status">${escapeHtml(translate("panel.connecting"))}</span>
           <span class="lmi-last-updated"></span>
         </div>
         <div class="lmi-panel-footer">
@@ -145,6 +176,7 @@
       collapsedImpact: root.querySelector(".lmi-collapsed-card__impact"),
       headline: root.querySelector(".lmi-expanded__headline"),
       eventBanner: root.querySelector(".lmi-event-banner"),
+      eventBannerLabel: root.querySelector(".lmi-event-banner__label"),
       eventText: root.querySelector(".lmi-event-banner__text"),
       leagueName: root.querySelector(".lmi-expanded__league-name"),
       homeBadge: root.querySelector(".lmi-badge--home"),
@@ -160,7 +192,12 @@
       lineupsGrid: root.querySelector(".lmi-lineups-grid"),
       injuriesGrid: root.querySelector(".lmi-injuries-grid"),
       connectionStatus: root.querySelector(".lmi-connection-status"),
-      lastUpdated: root.querySelector(".lmi-last-updated")
+      lastUpdated: root.querySelector(".lmi-last-updated"),
+      eyebrow: root.querySelector(".lmi-expanded__eyebrow"),
+      headlineLabel: root.querySelector(".lmi-expanded__headline"),
+      collapseButton: root.querySelector('[data-action="collapse"]'),
+      closeButton: root.querySelector('[data-action="close"]'),
+      sectionLabels: root.querySelectorAll(".lmi-section__label")
     };
   }
 
@@ -193,7 +230,9 @@
     const settings = await chrome.storage.sync.get(STORAGE_KEYS);
     state.fixtureId = settings.fixtureId ?? null;
     state.backendUrl = (settings.backendUrl || DEFAULT_BACKEND_URL).replace(/\/$/, "");
+    state.language = normalizeLanguage(settings.language ?? DEFAULT_LANGUAGE);
     state.trackingEnabled = Boolean(settings.trackingEnabled);
+    updateStaticCopy();
 
     if (!state.trackingEnabled || !state.fixtureId || state.pageDismissed) {
       stopTracking();
@@ -201,7 +240,7 @@
     }
 
     elements.root.classList.remove("is-hidden");
-    elements.connectionStatus.textContent = "Connecting…";
+    elements.connectionStatus.textContent = translate("panel.connecting");
 
     if (!state.sessionStartedAt) {
       state.sessionStartedAt = Date.now();
@@ -228,6 +267,33 @@
     state.backoffMs = BASE_POLL_INTERVAL_MS;
     state.sessionStartedAt = null;
     elements.root.classList.add("is-hidden");
+  }
+
+  function updateStaticCopy() {
+    elements.collapsedImpact.textContent = state.lastPayload
+      ? elements.collapsedImpact.textContent
+      : translate("panel.waitingImpact");
+    elements.eyebrow.textContent = translate("panel.eyebrow");
+    elements.headline.textContent = state.lastPayload
+      ? elements.headline.textContent
+      : translate("panel.waitingMatch");
+    elements.eventBannerLabel.textContent = translate("panel.goalImpact");
+    elements.collapseButton.textContent = translate("panel.collapse");
+    elements.closeButton.textContent = translate("panel.close");
+
+    const [tableLabel, competitionLabel, momentumLabel, preMatchLabel] = elements.sectionLabels;
+    if (tableLabel) {
+      tableLabel.textContent = translate("panel.tableImpact");
+    }
+    if (competitionLabel) {
+      competitionLabel.textContent = translate("panel.competitionImpact");
+    }
+    if (momentumLabel) {
+      momentumLabel.textContent = translate("panel.momentum");
+    }
+    if (preMatchLabel) {
+      preMatchLabel.textContent = translate("panel.preMatch");
+    }
   }
 
   function clearPollTimer() {
@@ -355,49 +421,57 @@
     const retrySuffix = retryAfterSeconds ? ` Retry in ~${retryAfterSeconds}s.` : "";
 
     if (errorCode === "UPSTREAM_QUOTA_EXCEEDED") {
-      elements.connectionStatus.textContent = "Upstream limit reached. Retrying…";
-      elements.collapsedScore.textContent = "Limited";
-      elements.collapsedImpact.textContent = "Football API quota reached";
-      elements.headline.textContent = "Live data temporarily limited";
-      elements.homeRow.textContent = "The football data provider hit its request cap.";
-      elements.awayRow.textContent = `Tracking will resume automatically.${retrySuffix}`;
+      elements.connectionStatus.textContent = translate("panel.upstreamLimitRetrying");
+      elements.collapsedScore.textContent = translate("panel.limited");
+      elements.collapsedImpact.textContent = translate("panel.liveDataLimited");
+      elements.headline.textContent = translate("panel.liveDataLimited");
+      elements.homeRow.textContent = translate("panel.footballApiQuotaExplanation");
+      elements.awayRow.textContent = translate("panel.trackingResume", {
+        suffix: retryAfterSeconds
+          ? translate("panel.retryAfter", { seconds: retryAfterSeconds })
+          : ""
+      });
       elements.competitionList.innerHTML =
-        '<div class="lmi-empty">The backend is healthy, but the upstream football API quota is temporarily exhausted.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("panel.footballApiQuotaDetail"))}</div>`;
       return;
     }
 
     if (errorCode === "UPSTREAM_TIMEOUT" || errorCode === "UPSTREAM_UNAVAILABLE") {
-      elements.connectionStatus.textContent = "Football API slow. Retrying…";
-      elements.collapsedScore.textContent = "Delayed";
-      elements.collapsedImpact.textContent = "Waiting for fresh football data";
-      elements.headline.textContent = "Live feed temporarily delayed";
-      elements.homeRow.textContent = "The upstream football API is responding slowly.";
-      elements.awayRow.textContent = `We will retry automatically.${retrySuffix}`;
+      elements.connectionStatus.textContent = translate("panel.footballApiSlowRetrying");
+      elements.collapsedScore.textContent = translate("panel.live");
+      elements.collapsedImpact.textContent = translate("panel.liveFeedDelayed");
+      elements.headline.textContent = translate("panel.liveFeedDelayed");
+      elements.homeRow.textContent = translate("panel.footballApiSlowExplanation");
+      elements.awayRow.textContent = translate("panel.retrySoon", {
+        suffix: retryAfterSeconds
+          ? translate("panel.retryAfter", { seconds: retryAfterSeconds })
+          : ""
+      });
       elements.competitionList.innerHTML =
-        '<div class="lmi-empty">Using a live retry loop until the upstream data provider responds again.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("panel.footballApiDelayedDetail"))}</div>`;
       return;
     }
 
     if (errorCode === "UPSTREAM_AUTH_FAILED") {
-      elements.connectionStatus.textContent = "Provider auth issue";
-      elements.collapsedScore.textContent = "Config";
-      elements.collapsedImpact.textContent = "Backend provider credentials failed";
-      elements.headline.textContent = "Football data provider rejected credentials";
-      elements.homeRow.textContent = "Check the backend API_FOOTBALL_KEY configuration.";
+      elements.connectionStatus.textContent = translate("panel.providerAuthIssue");
+      elements.collapsedScore.textContent = translate("panel.config");
+      elements.collapsedImpact.textContent = translate("panel.backendCredentialsFailed");
+      elements.headline.textContent = translate("panel.providerRejectedCredentials");
+      elements.homeRow.textContent = translate("panel.backendApiKeyCheck");
       elements.awayRow.textContent = state.backendUrl;
       elements.competitionList.innerHTML =
-        '<div class="lmi-empty">This is a backend configuration issue, not a match-tracking issue.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("panel.backendConfigIssue"))}</div>`;
       return;
     }
 
-    elements.connectionStatus.textContent = "Connection lost. Retrying…";
-    elements.collapsedScore.textContent = "Offline";
-    elements.collapsedImpact.textContent = "Could not reach backend";
-    elements.headline.textContent = "Backend connection failed";
-    elements.homeRow.textContent = "Check that the backend is online";
+    elements.connectionStatus.textContent = translate("panel.backendConnectionFailed");
+    elements.collapsedScore.textContent = translate("panel.offline");
+    elements.collapsedImpact.textContent = translate("panel.backendConnectionFailed");
+    elements.headline.textContent = translate("panel.backendConnectionFailed");
+    elements.homeRow.textContent = translate("panel.backendOnlineCheck");
     elements.awayRow.textContent = state.backendUrl;
     elements.competitionList.innerHTML =
-      '<div class="lmi-empty">The overlay could not fetch match data yet.</div>';
+      `<div class="lmi-empty">${escapeHtml(translate("panel.backendOfflineDetail"))}</div>`;
   }
 
   function render(payload) {
@@ -406,34 +480,42 @@
     const scoreline = `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName} · ${clockLabel}`;
     const eventLabel = buildEventLabel(payload.event);
     const competitionItems = payload.impact?.competition || [];
+    const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
 
     elements.collapsedScore.textContent = scoreline;
-    elements.collapsedImpact.textContent =
-      eventLabel || payload.impact?.summary || "No live table movement yet";
-    elements.leagueName.textContent = payload.league?.name || "Match Tracker";
+    elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
+    elements.leagueName.textContent = payload.league?.name || translate("panel.matchTracker");
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
 
     if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
-      elements.homeRow.textContent = `${payload.teams.home.name} → ${ordinal(
+      elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
+        state.language,
         payload.impact.table.home.newPosition
       )} (${formatMovement(payload.impact.table.home.movement)})`;
-      elements.awayRow.textContent = `${payload.teams.away.name} → ${ordinal(
+      elements.awayRow.textContent = `${payload.teams.away.name} → ${formatOrdinal(
+        state.language,
         payload.impact.table.away.newPosition
       )} (${formatMovement(payload.impact.table.away.movement)})`;
     } else {
-      elements.homeRow.textContent = `${payload.teams.home.name} live score tracked`;
-      elements.awayRow.textContent = "Table impact unavailable for this competition";
+      elements.homeRow.textContent = translate("panel.scoreOnlyHome", {
+        team: payload.teams.home.name
+      });
+      elements.awayRow.textContent = translate("panel.scoreOnlyAway");
     }
 
     elements.connectionStatus.textContent =
       payload.status.phase === "finished"
-        ? "Match finished"
+        ? translate("panel.finished")
         : payload.status.phase === "upcoming"
-          ? "Pre-match"
-          : "Live";
-    elements.lastUpdated.textContent = `Updated ${new Date(payload.last_updated).toLocaleTimeString()}`;
+          ? translate("panel.preMatchStatus")
+          : translate("panel.live");
+    elements.lastUpdated.textContent = translate("panel.updatedAt", {
+      time: new Date(payload.last_updated).toLocaleTimeString(
+        state.language === "pt-BR" ? "pt-BR" : "en-US"
+      )
+    });
     elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
     elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
 
@@ -446,8 +528,10 @@
       elements.eventBanner.classList.remove("is-hidden");
       elements.eventText.textContent =
         eventLabel ||
-        payload.event.impactSummary ||
-        `${payload.event.teamName} changes the table`;
+        localizedImpactSummary ||
+        translate("panel.eventChangesTable", {
+          team: payload.event.teamName
+        });
       notifyGoal(payload, eventLabel);
       setExpanded(true);
       window.setTimeout(() => {
@@ -469,7 +553,7 @@
     const pieces = [];
 
     if (event.typeLabel) {
-      pieces.push(event.typeLabel);
+      pieces.push(translateGoalType(state.language, event.typeLabel));
     }
 
     if (event.scorer) {
@@ -479,7 +563,11 @@
     }
 
     if (event.assist) {
-      pieces.push(`assist ${event.assist}`);
+      pieces.push(
+        translate("panel.eventAssist", {
+          name: event.assist
+        })
+      );
     }
 
     if (event.minuteLabel) {
@@ -503,40 +591,45 @@
 
   function renderCompetitionList(items) {
     if (!items?.length) {
-      elements.competitionList.innerHTML = '<div class="lmi-empty">No major competition swing yet.</div>';
+      elements.competitionList.innerHTML = `<div class="lmi-empty">${escapeHtml(translate("panel.noCompetitionSwing"))}</div>`;
       return;
     }
 
     elements.competitionList.innerHTML = items
-      .map((item) => `<div class="lmi-competition-item">${escapeHtml(item)}</div>`)
+      .map(
+        (item) =>
+          `<div class="lmi-competition-item">${escapeHtml(
+            translateCompetitionMessage(state.language, item)
+          )}</div>`
+      )
       .join("");
   }
 
   function renderStatistics(statistics) {
     if (!statistics?.available || !statistics.home || !statistics.away) {
       elements.statsGrid.innerHTML =
-        '<div class="lmi-empty">Momentum is currently based on score and table movement.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("panel.momentumFallback"))}</div>`;
       return;
     }
 
     const rows = [
       {
-        label: "Possession",
+        label: translate("stats.possession"),
         home: formatStat(statistics.home.possession, "%"),
         away: formatStat(statistics.away.possession, "%")
       },
       {
-        label: "Shots on target",
+        label: translate("stats.shotsOnTarget"),
         home: formatStat(statistics.home.shotsOnTarget),
         away: formatStat(statistics.away.shotsOnTarget)
       },
       {
-        label: "Total shots",
+        label: translate("stats.totalShots"),
         home: formatStat(statistics.home.totalShots),
         away: formatStat(statistics.away.totalShots)
       },
       {
-        label: "Corners",
+        label: translate("stats.corners"),
         home: formatStat(statistics.home.corners),
         away: formatStat(statistics.away.corners)
       }
@@ -562,7 +655,8 @@
     }
 
     elements.prematchSection.classList.remove("is-hidden");
-    elements.prematchList.innerHTML = (payload.prematch.items || [])
+    const prematchItems = buildPrematchItems(payload);
+    elements.prematchList.innerHTML = prematchItems
       .map((item) => `<div class="lmi-prematch-item">${escapeHtml(item)}</div>`)
       .join("");
 
@@ -575,16 +669,22 @@
           (entry, index) => `
             <div class="lmi-mini-card">
               <div class="lmi-mini-card__title">${escapeHtml(index === 0 ? payload.teams.home.name : payload.teams.away.name)}</div>
-              <div class="lmi-mini-card__line">Formation ${escapeHtml(entry.formation || "TBC")}</div>
-              <div class="lmi-mini-card__line">${escapeHtml(entry.coach || "Coach TBD")}</div>
-              <div class="lmi-mini-card__line">${escapeHtml((entry.startXI || []).slice(0, 4).join(", ") || "XI not released")}</div>
+              <div class="lmi-mini-card__line">${escapeHtml(
+                translate("prematch.formation", {
+                  value: entry.formation || translate("prematch.formationTbc")
+                })
+              )}</div>
+              <div class="lmi-mini-card__line">${escapeHtml(entry.coach || translate("prematch.coachTbd"))}</div>
+              <div class="lmi-mini-card__line">${escapeHtml(
+                (entry.startXI || []).slice(0, 4).join(", ") || translate("prematch.xiNotReleased")
+              )}</div>
             </div>
           `
         )
         .join("");
     } else {
       elements.lineupsGrid.innerHTML =
-        '<div class="lmi-empty">Starting XIs are not available yet.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("prematch.startingXiUnavailable"))}</div>`;
     }
 
     const injuries = payload.prematch.injuries;
@@ -601,18 +701,56 @@
 
       elements.injuriesGrid.innerHTML = `
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(payload.teams.home.name)} injuries</div>
-          ${homeItems.length ? homeItems.join("") : '<div class="lmi-mini-card__line">None reported</div>'}
+          <div class="lmi-mini-card__title">${escapeHtml(
+            translate("prematch.injuriesTitle", { team: payload.teams.home.name })
+          )}</div>
+          ${homeItems.length ? homeItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(payload.teams.away.name)} injuries</div>
-          ${awayItems.length ? awayItems.join("") : '<div class="lmi-mini-card__line">None reported</div>'}
+          <div class="lmi-mini-card__title">${escapeHtml(
+            translate("prematch.injuriesTitle", { team: payload.teams.away.name })
+          )}</div>
+          ${awayItems.length ? awayItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
       `;
     } else {
       elements.injuriesGrid.innerHTML =
-        '<div class="lmi-empty">No injury reports surfaced for this fixture.</div>';
+        `<div class="lmi-empty">${escapeHtml(translate("prematch.noInjuries"))}</div>`;
     }
+  }
+
+  function buildPrematchItems(payload) {
+    const items = [];
+    const lineups = payload.prematch?.lineups;
+    const injuries = payload.prematch?.injuries;
+
+    if (lineups?.available && lineups.home?.formation && lineups.away?.formation) {
+      items.push(
+        translate("prematch.lineupsSummary", {
+          home: payload.teams.home.name,
+          homeFormation: lineups.home.formation,
+          away: payload.teams.away.name,
+          awayFormation: lineups.away.formation
+        })
+      );
+    } else {
+      items.push(translate("prematch.lineupsExpected"));
+    }
+
+    if (injuries?.available) {
+      items.push(
+        translate("prematch.injuriesCount", {
+          homeShort: payload.teams.home.shortName,
+          homeCount: injuries.home?.length ?? 0,
+          awayShort: payload.teams.away.shortName,
+          awayCount: injuries.away?.length ?? 0
+        })
+      );
+    } else {
+      items.push(translate("prematch.noInjuries"));
+    }
+
+    return items;
   }
 
   function notifyGoal(payload, eventLabel) {
@@ -632,7 +770,9 @@
     chrome.runtime.sendMessage({
       type: "LMI_GOAL_NOTIFICATION",
       title: `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName}`,
-      message: [eventLabel, payload.event?.impactSummary].filter(Boolean).join("\n")
+      message: [eventLabel, buildImpactSummary(state.language, payload.impact, payload.teams)]
+        .filter(Boolean)
+        .join("\n")
     });
   }
 
@@ -671,34 +811,6 @@
       leagueName: payload.league?.name,
       durationMs
     });
-  }
-
-  function ordinal(value) {
-    const rank = Number(value ?? 0);
-    const mod100 = rank % 100;
-
-    if (mod100 >= 11 && mod100 <= 13) {
-      return `${rank}th`;
-    }
-
-    switch (rank % 10) {
-      case 1:
-        return `${rank}st`;
-      case 2:
-        return `${rank}nd`;
-      case 3:
-        return `${rank}rd`;
-      default:
-        return `${rank}th`;
-    }
-  }
-
-  function formatMovement(value) {
-    if (value > 0) {
-      return `+${value}`;
-    }
-
-    return String(value);
   }
 
   function formatStat(value, suffix = "") {

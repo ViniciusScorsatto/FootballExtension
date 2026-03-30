@@ -13,17 +13,25 @@
           <img src="assets/footanalysislogo.png" alt="Foot Analysis logo" class="lmi-brand__logo" />
         </div>
         <div class="lmi-brand__copy">
-          <div class="lmi-popup__eyebrow">Foot Analysis</div>
-          <div class="lmi-brand__subhead">Live Match Impact</div>
+          <div id="popupEyebrow" class="lmi-popup__eyebrow">Foot Analysis</div>
+          <div id="popupSubhead" class="lmi-brand__subhead">Live Match Impact</div>
         </div>
       </div>
-      <h1 class="lmi-popup__title">Track what a goal changes</h1>
-      <p class="lmi-popup__text">
+      <h1 id="popupTitle" class="lmi-popup__title">Track what a goal changes</h1>
+      <p id="popupDescription" class="lmi-popup__text">
         Pick a supported league and the overlay will explain the live match impact in seconds.
       </p>
 
       <label class="lmi-field">
-        <span class="lmi-field__label">Backend URL</span>
+        <span id="languageLabel" class="lmi-field__label">Language</span>
+        <select id="language" class="lmi-field__input">
+          <option value="en">English</option>
+          <option value="pt-BR">Português (Brasil)</option>
+        </select>
+      </label>
+
+      <label class="lmi-field">
+        <span id="backendUrlLabel" class="lmi-field__label">Backend URL</span>
         <input
           id="backendUrl"
           class="lmi-field__input"
@@ -37,28 +45,28 @@
       </button>
 
       <label class="lmi-field">
-        <span class="lmi-field__label">League Focus</span>
+        <span id="leagueFocusLabel" class="lmi-field__label">League Focus</span>
         <select id="leagueFilter" class="lmi-field__input">
           <option value="">All supported leagues</option>
         </select>
       </label>
 
       <label class="lmi-field">
-        <span class="lmi-field__label">Live Matches</span>
+        <span id="liveMatchesLabel" class="lmi-field__label">Live Matches</span>
         <select id="liveMatches" class="lmi-field__input">
           <option value="">Loading live matches…</option>
         </select>
       </label>
 
       <label class="lmi-field">
-        <span class="lmi-field__label">Upcoming Matches</span>
+        <span id="upcomingMatchesLabel" class="lmi-field__label">Upcoming Matches</span>
         <select id="upcomingMatches" class="lmi-field__input">
           <option value="">Loading upcoming matches…</option>
         </select>
       </label>
 
       <label class="lmi-field">
-        <span class="lmi-field__label">Manual Fixture ID</span>
+        <span id="manualFixtureLabel" class="lmi-field__label">Manual Fixture ID</span>
         <input
           id="fixtureId"
           class="lmi-field__input"
@@ -78,6 +86,7 @@
       <p id="statusMessage" class="lmi-popup__status" aria-live="polite"></p>
     </main>
 
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

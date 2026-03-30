@@ -1,7 +1,10 @@
 const DEFAULT_BACKEND_URL = "http://localhost:3000";
+const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
+const { normalizeLanguage, t } = window.LMI_I18N;
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const backendUrlInput = document.getElementById("backendUrl");
+const languageSelect = document.getElementById("language");
 const leagueFilterSelect = document.getElementById("leagueFilter");
 const liveMatchesSelect = document.getElementById("liveMatches");
 const upcomingMatchesSelect = document.getElementById("upcomingMatches");
@@ -16,10 +19,57 @@ let currentLeagueFilter = {
   supportedLeagueIds: [],
   availableLeagues: []
 };
+let currentLanguage = DEFAULT_LANGUAGE;
+
+const popupTextElements = {
+  eyebrow: document.getElementById("popupEyebrow"),
+  subhead: document.getElementById("popupSubhead"),
+  title: document.getElementById("popupTitle"),
+  description: document.getElementById("popupDescription"),
+  languageLabel: document.getElementById("languageLabel"),
+  backendUrlLabel: document.getElementById("backendUrlLabel"),
+  leagueFocusLabel: document.getElementById("leagueFocusLabel"),
+  liveMatchesLabel: document.getElementById("liveMatchesLabel"),
+  upcomingMatchesLabel: document.getElementById("upcomingMatchesLabel"),
+  manualFixtureLabel: document.getElementById("manualFixtureLabel")
+};
 
 function setStatus(message, isError = false) {
   statusMessage.textContent = message;
   statusMessage.dataset.error = String(isError);
+}
+
+function translate(key, values = {}) {
+  return t(currentLanguage, key, values);
+}
+
+function setLanguage(language) {
+  currentLanguage = normalizeLanguage(language);
+  languageSelect.value = currentLanguage;
+  applyStaticTranslations();
+}
+
+function applyStaticTranslations() {
+  document.title = translate("popup.subhead");
+  popupTextElements.eyebrow.textContent = translate("popup.eyebrow");
+  popupTextElements.subhead.textContent = translate("popup.subhead");
+  popupTextElements.title.textContent = translate("popup.title");
+  popupTextElements.description.textContent = translate("popup.description");
+  popupTextElements.languageLabel.textContent = translate("language.label");
+  popupTextElements.backendUrlLabel.textContent = translate("popup.backendUrl");
+  popupTextElements.leagueFocusLabel.textContent = translate("popup.leagueFocus");
+  popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
+  popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
+  popupTextElements.manualFixtureLabel.textContent = translate("popup.manualFixtureId");
+  fixtureIdInput.placeholder = translate("popup.manualFixturePlaceholder");
+  refreshMatchesButton.textContent = translate("popup.refreshMatches");
+  startButton.textContent = translate("popup.startTracking");
+  stopButton.textContent = translate("popup.stopTracking");
+
+  languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
+  languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
+    "language.portugueseBrazil"
+  );
 }
 
 function notifyActiveTab(message) {
@@ -54,7 +104,7 @@ async function ensureContentScriptInjected() {
 
   await chrome.scripting.executeScript({
     target: { tabId: activeTab.id },
-    files: ["content.js"]
+    files: ["i18n.js", "content.js"]
   });
 }
 
@@ -72,7 +122,7 @@ function validateBackendUrl(backendUrl) {
 }
 
 function formatKickoff(dateString) {
-  return new Date(dateString).toLocaleString([], {
+  return new Date(dateString).toLocaleString(currentLanguage === "pt-BR" ? "pt-BR" : "en-US", {
     weekday: "short",
     hour: "numeric",
     minute: "2-digit"
@@ -80,23 +130,27 @@ function formatKickoff(dateString) {
 }
 
 function buildLiveLabel(match) {
-  const featuredPrefix = match.league?.featured ? "Featured · " : "";
+  const featuredPrefix = match.league?.featured
+    ? `${translate("popup.featuredLeaguePrefix")} · `
+    : "";
   const suffix =
-    match.impactMode === "score-only" ? " · Live score only - no table impact" : "";
+    match.impactMode === "score-only" ? ` · ${translate("popup.scoreOnlySuffix")}` : "";
 
   return `${featuredPrefix}${match.teams.home.shortName} ${match.score.home}-${match.score.away} ${match.teams.away.shortName} · ${match.status.minute || 0}' · ${match.league.name}${suffix}`;
 }
 
 function buildUpcomingLabel(match) {
-  const featuredPrefix = match.league?.featured ? "Featured · " : "";
+  const featuredPrefix = match.league?.featured
+    ? `${translate("popup.featuredLeaguePrefix")} · `
+    : "";
   return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
 }
 
 function buildLeagueFilterLabel(league) {
-  const featuredPrefix = league.featured ? "Featured · " : "";
+  const featuredPrefix = league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
   const countrySuffix = league.country ? ` · ${league.country}` : "";
   const availabilitySuffix =
-    league.availableNow === false ? " · No matches right now" : "";
+    league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";
 
   return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
 }
@@ -153,7 +207,8 @@ function mergeLeagueFilterPayloads(...payloads) {
         id: league.id,
         name: league.name,
         country: league.country,
-        featured: existingLeague?.featured || league.featured === true
+        featured: existingLeague?.featured || league.featured === true,
+        availableNow: existingLeague?.availableNow || league.availableNow === true
       });
     });
   });
@@ -176,7 +231,7 @@ function populateLeagueFilterSelect(leagueFilter, selectedLeagueId) {
 
   const allOption = document.createElement("option");
   allOption.value = "";
-  allOption.textContent = "All supported leagues";
+  allOption.textContent = translate("popup.allSupportedLeagues");
   leagueFilterSelect.appendChild(allOption);
 
   leagueFilter.availableLeagues.forEach((league) => {
@@ -210,7 +265,7 @@ function renderMatchLists(preferredFixtureId = null) {
   populateMatchSelect(
     liveMatchesSelect,
     liveMatches,
-    liveMatches.length ? "Choose a live match" : "No live matches found",
+    liveMatches.length ? translate("popup.livePlaceholder") : translate("popup.liveEmpty"),
     buildLiveLabel,
     preferredFixtureId
   );
@@ -218,7 +273,9 @@ function renderMatchLists(preferredFixtureId = null) {
   populateMatchSelect(
     upcomingMatchesSelect,
     upcomingMatches,
-    upcomingMatches.length ? "Choose an upcoming match" : "No upcoming matches found",
+    upcomingMatches.length
+      ? translate("popup.upcomingPlaceholder")
+      : translate("popup.upcomingEmpty"),
     buildUpcomingLabel,
     preferredFixtureId
   );
@@ -266,12 +323,12 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
   const backendUrl = normalizeBackendUrl();
 
   if (!validateBackendUrl(backendUrl)) {
-    setStatus("Enter a valid backend URL.", true);
+    setStatus(translate("popup.statusEnterBackend"), true);
     return;
   }
 
   refreshMatchesButton.disabled = true;
-  setStatus("Loading matches…");
+  setStatus(translate("popup.statusLoadingMatches"));
 
   try {
     const [livePayload, upcomingPayload] = await Promise.all([
@@ -294,7 +351,7 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
 
     renderMatchLists(preferredFixtureId);
 
-    setStatus("Match lists updated.");
+    setStatus(translate("popup.statusMatchesUpdated"));
   } catch (error) {
     currentLiveMatches = [];
     currentUpcomingMatches = [];
@@ -304,14 +361,19 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
       availableLeagues: []
     };
     populateLeagueFilterSelect(currentLeagueFilter, null);
-    populateMatchSelect(liveMatchesSelect, [], "Could not load live matches", buildLiveLabel);
+    populateMatchSelect(
+      liveMatchesSelect,
+      [],
+      translate("popup.liveLoadError"),
+      buildLiveLabel
+    );
     populateMatchSelect(
       upcomingMatchesSelect,
       [],
-      "Could not load upcoming matches",
+      translate("popup.upcomingLoadError"),
       buildUpcomingLabel
     );
-    setStatus("Could not load matches from the backend.", true);
+    setStatus(translate("popup.statusMatchesFailed"), true);
   } finally {
     refreshMatchesButton.disabled = false;
   }
@@ -322,11 +384,14 @@ async function loadSettings() {
     "fixtureId",
     "backendUrl",
     "trackingEnabled",
-    "leagueFilterId"
+    "leagueFilterId",
+    "language"
   ]);
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
+  const storedLanguage = result.language ?? DEFAULT_LANGUAGE;
 
+  setLanguage(storedLanguage);
   backendUrlInput.value = result.backendUrl ?? DEFAULT_BACKEND_URL;
   fixtureIdInput.value = storedFixtureId ?? "";
 
@@ -343,7 +408,11 @@ async function loadSettings() {
     fixtureIdInput.value = "";
   }
 
-  setStatus(result.trackingEnabled ? "Tracking is active on this browser." : "Pick a match to start.");
+  setStatus(
+    result.trackingEnabled
+      ? translate("popup.statusTrackingActive")
+      : translate("popup.statusPickMatch")
+  );
 }
 
 async function handleStartTracking() {
@@ -351,12 +420,12 @@ async function handleStartTracking() {
   const backendUrl = normalizeBackendUrl();
 
   if (!fixtureId) {
-    setStatus("Choose a live or upcoming match, or enter a fixture ID.", true);
+    setStatus(translate("popup.statusChooseFixture"), true);
     return;
   }
 
   if (!validateBackendUrl(backendUrl)) {
-    setStatus("Enter a valid backend URL.", true);
+    setStatus(translate("popup.statusEnterBackend"), true);
     return;
   }
 
@@ -365,13 +434,14 @@ async function handleStartTracking() {
   await chrome.storage.sync.set({
     fixtureId,
     backendUrl,
+    language: currentLanguage,
     trackingEnabled: true
   });
 
   notifyActiveTab({
     type: "LMI_TRACKING_UPDATED"
   });
-  setStatus("Tracking started.");
+  setStatus(translate("popup.statusTrackingStarted"));
 }
 
 async function handleStopTracking() {
@@ -382,7 +452,7 @@ async function handleStopTracking() {
   notifyActiveTab({
     type: "LMI_TRACKING_STOPPED"
   });
-  setStatus("Tracking stopped.");
+  setStatus(translate("popup.statusTrackingStopped"));
 }
 
 liveMatchesSelect.addEventListener("change", () => {
@@ -407,6 +477,14 @@ refreshMatchesButton.addEventListener("click", async () => {
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
+languageSelect.addEventListener("change", async () => {
+  setLanguage(languageSelect.value);
+  await chrome.storage.sync.set({
+    language: currentLanguage
+  });
+  await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
+});
+
 backendUrlInput.addEventListener("change", async () => {
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
@@ -424,5 +502,5 @@ startButton.addEventListener("click", handleStartTracking);
 stopButton.addEventListener("click", handleStopTracking);
 
 loadSettings().catch(() => {
-  setStatus("Could not load saved settings.", true);
+  setStatus(translate("popup.statusSettingsFailed"), true);
 });
