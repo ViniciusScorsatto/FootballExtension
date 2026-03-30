@@ -91,12 +91,20 @@ app.use((error, _req, res, _next) => {
   const statusCode = error.statusCode ?? 500;
   const message = statusCode >= 500 ? "Internal server error." : error.message;
 
+  if (error.retryAfterSeconds) {
+    res.setHeader("Retry-After", String(error.retryAfterSeconds));
+  }
+
   if (statusCode >= 500) {
     console.error(error);
   }
 
   res.status(statusCode).json({
-    error: message
+    error: message,
+    code: error.code ?? "INTERNAL_ERROR",
+    source: error.source ?? "backend",
+    recoverable: Boolean(error.recoverable),
+    retryAfterSeconds: error.retryAfterSeconds ?? null
   });
 });
 

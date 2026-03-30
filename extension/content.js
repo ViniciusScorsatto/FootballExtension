@@ -261,13 +261,14 @@
           }
 
           if (!response?.ok) {
-            reject(
-              new Error(
-                response?.error ||
-                  response?.data?.error ||
-                  `Request failed with ${response?.status ?? "unknown"}`
-              )
+            const requestError = new Error(
+              response?.error ||
+                response?.data?.error ||
+                `Request failed with ${response?.status ?? "unknown"}`
             );
+            requestError.status = response?.status ?? 0;
+            requestError.data = response?.data ?? null;
+            reject(requestError);
             return;
           }
 
@@ -297,14 +298,7 @@
 
       scheduleNextPoll(BASE_POLL_INTERVAL_MS);
     } catch (error) {
-      elements.connectionStatus.textContent = "Connection lost. Retrying…";
-      elements.collapsedScore.textContent = "Offline";
-      elements.collapsedImpact.textContent = "Could not reach backend";
-      elements.headline.textContent = "Backend connection failed";
-      elements.homeRow.textContent = "Check that npm run dev is running";
-      elements.awayRow.textContent = state.backendUrl;
-      elements.competitionList.innerHTML =
-        '<div class="lmi-empty">The overlay could not fetch match data yet.</div>';
+      renderErrorState(error);
       elements.lastUpdated.textContent = "";
       elements.homeMomentum.style.width = "50%";
       elements.awayMomentum.style.width = "50%";
@@ -353,6 +347,57 @@
     state.renderTimer = window.setTimeout(() => {
       render(payload);
     }, RENDER_DEBOUNCE_MS);
+  }
+
+  function renderErrorState(error) {
+    const errorCode = error?.data?.code ?? "";
+    const retryAfterSeconds = error?.data?.retryAfterSeconds ?? null;
+    const retrySuffix = retryAfterSeconds ? ` Retry in ~${retryAfterSeconds}s.` : "";
+
+    if (errorCode === "UPSTREAM_QUOTA_EXCEEDED") {
+      elements.connectionStatus.textContent = "Upstream limit reached. Retrying…";
+      elements.collapsedScore.textContent = "Limited";
+      elements.collapsedImpact.textContent = "Football API quota reached";
+      elements.headline.textContent = "Live data temporarily limited";
+      elements.homeRow.textContent = "The football data provider hit its request cap.";
+      elements.awayRow.textContent = `Tracking will resume automatically.${retrySuffix}`;
+      elements.competitionList.innerHTML =
+        '<div class="lmi-empty">The backend is healthy, but the upstream football API quota is temporarily exhausted.</div>';
+      return;
+    }
+
+    if (errorCode === "UPSTREAM_TIMEOUT" || errorCode === "UPSTREAM_UNAVAILABLE") {
+      elements.connectionStatus.textContent = "Football API slow. Retrying…";
+      elements.collapsedScore.textContent = "Delayed";
+      elements.collapsedImpact.textContent = "Waiting for fresh football data";
+      elements.headline.textContent = "Live feed temporarily delayed";
+      elements.homeRow.textContent = "The upstream football API is responding slowly.";
+      elements.awayRow.textContent = `We will retry automatically.${retrySuffix}`;
+      elements.competitionList.innerHTML =
+        '<div class="lmi-empty">Using a live retry loop until the upstream data provider responds again.</div>';
+      return;
+    }
+
+    if (errorCode === "UPSTREAM_AUTH_FAILED") {
+      elements.connectionStatus.textContent = "Provider auth issue";
+      elements.collapsedScore.textContent = "Config";
+      elements.collapsedImpact.textContent = "Backend provider credentials failed";
+      elements.headline.textContent = "Football data provider rejected credentials";
+      elements.homeRow.textContent = "Check the backend API_FOOTBALL_KEY configuration.";
+      elements.awayRow.textContent = state.backendUrl;
+      elements.competitionList.innerHTML =
+        '<div class="lmi-empty">This is a backend configuration issue, not a match-tracking issue.</div>';
+      return;
+    }
+
+    elements.connectionStatus.textContent = "Connection lost. Retrying…";
+    elements.collapsedScore.textContent = "Offline";
+    elements.collapsedImpact.textContent = "Could not reach backend";
+    elements.headline.textContent = "Backend connection failed";
+    elements.homeRow.textContent = "Check that the backend is online";
+    elements.awayRow.textContent = state.backendUrl;
+    elements.competitionList.innerHTML =
+      '<div class="lmi-empty">The overlay could not fetch match data yet.</div>';
   }
 
   function render(payload) {

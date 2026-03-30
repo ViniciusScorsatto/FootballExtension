@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getFixturePhase } from "../utils/impact.js";
+import { normalizeUpstreamApiError } from "../utils/errors.js";
 
 export class ApiFootballClient {
   constructor({ baseUrl, apiKey, timeoutMs }) {
@@ -54,7 +55,7 @@ export class ApiFootballClient {
         errorMessage
       });
 
-      throw error;
+      throw normalizeUpstreamApiError(error);
     }
   }
 
