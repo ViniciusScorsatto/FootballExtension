@@ -748,13 +748,17 @@
             <div class="lmi-league-context-card__teams">
               <span class="lmi-league-context-card__team lmi-league-context-card__team--home">
                 ${renderLeagueContextBadge(fixture.teams.home.logo, fixture.teams.home.name)}
-                <span>${escapeHtml(fixture.teams.home.shortName)}</span>
+                <span class="lmi-league-context-card__team-name">${escapeHtml(
+                  fixture.teams.home.shortName
+                )}</span>
               </span>
               <span class="lmi-league-context-card__score">${escapeHtml(
                 `${fixture.score.home}-${fixture.score.away}`
               )}</span>
               <span class="lmi-league-context-card__team lmi-league-context-card__team--away">
-                <span>${escapeHtml(fixture.teams.away.shortName)}</span>
+                <span class="lmi-league-context-card__team-name">${escapeHtml(
+                  fixture.teams.away.shortName
+                )}</span>
                 ${renderLeagueContextBadge(fixture.teams.away.logo, fixture.teams.away.name)}
               </span>
             </div>
