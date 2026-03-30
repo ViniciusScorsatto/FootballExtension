@@ -28,6 +28,9 @@ test("buildLeagueFilterPayload returns featured leagues first", () => {
           id: 140,
           name: "La Liga",
           country: "Spain"
+        },
+        status: {
+          phase: "upcoming"
         }
       },
       {
@@ -35,6 +38,9 @@ test("buildLeagueFilterPayload returns featured leagues first", () => {
           id: 39,
           name: "Premier League",
           country: "England"
+        },
+        status: {
+          phase: "live"
         }
       }
     ],
@@ -49,13 +55,43 @@ test("buildLeagueFilterPayload returns featured leagues first", () => {
       id: 39,
       name: "Premier League",
       country: "England",
-      featured: true
+      featured: true,
+      availableNow: true,
+      hasLiveMatch: true,
+      hasUpcomingMatch: false
     },
     {
       id: 140,
       name: "La Liga",
       country: "Spain",
-      featured: false
+      featured: false,
+      availableNow: true,
+      hasLiveMatch: false,
+      hasUpcomingMatch: true
+    }
+  ]);
+});
+
+test("buildLeagueFilterPayload keeps configured leagues even when no fixtures are available", () => {
+  const payload = buildLeagueFilterPayload([], {
+    supportedLeagueIds: [39, 140],
+    featuredLeagueIds: [39]
+  });
+
+  assert.deepEqual(payload.availableLeagues, [
+    {
+      id: 39,
+      name: "Premier League",
+      country: "England",
+      featured: true,
+      availableNow: false
+    },
+    {
+      id: 140,
+      name: "La Liga",
+      country: "Spain",
+      featured: false,
+      availableNow: false
     }
   ]);
 });

@@ -95,8 +95,10 @@ function buildUpcomingLabel(match) {
 function buildLeagueFilterLabel(league) {
   const featuredPrefix = league.featured ? "Featured · " : "";
   const countrySuffix = league.country ? ` · ${league.country}` : "";
+  const availabilitySuffix =
+    league.availableNow === false ? " · No matches right now" : "";
 
-  return `${featuredPrefix}${league.name}${countrySuffix}`;
+  return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
 }
 
 function populateMatchSelect(selectElement, matches, placeholderLabel, labelBuilder, selectedFixtureId) {
@@ -181,6 +183,7 @@ function populateLeagueFilterSelect(leagueFilter, selectedLeagueId) {
     const option = document.createElement("option");
     option.value = String(league.id);
     option.textContent = buildLeagueFilterLabel(league);
+    option.disabled = league.availableNow === false;
     option.selected = Number(selectedLeagueId) === league.id;
     leagueFilterSelect.appendChild(option);
   });
