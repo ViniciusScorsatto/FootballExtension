@@ -2,12 +2,20 @@ const DEFAULT_BACKEND_URL = "http://localhost:3000";
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const backendUrlInput = document.getElementById("backendUrl");
+const leagueFilterSelect = document.getElementById("leagueFilter");
 const liveMatchesSelect = document.getElementById("liveMatches");
 const upcomingMatchesSelect = document.getElementById("upcomingMatches");
 const refreshMatchesButton = document.getElementById("refreshMatches");
 const startButton = document.getElementById("startTracking");
 const stopButton = document.getElementById("stopTracking");
 const statusMessage = document.getElementById("statusMessage");
+let currentLiveMatches = [];
+let currentUpcomingMatches = [];
+let currentLeagueFilter = {
+  featuredLeagueIds: [],
+  supportedLeagueIds: [],
+  availableLeagues: []
+};
 
 function setStatus(message, isError = false) {
   statusMessage.textContent = message;
@@ -72,14 +80,23 @@ function formatKickoff(dateString) {
 }
 
 function buildLiveLabel(match) {
+  const featuredPrefix = match.league?.featured ? "Featured · " : "";
   const suffix =
     match.impactMode === "score-only" ? " · Live score only - no table impact" : "";
 
-  return `${match.teams.home.shortName} ${match.score.home}-${match.score.away} ${match.teams.away.shortName} · ${match.status.minute || 0}' · ${match.league.name}${suffix}`;
+  return `${featuredPrefix}${match.teams.home.shortName} ${match.score.home}-${match.score.away} ${match.teams.away.shortName} · ${match.status.minute || 0}' · ${match.league.name}${suffix}`;
 }
 
 function buildUpcomingLabel(match) {
-  return `${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
+  const featuredPrefix = match.league?.featured ? "Featured · " : "";
+  return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
+}
+
+function buildLeagueFilterLabel(league) {
+  const featuredPrefix = league.featured ? "Featured · " : "";
+  const countrySuffix = league.country ? ` · ${league.country}` : "";
+
+  return `${featuredPrefix}${league.name}${countrySuffix}`;
 }
 
 function populateMatchSelect(selectElement, matches, placeholderLabel, labelBuilder, selectedFixtureId) {
@@ -113,6 +130,105 @@ function clearOtherInputs(source) {
   }
 }
 
+function mergeLeagueFilterPayloads(...payloads) {
+  const featuredLeagueIds = new Set();
+  const supportedLeagueIds = new Set();
+  const availableLeagues = new Map();
+
+  payloads.forEach((payload) => {
+    const leagueFilter = payload?.leagueFilter ?? {};
+
+    (leagueFilter.featuredLeagueIds ?? []).forEach((leagueId) => featuredLeagueIds.add(leagueId));
+    (leagueFilter.supportedLeagueIds ?? []).forEach((leagueId) => supportedLeagueIds.add(leagueId));
+    (leagueFilter.availableLeagues ?? []).forEach((league) => {
+      if (!league?.id) {
+        return;
+      }
+
+      const existingLeague = availableLeagues.get(league.id);
+
+      availableLeagues.set(league.id, {
+        id: league.id,
+        name: league.name,
+        country: league.country,
+        featured: existingLeague?.featured || league.featured === true
+      });
+    });
+  });
+
+  return {
+    featuredLeagueIds: [...featuredLeagueIds],
+    supportedLeagueIds: [...supportedLeagueIds],
+    availableLeagues: [...availableLeagues.values()].sort((left, right) => {
+      if (left.featured !== right.featured) {
+        return left.featured ? -1 : 1;
+      }
+
+      return buildLeagueFilterLabel(left).localeCompare(buildLeagueFilterLabel(right));
+    })
+  };
+}
+
+function populateLeagueFilterSelect(leagueFilter, selectedLeagueId) {
+  leagueFilterSelect.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All supported leagues";
+  leagueFilterSelect.appendChild(allOption);
+
+  leagueFilter.availableLeagues.forEach((league) => {
+    const option = document.createElement("option");
+    option.value = String(league.id);
+    option.textContent = buildLeagueFilterLabel(league);
+    option.selected = Number(selectedLeagueId) === league.id;
+    leagueFilterSelect.appendChild(option);
+  });
+}
+
+function getSelectedLeagueId() {
+  const selectedLeagueId = Number(leagueFilterSelect.value);
+  return Number.isInteger(selectedLeagueId) && selectedLeagueId > 0 ? selectedLeagueId : null;
+}
+
+function getFilteredMatches(matches, leagueId) {
+  if (!leagueId) {
+    return matches;
+  }
+
+  return matches.filter((match) => match.league?.id === leagueId);
+}
+
+function renderMatchLists(preferredFixtureId = null) {
+  const selectedLeagueId = getSelectedLeagueId();
+  const liveMatches = getFilteredMatches(currentLiveMatches, selectedLeagueId);
+  const upcomingMatches = getFilteredMatches(currentUpcomingMatches, selectedLeagueId);
+
+  populateMatchSelect(
+    liveMatchesSelect,
+    liveMatches,
+    liveMatches.length ? "Choose a live match" : "No live matches found",
+    buildLiveLabel,
+    preferredFixtureId
+  );
+
+  populateMatchSelect(
+    upcomingMatchesSelect,
+    upcomingMatches,
+    upcomingMatches.length ? "Choose an upcoming match" : "No upcoming matches found",
+    buildUpcomingLabel,
+    preferredFixtureId
+  );
+
+  if (!preferredFixtureId && liveMatches.length) {
+    liveMatchesSelect.value = String(liveMatches[0].fixtureId);
+  }
+
+  if (!preferredFixtureId && !liveMatches.length && upcomingMatches.length) {
+    upcomingMatchesSelect.value = String(upcomingMatches[0].fixtureId);
+  }
+}
+
 function getSelectedFixtureId() {
   const liveFixtureId = Number(liveMatchesSelect.value);
   const upcomingFixtureId = Number(upcomingMatchesSelect.value);
@@ -143,7 +259,7 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function refreshMatchLists(preferredFixtureId = null) {
+async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = null) {
   const backendUrl = normalizeBackendUrl();
 
   if (!validateBackendUrl(backendUrl)) {
@@ -160,35 +276,31 @@ async function refreshMatchLists(preferredFixtureId = null) {
       fetchJson(`${backendUrl}/matches/upcoming`)
     ]);
 
-    const liveMatches = livePayload.matches || [];
-    const upcomingMatches = upcomingPayload.matches || [];
+    currentLiveMatches = livePayload.matches || [];
+    currentUpcomingMatches = upcomingPayload.matches || [];
+    currentLeagueFilter = mergeLeagueFilterPayloads(livePayload, upcomingPayload);
 
-    populateMatchSelect(
-      liveMatchesSelect,
-      liveMatches,
-      liveMatches.length ? "Choose a live match" : "No live matches found",
-      buildLiveLabel,
-      preferredFixtureId
-    );
+    populateLeagueFilterSelect(currentLeagueFilter, preferredLeagueId);
 
-    populateMatchSelect(
-      upcomingMatchesSelect,
-      upcomingMatches,
-      upcomingMatches.length ? "Choose an upcoming match" : "No upcoming matches found",
-      buildUpcomingLabel,
-      preferredFixtureId
-    );
-
-    if (!preferredFixtureId && liveMatches.length) {
-      liveMatchesSelect.value = String(liveMatches[0].fixtureId);
+    if (
+      preferredLeagueId &&
+      !leagueFilterSelect.querySelector(`option[value="${preferredLeagueId}"]`)
+    ) {
+      leagueFilterSelect.value = "";
     }
 
-    if (!preferredFixtureId && !liveMatches.length && upcomingMatches.length) {
-      upcomingMatchesSelect.value = String(upcomingMatches[0].fixtureId);
-    }
+    renderMatchLists(preferredFixtureId);
 
     setStatus("Match lists updated.");
   } catch (error) {
+    currentLiveMatches = [];
+    currentUpcomingMatches = [];
+    currentLeagueFilter = {
+      featuredLeagueIds: [],
+      supportedLeagueIds: [],
+      availableLeagues: []
+    };
+    populateLeagueFilterSelect(currentLeagueFilter, null);
     populateMatchSelect(liveMatchesSelect, [], "Could not load live matches", buildLiveLabel);
     populateMatchSelect(
       upcomingMatchesSelect,
@@ -203,13 +315,19 @@ async function refreshMatchLists(preferredFixtureId = null) {
 }
 
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(["fixtureId", "backendUrl", "trackingEnabled"]);
+  const result = await chrome.storage.sync.get([
+    "fixtureId",
+    "backendUrl",
+    "trackingEnabled",
+    "leagueFilterId"
+  ]);
   const storedFixtureId = result.fixtureId ?? null;
+  const storedLeagueFilterId = result.leagueFilterId ?? null;
 
   backendUrlInput.value = result.backendUrl ?? DEFAULT_BACKEND_URL;
   fixtureIdInput.value = storedFixtureId ?? "";
 
-  await refreshMatchLists(storedFixtureId);
+  await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
 
   const isInLiveList = Boolean(
     storedFixtureId && liveMatchesSelect.querySelector(`option[value="${storedFixtureId}"]`)
@@ -283,11 +401,20 @@ fixtureIdInput.addEventListener("input", () => {
 });
 
 refreshMatchesButton.addEventListener("click", async () => {
-  await refreshMatchLists(getSelectedFixtureId());
+  await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
 backendUrlInput.addEventListener("change", async () => {
-  await refreshMatchLists(getSelectedFixtureId());
+  await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
+});
+
+leagueFilterSelect.addEventListener("change", async () => {
+  await chrome.storage.sync.set({
+    leagueFilterId: getSelectedLeagueId()
+  });
+
+  clearOtherInputs("manual");
+  renderMatchLists();
 });
 
 startButton.addEventListener("click", handleStartTracking);

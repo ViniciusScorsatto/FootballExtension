@@ -1,4 +1,5 @@
 import { getMatchStatus } from "../utils/impact.js";
+import { buildLeagueFilterPayload, isFeaturedLeague, isLeagueSupported } from "../utils/leagues.js";
 
 function buildCacheKey(mode, suffix = "default") {
   return `matches:${mode}:${suffix}`;
@@ -35,8 +36,9 @@ function isUpcoming(fixture) {
   return status === "NS" || status === "TBD";
 }
 
-function mapFixture(fixture) {
+function mapFixture(fixture, env) {
   const status = getMatchStatus(fixture);
+  const leagueId = fixture.league?.id ?? null;
 
   return {
     fixtureId: fixture.fixture.id,
@@ -48,12 +50,13 @@ function mapFixture(fixture) {
     },
     status,
     league: {
-      id: fixture.league?.id ?? null,
+      id: leagueId,
       name: fixture.league?.name ?? "",
       country: fixture.league?.country ?? "",
       season: fixture.league?.season ?? null,
       round: fixture.league?.round ?? "",
-      standings: fixture.league?.standings === true
+      standings: fixture.league?.standings === true,
+      featured: isFeaturedLeague(leagueId, env.featuredLeagueIds)
     },
     teams: {
       home: {
@@ -77,6 +80,13 @@ function mapFixture(fixture) {
 
 function sortFixtures(fixtures) {
   return [...fixtures].sort((left, right) => {
+    const leftFeatured = left.league?.featured === true ? 0 : 1;
+    const rightFeatured = right.league?.featured === true ? 0 : 1;
+
+    if (leftFeatured !== rightFeatured) {
+      return leftFeatured - rightFeatured;
+    }
+
     const leftStandings = left.league?.standings === true ? 0 : 1;
     const rightStandings = right.league?.standings === true ? 0 : 1;
 
@@ -84,7 +94,10 @@ function sortFixtures(fixtures) {
       return leftStandings - rightStandings;
     }
 
-    return left.fixture.timestamp - right.fixture.timestamp;
+    const leftTimestamp = left.timestamp ?? left.fixture?.timestamp ?? 0;
+    const rightTimestamp = right.timestamp ?? right.fixture?.timestamp ?? 0;
+
+    return leftTimestamp - rightTimestamp;
   });
 }
 
@@ -92,11 +105,13 @@ function dedupeFixtures(fixtures) {
   const seen = new Set();
 
   return fixtures.filter((fixture) => {
-    if (seen.has(fixture.fixture.id)) {
+    const fixtureId = fixture.fixtureId ?? fixture.fixture?.id;
+
+    if (!fixtureId || seen.has(fixtureId)) {
       return false;
     }
 
-    seen.add(fixture.fixture.id);
+    seen.add(fixtureId);
     return true;
   });
 }
@@ -111,16 +126,21 @@ export class MatchDiscoveryService {
 
   async getLiveMatches() {
     return this.getCachedList({
-      cacheKey: buildCacheKey("live"),
+      cacheKey: buildCacheKey("live", this.getLeagueCacheSuffix()),
       ttlSeconds: this.env.liveCacheTtlSeconds,
       loader: async () => {
         const fixtures = await this.apiFootballClient.getLiveFixtures();
-        const matches = sortFixtures(fixtures).map(mapFixture);
+        const matches = sortFixtures(
+          fixtures
+            .filter((fixture) => isLeagueSupported(fixture?.league?.id, this.env.supportedLeagueIds))
+            .map((fixture) => mapFixture(fixture, this.env))
+        );
 
         return {
           mode: "live",
           last_updated: new Date().toISOString(),
-          matches
+          matches,
+          leagueFilter: buildLeagueFilterPayload(matches, this.env)
         };
       }
     });
@@ -129,7 +149,10 @@ export class MatchDiscoveryService {
   async getUpcomingMatches({ date, limit = 20 } = {}) {
     const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 50) : 20;
     const requestedDate = date?.trim();
-    const cacheKey = buildCacheKey("upcoming", requestedDate ?? `window-${safeLimit}`);
+    const cacheKey = buildCacheKey(
+      "upcoming",
+      `${requestedDate ?? `window-${safeLimit}`}:${this.getLeagueCacheSuffix()}`
+    );
 
     return this.getCachedList({
       cacheKey,
@@ -146,7 +169,13 @@ export class MatchDiscoveryService {
           sortFixtures(
             responses
               .flat()
-              .filter((fixture) => fixture?.league?.standings === true && isUpcoming(fixture))
+              .filter(
+                (fixture) =>
+                  fixture?.league?.standings === true &&
+                  isUpcoming(fixture) &&
+                  isLeagueSupported(fixture?.league?.id, this.env.supportedLeagueIds)
+              )
+              .map((fixture) => mapFixture(fixture, this.env))
           )
         );
 
@@ -154,10 +183,21 @@ export class MatchDiscoveryService {
           mode: "upcoming",
           last_updated: new Date().toISOString(),
           dates: datesToFetch,
-          matches: fixtures.slice(0, safeLimit).map(mapFixture)
+          matches: fixtures.slice(0, safeLimit),
+          leagueFilter: buildLeagueFilterPayload(fixtures, this.env)
         };
       }
     });
+  }
+
+  getLeagueCacheSuffix() {
+    if (!this.env.supportedLeagueIds.length && !this.env.featuredLeagueIds.length) {
+      return "all";
+    }
+
+    return `supported-${this.env.supportedLeagueIds.join("-") || "all"}:featured-${
+      this.env.featuredLeagueIds.join("-") || "none"
+    }`;
   }
 
   async getCachedList({ cacheKey, ttlSeconds, loader }) {

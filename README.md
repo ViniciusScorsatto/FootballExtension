@@ -87,6 +87,12 @@ The backend exposes:
 - Redis-backed deployments share counters across instances automatically. Without Redis, the limiter falls back to per-instance in-memory counters.
 - When a bucket is exhausted the API returns `429` plus `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
 
+## League policy
+
+- `SUPPORTED_LEAGUE_IDS` lets you restrict discovery to a curated allowlist of league IDs.
+- `FEATURED_LEAGUE_IDS` lets you prioritize key leagues in backend discovery and in the extension popup.
+- Unsupported leagues are filtered out of `/matches/live` and `/matches/upcoming`, which keeps the product focused and helps control API usage.
+
 ## CORS and Allowed Origins
 
 - `ALLOWED_ORIGINS` accepts a comma-separated list of exact web origins such as `https://liveimpact.yourdomain.com`.

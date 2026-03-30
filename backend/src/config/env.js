@@ -56,6 +56,19 @@ function readNumber(name, fallback) {
   return Number.isFinite(parsedValue) ? parsedValue : fallback;
 }
 
+function readNumberList(name, fallback = []) {
+  const rawValue = process.env[name];
+
+  if (!rawValue) {
+    return fallback;
+  }
+
+  return rawValue
+    .split(",")
+    .map((entry) => Number(entry.trim()))
+    .filter((entry) => Number.isInteger(entry) && entry > 0);
+}
+
 function readList(name, fallback = ["*"]) {
   const rawValue = process.env[name];
 
@@ -81,6 +94,8 @@ export const env = {
   trustProxy: readTrustProxy("TRUST_PROXY", 1),
   allowedOrigins: readList("ALLOWED_ORIGINS"),
   allowedExtensionIds: readList("ALLOWED_EXTENSION_IDS", []),
+  supportedLeagueIds: readNumberList("SUPPORTED_LEAGUE_IDS", []),
+  featuredLeagueIds: readNumberList("FEATURED_LEAGUE_IDS", []),
   liveCacheTtlSeconds: readNumber("LIVE_CACHE_TTL_SECONDS", 15),
   upcomingCacheTtlSeconds: readNumber("UPCOMING_CACHE_TTL_SECONDS", 120),
   finishedCacheTtlSeconds: readNumber("FINISHED_CACHE_TTL_SECONDS", 3600),

@@ -19,7 +19,7 @@
       </div>
       <h1 class="lmi-popup__title">Track what a goal changes</h1>
       <p class="lmi-popup__text">
-        Pick a match with standings coverage and the overlay will explain the live table impact.
+        Pick a supported league and the overlay will explain the live match impact in seconds.
       </p>
 
       <label class="lmi-field">
@@ -35,6 +35,13 @@
       <button id="refreshMatches" class="lmi-button lmi-button--ghost" type="button">
         Refresh Match List
       </button>
+
+      <label class="lmi-field">
+        <span class="lmi-field__label">League Focus</span>
+        <select id="leagueFilter" class="lmi-field__input">
+          <option value="">All supported leagues</option>
+        </select>
+      </label>
 
       <label class="lmi-field">
         <span class="lmi-field__label">Live Matches</span>
