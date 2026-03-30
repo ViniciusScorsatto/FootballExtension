@@ -1,4 +1,4 @@
-import { serializeTable, simulateTable } from "../utils/table.js";
+import { serializeTable, simulateTable, simulateTableSubset } from "../utils/table.js";
 import {
   computeImpact,
   detectScoreEvent,
@@ -293,6 +293,100 @@ function buildLeagueContextSummary({
     displayedFixtures: selectedFixtures.length,
     limited: otherFixtures.length > selectedFixtures.length,
     fixtures: selectedFixtures
+  };
+}
+
+function buildTeamPositionSummary(teamPosition, projectedPosition = null) {
+  if (!teamPosition) {
+    return null;
+  }
+
+  return {
+    ...teamPosition,
+    projectedPosition: projectedPosition?.position ?? teamPosition.position,
+    projectedGroup: projectedPosition?.group ?? teamPosition.group,
+    projectedMovement:
+      teamPosition.position && projectedPosition?.position
+        ? teamPosition.position - projectedPosition.position
+        : 0
+  };
+}
+
+function findProjectedTeamPosition(groupTable, teamPosition) {
+  if (!groupTable || !teamPosition?.teamId) {
+    return null;
+  }
+
+  const row = groupTable.find((entry) => entry.teamId === teamPosition.teamId);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    group: teamPosition.group,
+    position: row.liveRank || row.rank,
+    teamId: row.teamId,
+    teamName: row.name
+  };
+}
+
+function buildGroupProjection(competitionFormat, roundFixtures) {
+  if (!competitionFormat?.teamPositions || !Array.isArray(roundFixtures) || !roundFixtures.length) {
+    return null;
+  }
+
+  const relevantGroups = new Map();
+
+  for (const teamPosition of Object.values(competitionFormat.teamPositions)) {
+    if (!teamPosition?.group) {
+      continue;
+    }
+
+    const groupDefinition = competitionFormat.groups.find((group) => group.name === teamPosition.group);
+
+    if (!groupDefinition) {
+      continue;
+    }
+
+    relevantGroups.set(
+      groupDefinition.name,
+      groupDefinition.table.map((entry) => ({
+        ...entry
+      }))
+    );
+  }
+
+  if (!relevantGroups.size) {
+    return null;
+  }
+
+  const liveFixtures = roundFixtures.filter((fixture) => getMatchStatus(fixture).phase === "live");
+
+  for (const liveFixture of liveFixtures) {
+    for (const [groupName, table] of relevantGroups.entries()) {
+      const updatedTable = simulateTableSubset(table, liveFixture, {
+        applyResult: true
+      });
+      relevantGroups.set(groupName, updatedTable);
+    }
+  }
+
+  return {
+    home: buildTeamPositionSummary(
+      competitionFormat.teamPositions.home,
+      findProjectedTeamPosition(
+        relevantGroups.get(competitionFormat.teamPositions.home?.group),
+        competitionFormat.teamPositions.home
+      )
+    ),
+    away: buildTeamPositionSummary(
+      competitionFormat.teamPositions.away,
+      findProjectedTeamPosition(
+        relevantGroups.get(competitionFormat.teamPositions.away?.group),
+        competitionFormat.teamPositions.away
+      )
+    )
   };
 }
 
@@ -605,7 +699,7 @@ export class MatchImpactService {
     };
     const baseEvent = detectScoreEvent(previousState.previousScore, score, teams);
     const prematchCadence = getPrematchCadence(fixture, this.env);
-    const [events, standings, statistics, lineups, injuries, leagueContext] = await Promise.all([
+    const [events, standings, statistics, lineups, injuries, roundFixtures] = await Promise.all([
       this.getEventsResource({
         fixtureId,
         status,
@@ -615,11 +709,20 @@ export class MatchImpactService {
       this.getStatisticsResource(fixtureId, status),
       this.getLineupsResource(fixtureId, status, prematchCadence),
       this.getInjuriesResource(fixtureId, status, prematchCadence),
-      this.getLeagueContextResource(fixture, status).catch(() => null)
+      this.getLeagueRoundFixturesResource(fixture, status).catch(() => [])
     ]);
     const competitionFormat = classifyCompetitionFormat({
       fixture,
       standingsPayload: standings
+    });
+    const groupProjection = buildGroupProjection(competitionFormat, roundFixtures);
+    const leagueContext = buildLeagueContextSummary({
+      fixtures: roundFixtures,
+      trackedFixtureId: fixture?.fixture?.id,
+      trackedFixtureTimestamp: getKickoffTimestamp(fixture),
+      maxFixtures: this.env.leagueContextMaxFixtures,
+      sameWindowMinutes: this.env.leagueContextSameWindowMinutes,
+      round: fixture?.league?.round
     });
     const hasTableImpact =
       competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group";
@@ -679,7 +782,9 @@ export class MatchImpactService {
           prematchCadence,
           competitionFormat: competitionFormat.format,
           impactMode: competitionFormat.impactMode,
-          groupLabel: competitionFormat.selectedGroup?.name ?? ""
+          groupLabel: competitionFormat.selectedGroup?.name ?? "",
+          teamGroupPositions: competitionFormat.teamPositions ?? null,
+          projectedTeamGroupPositions: groupProjection
         }
       };
 
@@ -749,7 +854,9 @@ export class MatchImpactService {
         prematchCadence,
         competitionFormat: competitionFormat.format,
         impactMode: competitionFormat.impactMode,
-        groupLabel: competitionFormat.selectedGroup?.name ?? ""
+        groupLabel: competitionFormat.selectedGroup?.name ?? "",
+        teamGroupPositions: competitionFormat.teamPositions ?? null,
+        projectedTeamGroupPositions: groupProjection
       }
     };
 
@@ -804,6 +911,19 @@ export class MatchImpactService {
   }
 
   async getLeagueContextResource(fixture, status) {
+    const roundFixtures = await this.getLeagueRoundFixturesResource(fixture, status);
+
+    return buildLeagueContextSummary({
+      fixtures: roundFixtures,
+      trackedFixtureId: fixture?.fixture?.id,
+      trackedFixtureTimestamp: getKickoffTimestamp(fixture),
+      maxFixtures: this.env.leagueContextMaxFixtures,
+      sameWindowMinutes: this.env.leagueContextSameWindowMinutes,
+      round: fixture?.league?.round
+    });
+  }
+
+  async getLeagueRoundFixturesResource(fixture, status) {
     const leagueId = fixture?.league?.id;
     const season = fixture?.league?.season;
     const round = fixture?.league?.round;
@@ -812,23 +932,11 @@ export class MatchImpactService {
       return null;
     }
 
-    const trackedFixtureId = fixture?.fixture?.id;
-    const trackedFixtureTimestamp = getKickoffTimestamp(fixture);
-
-    const fixtures = await this.getCachedResource({
+    return this.getCachedResource({
       key: buildLeagueContextKey(leagueId, season, round),
       ttlSeconds: getLeagueContextCacheTtl(status, this.env),
       fetcher: async () =>
         this.apiFootballClient.getFixturesByRound(leagueId, season, round).catch(() => [])
-    });
-
-    return buildLeagueContextSummary({
-      fixtures,
-      trackedFixtureId,
-      trackedFixtureTimestamp,
-      maxFixtures: this.env.leagueContextMaxFixtures,
-      sameWindowMinutes: this.env.leagueContextSameWindowMinutes,
-      round
     });
   }
 

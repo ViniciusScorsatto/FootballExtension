@@ -186,6 +186,10 @@
       leagueName: root.querySelector(".lmi-expanded__league-name"),
       homeBadge: root.querySelector(".lmi-badge--home"),
       awayBadge: root.querySelector(".lmi-badge--away"),
+      tableLabel: root.querySelectorAll(".lmi-section__label")[0],
+      competitionLabel: root.querySelectorAll(".lmi-section__label")[1],
+      momentumLabel: root.querySelectorAll(".lmi-section__label")[2],
+      preMatchLabel: root.querySelectorAll(".lmi-section__label")[3],
       homeRow: root.querySelector(".lmi-impact-row--home"),
       awayRow: root.querySelector(".lmi-impact-row--away"),
       competitionList: root.querySelector(".lmi-competition-list"),
@@ -288,12 +292,12 @@
     elements.collapseButton.textContent = translate("panel.collapse");
     elements.closeButton.textContent = translate("panel.close");
 
-    const labels = elements.root.querySelectorAll(".lmi-section__label");
-    const [tableLabel, competitionLabel, momentumLabel, preMatchLabel] = labels;
-    if (tableLabel) tableLabel.textContent = translate("panel.tableImpact");
-    if (competitionLabel) competitionLabel.textContent = translate("panel.competitionImpact");
-    if (momentumLabel) momentumLabel.textContent = translate("panel.momentum");
-    if (preMatchLabel) preMatchLabel.textContent = translate("panel.preMatch");
+    if (elements.tableLabel) elements.tableLabel.textContent = translate("panel.tableImpact");
+    if (elements.competitionLabel) {
+      elements.competitionLabel.textContent = translate("panel.competitionImpact");
+    }
+    if (elements.momentumLabel) elements.momentumLabel.textContent = translate("panel.momentum");
+    if (elements.preMatchLabel) elements.preMatchLabel.textContent = translate("panel.preMatch");
     if (elements.leagueContextLabel) {
       elements.leagueContextLabel.textContent = translate("panel.otherMatches");
     }
@@ -491,6 +495,7 @@
     const eventLabel = buildEventLabel(payload.event);
     const competitionItems = payload.impact?.competition || [];
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
+    const isLimitedImpact = payload.impact?.mode === "limited";
 
     elements.collapsedScore.textContent = scoreline;
     elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
@@ -498,6 +503,13 @@
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
+
+    elements.tableLabel.textContent = isLimitedImpact
+      ? translate("panel.groupPositions")
+      : translate("panel.tableImpact");
+    elements.competitionLabel.textContent = isLimitedImpact
+      ? translate("panel.limitedCompetition")
+      : translate("panel.competitionImpact");
 
     if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
       elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
@@ -509,8 +521,17 @@
         payload.impact.table.away.newPosition
       )} (${formatMovement(payload.impact.table.away.movement)})`;
     } else if (payload.impact?.mode === "limited") {
-      elements.homeRow.textContent = translate("panel.limitedHome");
-      elements.awayRow.textContent = translate("panel.limitedAway");
+      const homeGroupPosition = payload.metadata?.teamGroupPositions?.home;
+      const awayGroupPosition = payload.metadata?.teamGroupPositions?.away;
+      const homeProjectedGroupPosition = payload.metadata?.projectedTeamGroupPositions?.home;
+      const awayProjectedGroupPosition = payload.metadata?.projectedTeamGroupPositions?.away;
+
+      elements.homeRow.textContent = homeGroupPosition
+        ? formatGroupPositionLine(payload.teams.home.name, homeGroupPosition, homeProjectedGroupPosition)
+        : translate("panel.limitedHome");
+      elements.awayRow.textContent = awayGroupPosition
+        ? formatGroupPositionLine(payload.teams.away.name, awayGroupPosition, awayProjectedGroupPosition)
+        : translate("panel.limitedAway");
     } else {
       elements.homeRow.textContent = translate("panel.scoreOnlyHome", {
         team: payload.teams.home.name
@@ -532,7 +553,7 @@
     elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
     elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
 
-    renderCompetitionList(competitionItems);
+    renderCompetitionList(payload, competitionItems);
     renderStatistics(payload.statistics);
     renderPrematch(payload);
     renderLeagueContext(payload);
@@ -603,7 +624,14 @@
     element.classList.remove("is-hidden");
   }
 
-  function renderCompetitionList(items) {
+  function renderCompetitionList(payload, items) {
+    if (payload?.impact?.mode === "limited") {
+      elements.competitionList.innerHTML = `<div class="lmi-empty">${escapeHtml(
+        translate("panel.limitedCompetitionDetail")
+      )}</div>`;
+      return;
+    }
+
     if (!items?.length) {
       elements.competitionList.innerHTML = `<div class="lmi-empty">${escapeHtml(translate("panel.noCompetitionSwing"))}</div>`;
       return;
@@ -755,9 +783,6 @@
                   fixture.teams.home.shortName
                 )}</span>
               </span>
-              <span class="lmi-league-context-card__score">${escapeHtml(
-                `${fixture.score.home}-${fixture.score.away}`
-              )}</span>
               <span class="lmi-league-context-card__team lmi-league-context-card__team--away">
                 <span class="lmi-league-context-card__team-name">${escapeHtml(
                   fixture.teams.away.shortName
@@ -765,6 +790,9 @@
                 ${renderLeagueContextBadge(fixture.teams.away.logo, fixture.teams.away.name)}
               </span>
             </div>
+            <div class="lmi-league-context-card__score">${escapeHtml(
+              `${fixture.score.home}-${fixture.score.away}`
+            )}</div>
             <div class="lmi-league-context-card__meta">
               <span>${escapeHtml(formatLeagueContextStatus(fixture.status, fixture.startsAt))}</span>
             </div>
@@ -892,6 +920,26 @@
     return new Date(startsAt).toLocaleTimeString(state.language === "pt-BR" ? "pt-BR" : "en-US", {
       hour: "2-digit",
       minute: "2-digit"
+    });
+  }
+
+  function formatGroupPositionLine(teamName, currentPosition, projectedPosition) {
+    if (
+      projectedPosition?.projectedPosition &&
+      projectedPosition.projectedPosition !== currentPosition.position
+    ) {
+      return translate("panel.projectedGroupPosition", {
+        team: teamName,
+        currentPosition: formatOrdinal(state.language, currentPosition.position),
+        projectedPosition: formatOrdinal(state.language, projectedPosition.projectedPosition),
+        group: currentPosition.group
+      });
+    }
+
+    return translate("panel.groupPosition", {
+      team: teamName,
+      position: formatOrdinal(state.language, currentPosition.position),
+      group: currentPosition.group
     });
   }
 

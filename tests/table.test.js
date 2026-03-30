@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { computeImpact, formatEventMinute } from "../backend/src/utils/impact.js";
-import { simulateTable } from "../backend/src/utils/table.js";
+import { simulateTable, simulateTableSubset } from "../backend/src/utils/table.js";
 
 test("simulateTable applies a live win and reranks the table", () => {
   const standings = [
@@ -105,6 +105,56 @@ test("computeImpact highlights top-four swings", () => {
   assert.match(impact.summary, /Arsenal moves to 4th/);
   assert.ok(impact.competition.includes("Arsenal breaks into the top 4"));
   assert.ok(impact.competition.includes("Chelsea drops out of the top 4"));
+});
+
+test("simulateTableSubset updates only the team present in the group table", () => {
+  const standings = [
+    {
+      teamId: 1,
+      name: "Jacuipense",
+      shortName: "JAC",
+      rank: 4,
+      liveRank: 4,
+      played: 2,
+      points: 1,
+      goalsDiff: -2,
+      goalsFor: 1,
+      goalsAgainst: 3,
+      won: 0,
+      draw: 1,
+      lost: 1
+    },
+    {
+      teamId: 3,
+      name: "Another Team",
+      shortName: "ANO",
+      rank: 3,
+      liveRank: 3,
+      played: 2,
+      points: 3,
+      goalsDiff: 0,
+      goalsFor: 2,
+      goalsAgainst: 2,
+      won: 1,
+      draw: 0,
+      lost: 1
+    }
+  ];
+
+  const updatedTable = simulateTableSubset(standings, {
+    teams: {
+      home: { id: 1, name: "Jacuipense" },
+      away: { id: 99, name: "America-RN" }
+    },
+    goals: {
+      home: 1,
+      away: 0
+    }
+  });
+
+  assert.equal(updatedTable[0].teamId, 1);
+  assert.equal(updatedTable[0].points, 4);
+  assert.equal(updatedTable[0].played, 3);
 });
 
 test("formatEventMinute includes added time", () => {

@@ -444,7 +444,7 @@ select.lmi-field__input {
 }
 
 .lmi-league-context-card {
-  min-width: 134px;
+  min-width: 146px;
   padding: 12px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
@@ -453,8 +453,8 @@ select.lmi-field__input {
 }
 
 .lmi-league-context-card__teams {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
+  justify-content: space-between;
   gap: 10px;
   align-items: center;
   color: var(--lmi-text);
@@ -462,15 +462,18 @@ select.lmi-field__input {
 }
 
 .lmi-league-context-card__score {
+  margin-top: 8px;
+  font-size: 20px;
   font-weight: 700;
-  min-width: 38px;
   text-align: center;
+  color: var(--lmi-text);
 }
 
 .lmi-league-context-card__meta {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 12px;
   color: var(--lmi-muted);
+  text-align: center;
 }
 
 .lmi-league-context-card__team {
@@ -478,17 +481,16 @@ select.lmi-field__input {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  max-width: calc(50% - 8px);
   overflow: hidden;
 }
 
 .lmi-league-context-card__team--home {
   justify-content: flex-start;
-  justify-self: start;
 }
 
 .lmi-league-context-card__team--away {
   justify-content: flex-end;
-  justify-self: end;
 }
 
 .lmi-league-context-card__badge {

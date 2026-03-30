@@ -200,4 +200,18 @@ test("registry overrides can force limited mode for known competitions", () => {
   assert.equal(result.format, "grouped_cross_play");
   assert.equal(result.impactMode, "limited");
   assert.equal(result.source, "override");
+  assert.deepEqual(result.teamPositions, {
+    home: {
+      group: "Table",
+      position: 1,
+      teamId: 1,
+      teamName: "Home"
+    },
+    away: {
+      group: "Table",
+      position: 2,
+      teamId: 2,
+      teamName: "Away"
+    }
+  });
 });

@@ -28,18 +28,25 @@ function findGroupsForTeam(groups, teamId) {
   return groups.filter((group) => group.table.some((row) => row.teamId === teamId));
 }
 
+function findTeamPosition(groups, teamId) {
+  for (const group of groups) {
+    const row = group.table.find((entry) => entry.teamId === teamId);
+
+    if (row) {
+      return {
+        group: group.name,
+        position: row.liveRank || row.rank,
+        teamId: row.teamId,
+        teamName: row.name
+      };
+    }
+  }
+
+  return null;
+}
+
 export function classifyCompetitionFormat({ fixture, standingsPayload }) {
   const override = findCompetitionOverride(fixture);
-
-  if (override) {
-    return {
-      format: override.format,
-      impactMode: override.impactMode,
-      selectedGroup: null,
-      groups: [],
-      source: "override"
-    };
-  }
 
   if (fixture?.league?.standings !== true || !standingsPayload) {
     return {
@@ -52,6 +59,33 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
   }
 
   const groups = normalizeStandingsGroups(standingsPayload);
+  const homeTeamId = fixture?.teams?.home?.id;
+  const awayTeamId = fixture?.teams?.away?.id;
+  const homeTeamPosition = findTeamPosition(groups, homeTeamId);
+  const awayTeamPosition = findTeamPosition(groups, awayTeamId);
+  const sharedGroup = groups.find(
+    (group) =>
+      group.table.some((row) => row.teamId === homeTeamId) &&
+      group.table.some((row) => row.teamId === awayTeamId)
+  );
+
+  if (override) {
+    return {
+      format: override.format,
+      impactMode: override.impactMode,
+      selectedGroup: sharedGroup ?? null,
+      groups,
+      teamPositions: {
+        home: homeTeamPosition,
+        away: awayTeamPosition
+      },
+      teamGroups: {
+        home: findGroupsForTeam(groups, homeTeamId).map((group) => group.name),
+        away: findGroupsForTeam(groups, awayTeamId).map((group) => group.name)
+      },
+      source: "override"
+    };
+  }
 
   if (groups.length === 1) {
     return {
@@ -59,17 +93,13 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
       impactMode: "full",
       selectedGroup: groups[0],
       groups,
+      teamPositions: {
+        home: homeTeamPosition,
+        away: awayTeamPosition
+      },
       source: "standings"
     };
   }
-
-  const homeTeamId = fixture?.teams?.home?.id;
-  const awayTeamId = fixture?.teams?.away?.id;
-  const sharedGroup = groups.find(
-    (group) =>
-      group.table.some((row) => row.teamId === homeTeamId) &&
-      group.table.some((row) => row.teamId === awayTeamId)
-  );
 
   if (sharedGroup) {
     return {
@@ -77,6 +107,10 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
       impactMode: "group",
       selectedGroup: sharedGroup,
       groups,
+      teamPositions: {
+        home: homeTeamPosition,
+        away: awayTeamPosition
+      },
       source: "standings"
     };
   }
@@ -86,6 +120,10 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
     impactMode: "limited",
     selectedGroup: null,
     groups,
+    teamPositions: {
+      home: homeTeamPosition,
+      away: awayTeamPosition
+    },
     teamGroups: {
       home: findGroupsForTeam(groups, homeTeamId).map((group) => group.name),
       away: findGroupsForTeam(groups, awayTeamId).map((group) => group.name)

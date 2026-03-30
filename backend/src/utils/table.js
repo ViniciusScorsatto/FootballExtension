@@ -29,6 +29,27 @@ function rankTable(entries) {
   }));
 }
 
+function applyFixtureStats(row, goalsFor, goalsAgainst) {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+  row.goalsDiff += goalsFor - goalsAgainst;
+
+  if (goalsFor > goalsAgainst) {
+    row.points += 3;
+    row.won += 1;
+    return;
+  }
+
+  if (goalsFor < goalsAgainst) {
+    row.lost += 1;
+    return;
+  }
+
+  row.points += 1;
+  row.draw += 1;
+}
+
 export function sortTable(entries) {
   return [...entries].sort((left, right) => {
     if (right.points !== left.points) {
@@ -126,30 +147,38 @@ export function simulateTable(standings, fixture, options = {}) {
     return rankTable(sortTable(table));
   }
 
-  homeRow.played += 1;
-  awayRow.played += 1;
+  applyFixtureStats(homeRow, homeGoals, awayGoals);
+  applyFixtureStats(awayRow, awayGoals, homeGoals);
 
-  homeRow.goalsFor += homeGoals;
-  homeRow.goalsAgainst += awayGoals;
-  homeRow.goalsDiff += homeGoals - awayGoals;
+  return rankTable(sortTable(table));
+}
 
-  awayRow.goalsFor += awayGoals;
-  awayRow.goalsAgainst += homeGoals;
-  awayRow.goalsDiff += awayGoals - homeGoals;
+export function simulateTableSubset(standings, fixture, options = {}) {
+  const { applyResult = true } = options;
+  const table = standings.map(cloneRow);
 
-  if (homeGoals > awayGoals) {
-    homeRow.points += 3;
-    homeRow.won += 1;
-    awayRow.lost += 1;
-  } else if (awayGoals > homeGoals) {
-    awayRow.points += 3;
-    awayRow.won += 1;
-    homeRow.lost += 1;
-  } else {
-    homeRow.points += 1;
-    awayRow.points += 1;
-    homeRow.draw += 1;
-    awayRow.draw += 1;
+  if (!applyResult) {
+    return rankTable(sortTable(table));
+  }
+
+  const homeId = fixture?.teams?.home?.id;
+  const awayId = fixture?.teams?.away?.id;
+  const homeGoals = Number(fixture?.goals?.home ?? 0);
+  const awayGoals = Number(fixture?.goals?.away ?? 0);
+
+  const homeRow = table.find((row) => row.teamId === homeId);
+  const awayRow = table.find((row) => row.teamId === awayId);
+
+  if (!homeRow && !awayRow) {
+    return rankTable(sortTable(table));
+  }
+
+  if (homeRow) {
+    applyFixtureStats(homeRow, homeGoals, awayGoals);
+  }
+
+  if (awayRow) {
+    applyFixtureStats(awayRow, awayGoals, homeGoals);
   }
 
   return rankTable(sortTable(table));
