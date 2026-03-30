@@ -76,12 +76,30 @@ class InMemoryStore {
   }
 }
 
+function createEmptyMetrics() {
+  return {
+    totalHits: 0,
+    totalMisses: 0,
+    totalWrites: 0,
+    namespaces: {}
+  };
+}
+
+function getNamespaceFromKey(key) {
+  if (!key || typeof key !== "string") {
+    return "unknown";
+  }
+
+  return key.split(":")[0] || "unknown";
+}
+
 export class CacheService {
   constructor({ redisUrl }) {
     this.redisUrl = redisUrl;
     this.memoryStore = new InMemoryStore();
     this.client = null;
     this.redisEnabled = false;
+    this.metrics = createEmptyMetrics();
   }
 
   async connect() {
@@ -110,10 +128,14 @@ export class CacheService {
   async getJson(key) {
     if (this.redisEnabled && this.client) {
       const rawValue = await this.client.get(key);
-      return rawValue ? JSON.parse(rawValue) : null;
+      const parsedValue = rawValue ? JSON.parse(rawValue) : null;
+      this.recordReadMetric(key, Boolean(parsedValue));
+      return parsedValue;
     }
 
-    return this.memoryStore.get(key);
+    const value = this.memoryStore.get(key);
+    this.recordReadMetric(key, Boolean(value));
+    return value;
   }
 
   async setJson(key, value, ttlSeconds) {
@@ -121,10 +143,12 @@ export class CacheService {
       await this.client.set(key, JSON.stringify(value), {
         EX: ttlSeconds
       });
+      this.recordWriteMetric(key);
       return;
     }
 
     this.memoryStore.set(key, value, ttlSeconds);
+    this.recordWriteMetric(key);
   }
 
   async incrementScore(key, member, amount = 1) {
@@ -171,10 +195,56 @@ export class CacheService {
   }
 
   getStatus() {
+    const totalReads = this.metrics.totalHits + this.metrics.totalMisses;
+
     return {
       mode: this.redisEnabled ? "redis" : "memory",
       redisConfigured: Boolean(this.redisUrl),
-      redisEnabled: this.redisEnabled
+      redisEnabled: this.redisEnabled,
+      metrics: {
+        totalHits: this.metrics.totalHits,
+        totalMisses: this.metrics.totalMisses,
+        totalWrites: this.metrics.totalWrites,
+        totalReads,
+        hitRate: totalReads > 0 ? Number((this.metrics.totalHits / totalReads).toFixed(3)) : 0,
+        namespaces: this.metrics.namespaces
+      }
     };
+  }
+
+  recordReadMetric(key, hit) {
+    const namespace = getNamespaceFromKey(key);
+    const metricKey = hit ? "hits" : "misses";
+
+    if (hit) {
+      this.metrics.totalHits += 1;
+    } else {
+      this.metrics.totalMisses += 1;
+    }
+
+    if (!this.metrics.namespaces[namespace]) {
+      this.metrics.namespaces[namespace] = {
+        hits: 0,
+        misses: 0,
+        writes: 0
+      };
+    }
+
+    this.metrics.namespaces[namespace][metricKey] += 1;
+  }
+
+  recordWriteMetric(key) {
+    const namespace = getNamespaceFromKey(key);
+    this.metrics.totalWrites += 1;
+
+    if (!this.metrics.namespaces[namespace]) {
+      this.metrics.namespaces[namespace] = {
+        hits: 0,
+        misses: 0,
+        writes: 0
+      };
+    }
+
+    this.metrics.namespaces[namespace].writes += 1;
   }
 }
