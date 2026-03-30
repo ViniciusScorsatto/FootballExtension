@@ -40,3 +40,37 @@ export function validateSessionPayload(payload = {}) {
     leagueName
   };
 }
+
+export function validateBillingIdentity(value, fieldName = "userId") {
+  const userId = typeof value === "string" ? value.trim() : "";
+
+  if (!userId || userId === "anonymous") {
+    const error = new Error(`${fieldName} must be a non-empty identifier.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!/^[a-zA-Z0-9._:@-]{3,120}$/.test(userId)) {
+    const error = new Error(`${fieldName} contains unsupported characters.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return userId;
+}
+
+export function validateEarlyBirdClaimPayload(payload = {}) {
+  const userId = validateBillingIdentity(payload.userId, "userId");
+  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("email must be a valid email address.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    userId,
+    email
+  };
+}

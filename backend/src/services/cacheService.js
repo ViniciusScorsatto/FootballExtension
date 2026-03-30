@@ -194,6 +194,21 @@ export class CacheService {
     return this.memoryStore.incrementCounter(key, ttlSeconds, amount);
   }
 
+  async getCounter(key) {
+    if (this.redisEnabled && this.client) {
+      const rawValue = await this.client.get(key);
+      return rawValue ? Number(rawValue) : 0;
+    }
+
+    const entry = this.memoryStore.counters.get(key);
+
+    if (!entry || entry.expiresAt <= now()) {
+      return 0;
+    }
+
+    return entry.count;
+  }
+
   getStatus() {
     const totalReads = this.metrics.totalHits + this.metrics.totalMisses;
 

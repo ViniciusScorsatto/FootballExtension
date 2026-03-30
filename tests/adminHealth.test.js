@@ -6,11 +6,20 @@ function createResponseMock() {
   return {
     statusCode: 200,
     body: null,
+    contentType: "",
     status(code) {
       this.statusCode = code;
       return this;
     },
+    type(value) {
+      this.contentType = value;
+      return this;
+    },
     json(payload) {
+      this.body = payload;
+      return this;
+    },
+    send(payload) {
       this.body = payload;
       return this;
     }
@@ -21,6 +30,44 @@ function createController(envOverrides = {}) {
   return createMatchImpactController({
     matchImpactService: {},
     matchDiscoveryService: {},
+    billingService: {
+      getPricingCatalog: async () => ({
+        betaModeEnabled: true,
+        currency: "USD",
+        supportEmail: "support@example.com",
+        plans: {
+          free: {
+            name: "Free",
+            priceMonthlyUsd: 0,
+            features: []
+          },
+          pro: {
+            name: "Pro",
+            priceMonthlyUsd: 5.99,
+            features: []
+          }
+        },
+        offers: {
+          early_bird_lifetime: {
+            priceMonthlyUsd: 3.99,
+            maxClaims: 100,
+            remaining: 100,
+            active: true,
+            badge: "Beta"
+          }
+        }
+      }),
+      getBillingStatus: async () => ({
+        userId: "tester",
+        plan: "free",
+        offers: {
+          earlyBirdEligible: true
+        }
+      }),
+      claimEarlyBird: async () => ({
+        claimed: true
+      })
+    },
     cacheService: {
       getStatus() {
         return {
@@ -51,6 +98,11 @@ function createController(envOverrides = {}) {
       statisticsCacheTtlSeconds: 60,
       injuriesCacheTtlSeconds: 14400,
       eventsCacheTtlSeconds: 60,
+      betaModeEnabled: true,
+      proMonthlyPriceUsd: 5.99,
+      earlyBirdProMonthlyPriceUsd: 3.99,
+      earlyBirdOfferEnabled: true,
+      earlyBirdOfferMaxClaims: 100,
       rateLimitEnabled: true,
       rateLimitWindowSeconds: 60,
       freeReadLimitPerWindow: 120,
@@ -101,4 +153,40 @@ test("admin health rejects unauthorized requests when admin token is configured"
 
   assert.equal(res.statusCode, 401);
   assert.equal(res.body.error, "Unauthorized.");
+});
+
+test("marketing page renders html", async () => {
+  const controller = createController();
+  const res = createResponseMock();
+
+  await controller.getMarketingPage({}, res, (error) => {
+    throw error;
+  });
+
+  assert.equal(res.contentType, "html");
+  assert.match(res.body, /Instant understanding of what a goal means/i);
+  assert.match(res.body, /Early Bird Pro/i);
+});
+
+test("billing status returns the current plan snapshot", async () => {
+  const controller = createController();
+  const res = createResponseMock();
+
+  await controller.getBillingStatus(
+    {
+      query: {},
+      monetization: {
+        plan: "free",
+        userId: "tester"
+      }
+    },
+    res,
+    (error) => {
+      throw error;
+    }
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.plan, "free");
+  assert.equal(res.body.offers.earlyBirdEligible, true);
 });

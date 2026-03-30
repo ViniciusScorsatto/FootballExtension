@@ -7,6 +7,7 @@ import { createRequestLimiter } from "./middleware/requestLimiter.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnalyticsService } from "./services/analyticsService.js";
 import { ApiFootballClient } from "./services/apiFootballClient.js";
+import { BillingService } from "./services/billingService.js";
 import { CacheService } from "./services/cacheService.js";
 import { MatchImpactService } from "./services/matchImpactService.js";
 import { MatchDiscoveryService } from "./services/matchDiscoveryService.js";
@@ -18,6 +19,11 @@ const cacheService = new CacheService({
 
 const analyticsService = new AnalyticsService({
   cacheService
+});
+
+const billingService = new BillingService({
+  cacheService,
+  env
 });
 
 const apiFootballClient = new ApiFootballClient({
@@ -42,6 +48,7 @@ const matchDiscoveryService = new MatchDiscoveryService({
 const controller = createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
+  billingService,
   cacheService,
   apiFootballClient,
   env

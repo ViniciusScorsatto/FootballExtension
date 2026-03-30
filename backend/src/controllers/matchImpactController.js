@@ -1,4 +1,11 @@
-import { assertFixtureId, parseFixtureId, validateSessionPayload } from "../utils/validators.js";
+import {
+  assertFixtureId,
+  parseFixtureId,
+  validateBillingIdentity,
+  validateEarlyBirdClaimPayload,
+  validateSessionPayload
+} from "../utils/validators.js";
+import { renderMarketingPage } from "../views/marketingPage.js";
 
 function isAuthorizedAdminRequest(req, adminToken) {
   if (!adminToken) {
@@ -17,6 +24,7 @@ function isAuthorizedAdminRequest(req, adminToken) {
 export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
+  billingService,
   cacheService,
   apiFootballClient,
   env
@@ -28,6 +36,15 @@ export function createMatchImpactController({
         service: "live-match-impact",
         timestamp: new Date().toISOString()
       });
+    },
+
+    async getMarketingPage(_req, res, next) {
+      try {
+        const pricing = await billingService.getPricingCatalog();
+        res.type("html").send(renderMarketingPage({ pricing }));
+      } catch (error) {
+        next(error);
+      }
     },
 
     getAdminHealth(req, res) {
@@ -90,6 +107,13 @@ export function createMatchImpactController({
           leagueContext: {
             maxFixtures: env.leagueContextMaxFixtures,
             sameWindowMinutes: env.leagueContextSameWindowMinutes
+          },
+          billing: {
+            betaModeEnabled: env.betaModeEnabled,
+            proMonthlyPriceUsd: env.proMonthlyPriceUsd,
+            earlyBirdProMonthlyPriceUsd: env.earlyBirdProMonthlyPriceUsd,
+            earlyBirdOfferEnabled: env.earlyBirdOfferEnabled,
+            earlyBirdOfferMaxClaims: env.earlyBirdOfferMaxClaims
           }
         }
       });
@@ -167,6 +191,47 @@ export function createMatchImpactController({
         const payload = await matchImpactService.getAnalyticsSummary();
 
         res.json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async getBillingPlans(_req, res, next) {
+      try {
+        const payload = await billingService.getPricingCatalog();
+        res.json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async getBillingStatus(req, res, next) {
+      try {
+        const userId = req.query.user_id
+          ? validateBillingIdentity(req.query.user_id, "user_id")
+          : req.monetization.userId !== "anonymous"
+            ? validateBillingIdentity(req.monetization.userId, "x-live-impact-user")
+            : "";
+        const payload = await billingService.getBillingStatus({
+          userId,
+          planHint: req.monetization.plan
+        });
+
+        res.json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async claimEarlyBird(req, res, next) {
+      try {
+        const bodyPayload = validateEarlyBirdClaimPayload({
+          ...req.body,
+          userId: req.body?.userId ?? req.monetization.userId
+        });
+        const payload = await billingService.claimEarlyBird(bodyPayload);
+
+        res.status(payload.alreadyClaimed ? 200 : 201).json(payload);
       } catch (error) {
         next(error);
       }

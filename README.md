@@ -43,8 +43,12 @@ Live Match Impact is a production-minded Chrome extension plus Node.js backend t
 
 The backend exposes:
 
+- `GET /`
 - `GET /health`
 - `GET /admin/health`
+- `GET /billing/plans`
+- `GET /billing/status`
+- `POST /billing/early-bird/claim`
 - `GET /matches/live`
 - `GET /matches/upcoming`
 - `GET /match-impact?fixture_id=12345`
@@ -86,9 +90,33 @@ The backend exposes:
 ## Production considerations
 
 - Add a real auth layer before enabling paid tiers.
+- Use Stripe Checkout or your own billing backend later; the current billing structure is pricing-ready but not payment-enabled yet.
 - Tune the rate-limit env vars for your expected traffic and plan tiers before launch.
 - Configure `ALLOWED_ORIGINS` with your deployed extension/web origins in production.
 - Run Redis in production so all backend instances share the same cache and analytics counters.
+
+## Billing and Launch Offer
+
+- `GET /` now serves a one-page marketing site for beta launch messaging.
+- `GET /billing/plans` returns the public plan catalog and Early Bird availability.
+- `GET /billing/status` returns the current plan state for a given user or request context.
+- `POST /billing/early-bird/claim` reserves the lifetime-discount Early Bird offer for a user identifier.
+- The current billing model is:
+  - `Free`
+  - `Pro`
+  - `Early Bird Pro` at a discounted lifetime monthly price for the first configured users
+
+Key env vars:
+
+```env
+BETA_MODE_ENABLED=true
+BILLING_CURRENCY=USD
+PRO_MONTHLY_PRICE_USD=5.99
+EARLY_BIRD_PRO_MONTHLY_PRICE_USD=3.99
+EARLY_BIRD_OFFER_ENABLED=true
+EARLY_BIRD_OFFER_MAX_CLAIMS=100
+SUPPORT_EMAIL=support@footanalysis.com
+```
 
 ## Rate limiting
 
