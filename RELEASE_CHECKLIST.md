@@ -6,11 +6,12 @@
 - Run `npm run dev`.
 - Sanity-check one live fixture, one upcoming fixture, and one non-standings fixture.
 - Confirm popup selector, panel rendering, notifications, momentum, and pre-match sections still behave as expected.
+- Deploy Railway `staging` and point the extension at it before touching production.
 
 ## Must Do Before Public Launch
 
-- Add real backend rate limiting per IP or per user.
-- Lock down `ALLOWED_ORIGINS` for production domains only.
+- Tune backend rate-limit env vars for real production traffic and plan tiers.
+- Lock down `ALLOWED_ORIGINS` and `ALLOWED_EXTENSION_IDS` for production values only.
 - Add backend error logging and uptime monitoring.
 - Add graceful UI handling for API-Football quota exhaustion and upstream failure states.
 - Add integration tests for:

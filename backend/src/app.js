@@ -2,13 +2,15 @@ import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
 import { createMatchImpactController } from "./controllers/matchImpactController.js";
-import { attachMonetizationContext, requestLimitPlaceholder } from "./middleware/placeholderGuards.js";
+import { attachMonetizationContext } from "./middleware/placeholderGuards.js";
+import { createRequestLimiter } from "./middleware/requestLimiter.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnalyticsService } from "./services/analyticsService.js";
 import { ApiFootballClient } from "./services/apiFootballClient.js";
 import { CacheService } from "./services/cacheService.js";
 import { MatchImpactService } from "./services/matchImpactService.js";
 import { MatchDiscoveryService } from "./services/matchDiscoveryService.js";
+import { createAllowedOrigins, isOriginAllowed } from "./utils/origins.js";
 
 const cacheService = new CacheService({
   redisUrl: env.redisUrl
@@ -43,13 +45,23 @@ const controller = createMatchImpactController({
 });
 
 const app = express();
+const requestLimiter = createRequestLimiter({
+  cacheService,
+  env
+});
+const allowedOrigins = createAllowedOrigins(env);
 
 app.locals.bootstrapPromise = cacheService.connect();
+app.set("trust proxy", env.trustProxy);
+
+if (env.nodeEnv === "production" && allowedOrigins.includes("*")) {
+  console.warn("ALLOWED_ORIGINS is set to '*' in production. Restrict it before public launch.");
+}
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.allowedOrigins.includes("*") || env.allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin, allowedOrigins)) {
         callback(null, true);
         return;
       }
@@ -60,7 +72,6 @@ app.use(
 );
 app.use(express.json({ limit: "100kb" }));
 app.use(attachMonetizationContext);
-app.use(requestLimitPlaceholder);
 app.use(async (_req, _res, next) => {
   try {
     await app.locals.bootstrapPromise;
@@ -69,6 +80,7 @@ app.use(async (_req, _res, next) => {
     next(error);
   }
 });
+app.use(requestLimiter);
 
 registerRoutes(app, controller);
 

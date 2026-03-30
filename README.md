@@ -70,10 +70,34 @@ The backend exposes:
 - Railway / Render: set the root command to `npm start`.
 - Vercel: the included `vercel.json` routes requests to `api/index.js`.
 - Redis is optional. If `REDIS_URL` is missing or unavailable, the backend falls back to in-memory caching.
+- For Chrome extension access in production, set `ALLOWED_EXTENSION_IDS` to your published extension ID and set `ALLOWED_ORIGINS` to your deployed site domains only.
+- Railway can use the included [railway.toml](/Users/viniciusscorsatto/Desktop/AI Projects/Football Extension/railway.toml) config file with `/health` as the healthcheck. See [RAILWAY_DEPLOY.md](/Users/viniciusscorsatto/Desktop/AI Projects/Football Extension/RAILWAY_DEPLOY.md) for the staging and production variable checklist.
 
 ## Production considerations
 
 - Add a real auth layer before enabling paid tiers.
-- Replace the placeholder request-limit middleware with quota enforcement.
+- Tune the rate-limit env vars for your expected traffic and plan tiers before launch.
 - Configure `ALLOWED_ORIGINS` with your deployed extension/web origins in production.
 - Run Redis in production so all backend instances share the same cache and analytics counters.
+
+## Rate limiting
+
+- The backend throttles per `x-live-impact-user` when present, or per client IP otherwise.
+- `GET` match data routes use the read bucket, `POST /track/*` uses the analytics bucket, and `GET /analytics/summary` uses a stricter admin bucket.
+- Redis-backed deployments share counters across instances automatically. Without Redis, the limiter falls back to per-instance in-memory counters.
+- When a bucket is exhausted the API returns `429` plus `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+
+## CORS and Allowed Origins
+
+- `ALLOWED_ORIGINS` accepts a comma-separated list of exact web origins such as `https://liveimpact.yourdomain.com`.
+- `ALLOWED_EXTENSION_IDS` accepts Chrome extension IDs and converts them into `chrome-extension://...` origins automatically.
+- Requests without an `Origin` header, like health checks and server-to-server traffic, are still allowed.
+- Avoid `ALLOWED_ORIGINS=*` in production. The backend will now warn at boot if wildcard CORS is still enabled while `NODE_ENV=production`.
+
+Example production config:
+
+```env
+NODE_ENV=production
+ALLOWED_ORIGINS=https://liveimpact.yourdomain.com,https://api-liveimpact.up.railway.app
+ALLOWED_EXTENSION_IDS=yourpublishedextensionidhere
+```

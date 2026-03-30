@@ -6,12 +6,3 @@ export function attachMonetizationContext(req, _res, next) {
 
   next();
 }
-
-export function requestLimitPlaceholder(req, _res, next) {
-  req.requestLimit = {
-    enabled: false,
-    reason: "Placeholder for future per-user request throttling."
-  };
-
-  next();
-}

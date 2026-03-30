@@ -8,6 +8,7 @@ class InMemoryStore {
   constructor() {
     this.values = new Map();
     this.sortedScores = new Map();
+    this.counters = new Map();
   }
 
   get(key) {
@@ -30,6 +31,23 @@ class InMemoryStore {
       value,
       expiresAt: now() + ttlSeconds * 1000
     });
+  }
+
+  incrementCounter(key, ttlSeconds, amount = 1) {
+    const existingEntry = this.counters.get(key);
+
+    if (!existingEntry || existingEntry.expiresAt <= now()) {
+      const freshEntry = {
+        count: amount,
+        expiresAt: now() + ttlSeconds * 1000
+      };
+
+      this.counters.set(key, freshEntry);
+      return freshEntry;
+    }
+
+    existingEntry.count += amount;
+    return existingEntry;
   }
 
   incrementScore(key, member, amount = 1) {
@@ -131,5 +149,24 @@ export class CacheService {
     }
 
     return this.memoryStore.getTopScores(key, limit);
+  }
+
+  async incrementCounter(key, ttlSeconds, amount = 1) {
+    if (this.redisEnabled && this.client) {
+      const count = await this.client.incrBy(key, amount);
+
+      if (count === amount) {
+        await this.client.expire(key, ttlSeconds);
+      }
+
+      const ttl = await this.client.ttl(key);
+
+      return {
+        count,
+        expiresAt: now() + (ttl > 0 ? ttl : ttlSeconds) * 1000
+      };
+    }
+
+    return this.memoryStore.incrementCounter(key, ttlSeconds, amount);
   }
 }
