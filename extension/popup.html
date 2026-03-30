@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Match Impact</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="lmi-popup-body">
+    <main class="lmi-popup">
+      <div class="lmi-brand">
+        <div class="lmi-brand__mark">
+          <img src="assets/footanalysislogo.png" alt="Foot Analysis logo" class="lmi-brand__logo" />
+        </div>
+        <div class="lmi-brand__copy">
+          <div class="lmi-popup__eyebrow">Foot Analysis</div>
+          <div class="lmi-brand__subhead">Live Match Impact</div>
+        </div>
+      </div>
+      <h1 class="lmi-popup__title">Track what a goal changes</h1>
+      <p class="lmi-popup__text">
+        Pick a match with standings coverage and the overlay will explain the live table impact.
+      </p>
+
+      <label class="lmi-field">
+        <span class="lmi-field__label">Backend URL</span>
+        <input
+          id="backendUrl"
+          class="lmi-field__input"
+          type="url"
+          placeholder="http://localhost:3000"
+        />
+      </label>
+
+      <button id="refreshMatches" class="lmi-button lmi-button--ghost" type="button">
+        Refresh Match List
+      </button>
+
+      <label class="lmi-field">
+        <span class="lmi-field__label">Live Matches</span>
+        <select id="liveMatches" class="lmi-field__input">
+          <option value="">Loading live matches…</option>
+        </select>
+      </label>
+
+      <label class="lmi-field">
+        <span class="lmi-field__label">Upcoming Matches</span>
+        <select id="upcomingMatches" class="lmi-field__input">
+          <option value="">Loading upcoming matches…</option>
+        </select>
+      </label>
+
+      <label class="lmi-field">
+        <span class="lmi-field__label">Manual Fixture ID</span>
+        <input
+          id="fixtureId"
+          class="lmi-field__input"
+          type="number"
+          min="1"
+          placeholder="Optional fallback"
+        />
+      </label>
+
+      <button id="startTracking" class="lmi-button lmi-button--primary" type="button">
+        Start Tracking
+      </button>
+      <button id="stopTracking" class="lmi-button lmi-button--ghost" type="button">
+        Stop Tracking
+      </button>
+
+      <p id="statusMessage" class="lmi-popup__status" aria-live="polite"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
