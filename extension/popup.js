@@ -174,6 +174,44 @@ function buildMatchAnalyticsProperties(match) {
   };
 }
 
+function buildLeagueSelectionAnalyticsProperties() {
+  const selectedLeagueId = getSelectedLeagueId();
+  const selectedLeague = currentLeagueFilter.availableLeagues.find(
+    (league) => league.id === selectedLeagueId
+  );
+
+  return {
+    selectedLeagueId,
+    selectedLeagueName: selectedLeague?.name,
+    selectedLeagueCountry: selectedLeague?.country
+  };
+}
+
+function buildPopupOpenedAnalyticsProperties(trackingEnabled) {
+  return {
+    accountLinked: currentBilling.accountLinked,
+    trackingEnabled: Boolean(trackingEnabled),
+    activeViewMode: trackingEnabled ? "overlay" : "idle",
+    hasLiveMatches: currentLiveMatches.length > 0,
+    hasUpcomingMatches: currentUpcomingMatches.length > 0,
+    liveMatchesCount: currentLiveMatches.length,
+    upcomingMatchesCount: currentUpcomingMatches.length,
+    ...buildLeagueSelectionAnalyticsProperties()
+  };
+}
+
+function getBillingRefreshResult() {
+  if (isProPlan()) {
+    return "pro_active";
+  }
+
+  if (currentBilling.accountLinked) {
+    return "linked_no_pro";
+  }
+
+  return "still_free";
+}
+
 function setLanguage(language) {
   currentLanguage = normalizeLanguage(language);
   languageSelect.value = currentLanguage;
@@ -723,6 +761,11 @@ async function fetchBillingStatus() {
     trackAnalytics("account_linked", {
       linkedVia: "status_poll"
     });
+    if (!nowPro) {
+      trackAnalytics("restore_linked_no_pro", {
+        source: "status_poll"
+      });
+    }
   }
   if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
@@ -816,6 +859,12 @@ async function refreshBillingStatusWithRecovery() {
     trackAnalytics("account_linked", {
       linkedVia: "manual_refresh"
     });
+    if (!nowPro) {
+      trackAnalytics("restore_linked_no_pro", {
+        source: "manual_refresh",
+        emailDomain: recoveryEmail.split("@")[1] || ""
+      });
+    }
   }
   if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
@@ -853,6 +902,15 @@ async function refreshBillingStatusWithRecovery() {
   renderBillingCard();
   updatePlanHint();
   renderNotificationsCard();
+
+  trackAnalytics("billing_refresh_result", {
+    result: getBillingRefreshResult(),
+    accountLinked: currentBilling.accountLinked,
+    recovered: Boolean(lastBillingDebug?.recovery?.recovered),
+    stripeLookupSource: lastBillingDebug?.recovery?.stripe?.lookupSource,
+    emailDomain: recoveryEmail.split("@")[1] || "",
+    ...buildLeagueSelectionAnalyticsProperties()
+  });
 }
 
 function renderNotificationsCard() {
@@ -1000,10 +1058,7 @@ async function loadSettings() {
   );
 
   if (!popupOpenedTracked) {
-    trackAnalytics("popup_opened", {
-      accountLinked: currentBilling.accountLinked,
-      trackingEnabled: Boolean(result.trackingEnabled)
-    });
+    trackAnalytics("popup_opened", buildPopupOpenedAnalyticsProperties(result.trackingEnabled));
     popupOpenedTracked = true;
   }
 }
@@ -1134,7 +1189,11 @@ async function handleBillingAction() {
   billingActionButton.disabled = true;
   setStatus(translate("popup.upgradeInProgress"));
   trackAnalytics("upgrade_clicked", {
-    offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : "standard_pro"
+    offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : "standard_pro",
+    fixtureId: getSelectedFixtureId(),
+    source: getSelectedFixtureSource(),
+    hasBillingEmail: Boolean(validateEmailInput() || currentBilling.accountEmail),
+    ...buildLeagueSelectionAnalyticsProperties()
   });
 
   try {
@@ -1193,6 +1252,9 @@ async function handleRestoreAccess() {
   }
 
   if (!email) {
+    trackAnalytics("restore_failed", {
+      reason: "invalid_email"
+    });
     setStatus(translate("popup.statusRestoreEmailInvalid"), true);
     return;
   }
@@ -1240,6 +1302,10 @@ async function handleRestoreAccess() {
 
     setStatus(translate("popup.statusRestoreSent"));
   } catch {
+    trackAnalytics("restore_failed", {
+      reason: "request_failed",
+      emailDomain: email.split("@")[1] || ""
+    });
     setStatus(translate("popup.statusRestoreFailed"), true);
   } finally {
     accountRestoreButton.disabled = false;
