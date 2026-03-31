@@ -8,6 +8,11 @@
   globalScope.LMI_CONFIG = {
     releaseChannel,
     backendUrls,
-    backendUrl: backendUrls[releaseChannel] || backendUrls.staging
+    backendUrl: backendUrls[releaseChannel] || backendUrls.staging,
+    posthog: {
+      enabled: true,
+      host: "https://us.i.posthog.com",
+      apiKey: "phc_qxYrzMeh9rgjqHZ2LXQTVLQrrsYifB7kCj4bpZ9i8f4a"
+    }
   };
 })(globalThis);

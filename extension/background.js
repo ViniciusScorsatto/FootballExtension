@@ -1,4 +1,38 @@
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === "LMI_POSTHOG_CAPTURE") {
+    void (async () => {
+      try {
+        await fetch(`${String(message.host || "https://us.i.posthog.com").replace(/\/$/, "")}/capture/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            api_key: message.apiKey,
+            event: message.event,
+            distinct_id: message.distinctId || "anonymous",
+            properties: {
+              ...message.properties,
+              $lib: "live-match-impact-extension",
+              $lib_version: chrome.runtime.getManifest().version
+            }
+          })
+        });
+
+        sendResponse({
+          ok: true
+        });
+      } catch (error) {
+        sendResponse({
+          ok: false,
+          error: error?.message || "PostHog capture failed"
+        });
+      }
+    })();
+
+    return true;
+  }
+
   if (message?.type === "LMI_HTTP_REQUEST") {
     void (async () => {
       try {

@@ -91,6 +91,7 @@
         upcomingLoadError: "Could not load upcoming matches",
         featuredLeaguePrefix: "Featured",
         noMatchesRightNow: "No matches right now",
+        noMatchesInCurrentWindow: "No live or next 12h matches",
         scoreOnlySuffix: "Live score only - no table impact",
         featuredLeaguesOnly: "Free plan: featured leagues only",
         proUnlocksAllLeagues: "Pro unlocks all configured leagues and manual fixture tracking.",
@@ -338,6 +339,7 @@
         upcomingLoadError: "Não foi possível carregar próximos jogos",
         featuredLeaguePrefix: "Destaque",
         noMatchesRightNow: "Sem jogos agora",
+        noMatchesInCurrentWindow: "Sem jogos ao vivo ou nas próximas 12h",
         scoreOnlySuffix: "Somente placar ao vivo - sem impacto na tabela",
         featuredLeaguesOnly: "Plano Free: apenas ligas em destaque",
         proUnlocksAllLeagues:

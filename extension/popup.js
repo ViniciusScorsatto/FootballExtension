@@ -5,6 +5,7 @@ const DEFAULT_BACKEND_URL =
 const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
 const RESTORE_AUTO_REFRESH_WINDOW_MS = 45000;
 const { normalizeLanguage, t } = window.LMI_I18N;
+const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const languageSelect = document.getElementById("language");
@@ -71,6 +72,7 @@ let currentBilling = {
   recentlyUnlocked: false
 };
 let lastBillingDebug = null;
+let popupOpenedTracked = false;
 let currentNotifications = {
   notifyGoals: true,
   notifyTableChanges: true
@@ -127,6 +129,48 @@ function summarizeBillingDebug(debug) {
 
 function translate(key, values = {}) {
   return t(currentLanguage, key, values);
+}
+
+function trackAnalytics(eventName, properties = {}) {
+  captureAnalytics(eventName, {
+    distinctId: currentBilling.userId || "anonymous",
+    properties: {
+      plan: currentBilling.plan || "free",
+      planStatus: currentBilling.status || "inactive",
+      language: currentLanguage,
+      releaseChannel: window.LMI_CONFIG?.releaseChannel || "staging",
+      ...properties
+    }
+  });
+}
+
+function getSelectedFixtureSource() {
+  if (liveMatchesSelect.value) {
+    return "live";
+  }
+
+  if (upcomingMatchesSelect.value) {
+    return "upcoming";
+  }
+
+  if (fixtureIdInput.value) {
+    return "manual";
+  }
+
+  return "unknown";
+}
+
+function buildMatchAnalyticsProperties(match) {
+  return {
+    fixtureId: match?.fixtureId || getSelectedFixtureId(),
+    leagueId: match?.league?.id || getSelectedLeagueId(),
+    leagueName: match?.league?.name,
+    country: match?.league?.country,
+    homeTeam: match?.teams?.home?.name || match?.teams?.home?.shortName,
+    awayTeam: match?.teams?.away?.name || match?.teams?.away?.shortName,
+    matchState: match?.status?.phase || getSelectedFixtureSource(),
+    source: getSelectedFixtureSource()
+  };
 }
 
 function setLanguage(language) {
@@ -421,7 +465,7 @@ function buildLeagueFilterLabel(league) {
     !isProPlan() && league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
   const countrySuffix = league.country ? ` · ${league.country}` : "";
   const availabilitySuffix =
-    league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";
+    league.availableNow === false ? ` · ${translate("popup.noMatchesInCurrentWindow")}` : "";
 
   return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
 }
@@ -479,7 +523,9 @@ function mergeLeagueFilterPayloads(...payloads) {
         name: league.name,
         country: league.country,
         featured: existingLeague?.featured || league.featured === true,
-        availableNow: existingLeague?.availableNow || league.availableNow === true
+        availableNow: existingLeague?.availableNow || league.availableNow === true,
+        hasLiveMatch: existingLeague?.hasLiveMatch || league.hasLiveMatch === true,
+        hasUpcomingMatch: existingLeague?.hasUpcomingMatch || league.hasUpcomingMatch === true
       });
     });
   });
@@ -638,10 +684,21 @@ async function fetchBillingStatus() {
   };
 
   const nowPro = isProPlan();
+  if (!previouslyLinked && currentBilling.accountLinked) {
+    trackAnalytics("account_linked", {
+      linkedVia: "status_poll"
+    });
+  }
   if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
   }
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
+  if (!previousWasPro && nowPro) {
+    trackAnalytics("plan_became_pro", {
+      source: currentBilling.checkoutPending ? "checkout_return" : "status_poll",
+      offerId: currentBilling.offerId
+    });
+  }
 
   currentBilling.recentlyUnlocked = justUnlocked;
   if (currentBilling.accountLinked || nowPro) {
@@ -720,10 +777,21 @@ async function refreshBillingStatusWithRecovery() {
   };
 
   const nowPro = isProPlan();
+  if (!previouslyLinked && currentBilling.accountLinked) {
+    trackAnalytics("account_linked", {
+      linkedVia: "manual_refresh"
+    });
+  }
   if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
   }
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
+  if (!previousWasPro && nowPro) {
+    trackAnalytics("plan_became_pro", {
+      source: "manual_refresh",
+      offerId: currentBilling.offerId
+    });
+  }
 
   currentBilling.recentlyUnlocked = justUnlocked;
   if (currentBilling.accountLinked || nowPro) {
@@ -892,6 +960,14 @@ async function loadSettings() {
       ? translate("popup.statusTrackingActive")
       : translate("popup.statusPickMatch")
   );
+
+  if (!popupOpenedTracked) {
+    trackAnalytics("popup_opened", {
+      accountLinked: currentBilling.accountLinked,
+      trackingEnabled: Boolean(result.trackingEnabled)
+    });
+    popupOpenedTracked = true;
+  }
 }
 
 async function handleStartTracking() {
@@ -940,10 +1016,14 @@ async function handleStartTracking() {
   notifyActiveTab({
     type: "LMI_TRACKING_UPDATED"
   });
-    setStatus(translate("popup.statusTrackingStarted"));
+
+  trackAnalytics("tracking_started", buildMatchAnalyticsProperties(selectedMatch));
+  setStatus(translate("popup.statusTrackingStarted"));
 }
 
 async function handleStopTracking() {
+  const selectedMatch = getSelectedMatch();
+
   await chrome.storage.sync.set({
     trackingEnabled: false,
     billingPlan: currentBilling.plan,
@@ -954,6 +1034,8 @@ async function handleStopTracking() {
   notifyActiveTab({
     type: "LMI_TRACKING_STOPPED"
   });
+
+  trackAnalytics("tracking_stopped", buildMatchAnalyticsProperties(selectedMatch));
   setStatus(translate("popup.statusTrackingStopped"));
 }
 
@@ -978,6 +1060,9 @@ async function handleBillingAction() {
 
   billingActionButton.disabled = true;
   setStatus(translate("popup.upgradeInProgress"));
+  trackAnalytics("upgrade_clicked", {
+    offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : "standard_pro"
+  });
 
   try {
     const response = await fetch(`${backendUrl}/billing/checkout-session`, {
@@ -1042,6 +1127,10 @@ async function handleRestoreAccess() {
   accountRestoreButton.disabled = true;
 
   try {
+    trackAnalytics("restore_started", {
+      emailDomain: email.split("@")[1] || ""
+    });
+
     const response = await fetch(`${backendUrl}/auth/magic-link/request`, {
       method: "POST",
       headers: getRequestHeaders(),
@@ -1140,6 +1229,7 @@ async function handleOpenSidePanel() {
     }
 
     setStatus(translate("popup.statusSidePanelOpened"));
+    trackAnalytics("sidepanel_opened");
     window.close();
   } catch {
     setStatus(translate("popup.statusSidePanelFailed"), true);
@@ -1165,6 +1255,9 @@ fixtureIdInput.addEventListener("input", () => {
 });
 
 refreshMatchesButton.addEventListener("click", async () => {
+  trackAnalytics("match_list_refreshed", {
+    selectedLeagueId: getSelectedLeagueId()
+  });
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
@@ -1173,12 +1266,25 @@ languageSelect.addEventListener("change", async () => {
   await chrome.storage.sync.set({
     language: currentLanguage
   });
+  trackAnalytics("language_selected", {
+    selectedLanguage: currentLanguage
+  });
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
 leagueFilterSelect.addEventListener("change", async () => {
+  const selectedLeagueId = getSelectedLeagueId();
+  const selectedLeague = currentLeagueFilter.availableLeagues.find(
+    (league) => league.id === selectedLeagueId
+  );
+
   await chrome.storage.sync.set({
-    leagueFilterId: getSelectedLeagueId()
+    leagueFilterId: selectedLeagueId
+  });
+
+  trackAnalytics("league_focus_selected", {
+    selectedLeagueId,
+    selectedLeagueName: selectedLeague?.name
   });
 
   clearOtherInputs("manual");
@@ -1192,6 +1298,9 @@ billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
+    trackAnalytics("billing_refresh_clicked", {
+      hasAccountEmail: Boolean(validateEmailInput() || currentBilling.accountEmail)
+    });
     await refreshBillingStatusWithRecovery();
     if (isProPlan()) {
       setStatus(translate("popup.statusPlanUpdated"));
@@ -1221,6 +1330,10 @@ notifyGoalsToggle.addEventListener("change", async () => {
   await chrome.storage.sync.set({
     notifyGoals: currentNotifications.notifyGoals
   });
+  trackAnalytics("notification_setting_changed", {
+    setting: "goal_happened",
+    enabled: currentNotifications.notifyGoals
+  });
   setStatus(translate("popup.statusNotificationsUpdated"));
 });
 
@@ -1229,11 +1342,18 @@ notifyTableChangesToggle.addEventListener("change", async () => {
   await chrome.storage.sync.set({
     notifyTableChanges: currentNotifications.notifyTableChanges
   });
+  trackAnalytics("notification_setting_changed", {
+    setting: "goal_changed_table_position",
+    enabled: currentNotifications.notifyTableChanges
+  });
   setStatus(translate("popup.statusNotificationsUpdated"));
 });
 
 notificationsToggleButton.addEventListener("click", () => {
   notificationsCardExpanded = !notificationsCardExpanded;
+  if (notificationsCardExpanded) {
+    trackAnalytics("notifications_panel_opened");
+  }
   renderNotificationsCard();
 });
 

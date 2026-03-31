@@ -15,6 +15,7 @@
   const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
   const MAX_POLL_INTERVAL_MS = 120000;
+  const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
 
   const {
     normalizeLanguage,
@@ -46,6 +47,7 @@
     backoffMs: BASE_POLL_INTERVAL_MS,
     lastPayload: null
   };
+  let sidepanelOpenedTracked = false;
 
   const elements = {
     eyebrow: document.getElementById("sidepanelEyebrow"),
@@ -109,6 +111,29 @@
     return t(state.language, key, values);
   }
 
+  function trackAnalytics(eventName, properties = {}) {
+    captureAnalytics(eventName, {
+      distinctId: state.billingUserId || "anonymous",
+      properties: {
+        plan: state.billingPlan || "free",
+        planStatus: state.billingStatus || "inactive",
+        language: state.language,
+        releaseChannel: window.LMI_CONFIG?.releaseChannel || "staging",
+        ...properties
+      }
+    });
+  }
+
+  function buildMatchAnalyticsProperties(match) {
+    return {
+      fixtureId: match?.fixtureId || state.fixtureId,
+      leagueId: match?.league?.id || getSelectedLeagueId(),
+      leagueName: match?.league?.name,
+      homeTeam: match?.teams?.home?.name || match?.teams?.home?.shortName,
+      awayTeam: match?.teams?.away?.name || match?.teams?.away?.shortName
+    };
+  }
+
   function isProPlan() {
     return state.billingPlan === "pro" && state.billingStatus === "active";
   }
@@ -120,10 +145,17 @@
       }
 
       elements.connectionStatus.textContent = translate("sidepanel.refreshing");
+      trackAnalytics("sidepanel_refreshed", {
+        fixtureId: state.fixtureId
+      });
       await fetchImpact();
     });
 
     elements.stopButton.addEventListener("click", async () => {
+      trackAnalytics("tracking_stopped", {
+        fixtureId: state.fixtureId,
+        source: "sidepanel"
+      });
       await chrome.storage.sync.set({
         trackingEnabled: false
       });
@@ -147,6 +179,13 @@
       await chrome.storage.sync.set({
         leagueFilterId: state.selectedLeagueId
       });
+      const selectedLeague = state.currentLeagueFilter.availableLeagues.find(
+        (league) => league.id === state.selectedLeagueId
+      );
+      trackAnalytics("sidepanel_league_focus_selected", {
+        selectedLeagueId: state.selectedLeagueId,
+        selectedLeagueName: selectedLeague?.name
+      });
       renderMatchLists();
     });
 
@@ -156,6 +195,9 @@
 
     elements.refreshMatchesButton.addEventListener("click", async () => {
       elements.connectionStatus.textContent = translate("popup.statusLoadingMatches");
+      trackAnalytics("sidepanel_match_list_refreshed", {
+        selectedLeagueId: getSelectedLeagueId()
+      });
       await refreshMatchLists();
     });
 
@@ -202,6 +244,13 @@
     renderStaticCopy();
     updatePlanHint();
     await refreshMatchLists();
+
+    if (!sidepanelOpenedTracked) {
+      trackAnalytics("sidepanel_opened", {
+        trackingEnabled: state.trackingEnabled
+      });
+      sidepanelOpenedTracked = true;
+    }
 
     if (!state.trackingEnabled || !state.fixtureId) {
       clearPollTimer();
@@ -528,6 +577,13 @@
     state.fixtureId = fixtureId;
     state.trackingEnabled = true;
     elements.connectionStatus.textContent = translate("sidepanel.matchApplied");
+    const selectedMatch = [...state.currentLiveMatches, ...state.currentUpcomingMatches].find(
+      (match) => match.fixtureId === fixtureId
+    );
+    trackAnalytics("tracking_started", {
+      ...buildMatchAnalyticsProperties(selectedMatch),
+      source: "sidepanel"
+    });
     await fetchImpact();
   }
 

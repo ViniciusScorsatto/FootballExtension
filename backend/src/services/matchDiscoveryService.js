@@ -15,6 +15,16 @@ function addDays(date, amount) {
   return nextDate;
 }
 
+function isWithinUpcomingWindow(fixture, windowStartMs, windowEndMs) {
+  const fixtureTimestamp = Number(fixture?.fixture?.timestamp ?? 0) * 1000;
+
+  if (!Number.isFinite(fixtureTimestamp) || fixtureTimestamp <= 0) {
+    return false;
+  }
+
+  return fixtureTimestamp >= windowStartMs && fixtureTimestamp <= windowEndMs;
+}
+
 function shortName(teamName) {
   const parts = String(teamName ?? "")
     .split(/\s+/)
@@ -158,10 +168,12 @@ export class MatchDiscoveryService {
       cacheKey,
       ttlSeconds: this.env.upcomingCacheTtlSeconds,
       loader: async () => {
-        const baseDate = requestedDate ? new Date(`${requestedDate}T00:00:00Z`) : new Date();
+        const nowMs = Date.now();
+        const baseDate = requestedDate ? new Date(`${requestedDate}T00:00:00Z`) : new Date(nowMs);
         const datesToFetch = requestedDate
           ? [requestedDate]
           : [toDateKey(baseDate), toDateKey(addDays(baseDate, 1))];
+        const upcomingWindowEndMs = nowMs + 12 * 60 * 60 * 1000;
         const responses = await Promise.all(
           datesToFetch.map((currentDate) => this.apiFootballClient.getFixturesByDate(currentDate))
         );
@@ -173,6 +185,7 @@ export class MatchDiscoveryService {
                 (fixture) =>
                   fixture?.league?.standings === true &&
                   isUpcoming(fixture) &&
+                  (requestedDate || isWithinUpcomingWindow(fixture, nowMs, upcomingWindowEndMs)) &&
                   isLeagueSupported(fixture?.league?.id, this.env.supportedLeagueIds)
               )
               .map((fixture) => mapFixture(fixture, this.env))
