@@ -142,3 +142,43 @@ export function validateMagicLinkToken(value) {
 
   return token;
 }
+
+export function validateSupportLookupQuery(query = {}) {
+  const email = typeof query.email === "string" ? query.email.trim().toLowerCase() : "";
+  const userId = query.user_id ? validateBillingIdentity(query.user_id, "user_id") : "";
+  const accountId = query.account_id ? validateBillingIdentity(query.account_id, "account_id") : "";
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("email must be a valid email address.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!email && !userId && !accountId) {
+    const error = new Error("Provide email, user_id, or account_id.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    email,
+    userId,
+    accountId
+  };
+}
+
+export function validateSupportRelinkPayload(payload = {}) {
+  const userId = validateBillingIdentity(payload.userId, "userId");
+  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("email must be a valid email address.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    userId,
+    email
+  };
+}

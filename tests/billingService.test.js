@@ -251,3 +251,35 @@ test("billing recovery can rebuild an entitlement from Stripe by email", async (
   const storedEntitlement = await cacheService.getJson(`billing:user:${linkedAccount.accountId}`);
   assert.equal(storedEntitlement.stripeSubscriptionId, "sub_recovered");
 });
+
+test("support snapshot includes account links, stripe state, and webhook diagnostics", async () => {
+  const { billingService, cacheService, accountService } = createBillingService();
+
+  const account = await accountService.findOrCreateAccountByEmail("support@example.com");
+  await accountService.linkUserToAccount("browser-support", account.accountId);
+  await billingService.activateEntitlement({
+    userId: "browser-support",
+    email: "support@example.com",
+    customerId: "cus_support",
+    subscriptionId: "sub_support",
+    priceId: "price_normal",
+    status: "active"
+  });
+  await billingService.recordWebhookStatus({
+    ok: true,
+    lastEventType: "checkout.session.completed",
+    lastEventAt: "2026-03-31T09:00:00.000Z",
+    lastError: ""
+  });
+
+  const snapshot = await billingService.getSupportSnapshot({
+    email: "support@example.com",
+    userId: "browser-support"
+  });
+
+  assert.equal(snapshot.account.accountId, account.accountId);
+  assert.deepEqual(snapshot.account.linkedBrowserIds, ["browser-support"]);
+  assert.equal(snapshot.billingStatus.plan, "pro");
+  assert.equal(snapshot.entitlement.stripeSubscriptionId, "sub_support");
+  assert.equal(snapshot.webhooks.lastEventType, "checkout.session.completed");
+});

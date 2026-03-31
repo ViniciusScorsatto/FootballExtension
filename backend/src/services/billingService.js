@@ -15,6 +15,10 @@ function buildCustomerKey(customerId) {
   return `billing:customer:${customerId}`;
 }
 
+function buildWebhookStatusKey() {
+  return "billing:webhook:last_status";
+}
+
 function entitlementKeyPrefix() {
   return "billing:user:";
 }
@@ -644,6 +648,119 @@ export class BillingService {
         email: normalizedEmail,
         stripe: subscription
       }
+    };
+  }
+
+  async getWebhookStatus() {
+    return (
+      (await this.cacheService.getJson(buildWebhookStatusKey())) ?? {
+        ok: false,
+        lastEventType: "",
+        lastEventAt: "",
+        lastProcessedAt: "",
+        lastError: ""
+      }
+    );
+  }
+
+  async recordWebhookStatus(status) {
+    await this.cacheService.setJson(
+      buildWebhookStatusKey(),
+      {
+        ok: Boolean(status?.ok),
+        lastEventType: status?.lastEventType ?? "",
+        lastEventAt: status?.lastEventAt ?? "",
+        lastProcessedAt: new Date().toISOString(),
+        lastError: status?.lastError ?? ""
+      },
+      BILLING_COUNTER_TTL_SECONDS
+    );
+  }
+
+  async getEntitlementForOwner(ownerId) {
+    if (!ownerId) {
+      return null;
+    }
+
+    return this.cacheService.getJson(buildEntitlementKey(ownerId));
+  }
+
+  async getSupportSnapshot({ email = "", userId = "", accountId = "" }) {
+    const requestedEmail = String(email ?? "").trim().toLowerCase();
+    const normalizedUserId = userId || "";
+    let resolvedAccount = null;
+
+    if (accountId) {
+      resolvedAccount = this.accountService
+        ? await this.accountService.getAccountById(accountId)
+        : null;
+    } else if (requestedEmail && this.accountService) {
+      resolvedAccount = await this.accountService.findAccountByEmail(requestedEmail);
+    } else if (normalizedUserId && this.accountService) {
+      resolvedAccount = await this.accountService.getAccountByUserId(normalizedUserId);
+    }
+
+    const resolvedAccountId = resolvedAccount?.accountId ?? accountId ?? "";
+    const linkedBrowserIds =
+      resolvedAccountId && this.accountService
+        ? await this.accountService.listLinkedBrowserIds(resolvedAccountId)
+        : [];
+    const browserLinkedAccountId =
+      normalizedUserId && this.accountService
+        ? await this.accountService.getLinkedAccountIdForUser(normalizedUserId)
+        : "";
+    const ownerId =
+      resolvedAccountId ||
+      (normalizedUserId ? await this.resolveBillingOwnerId(normalizedUserId) : "");
+    const entitlement = ownerId ? await this.getEntitlementForOwner(ownerId) : null;
+    const billingStatus =
+      normalizedUserId
+        ? await this.getBillingStatus({ userId: normalizedUserId })
+        : resolvedAccountId
+          ? {
+              ...(await this.getBillingStatus({ userId: resolvedAccountId })),
+              userId: resolvedAccountId
+            }
+          : null;
+    const normalizedEmail =
+      requestedEmail ||
+      resolvedAccount?.email ||
+      billingStatus?.account?.email ||
+      "";
+    const stripeRecovery =
+      normalizedEmail && this.stripeService?.findRecoverableSubscriptionByEmail
+        ? await this.stripeService.findRecoverableSubscriptionByEmail(normalizedEmail)
+        : null;
+    const webhookStatus = await this.getWebhookStatus();
+
+    return {
+      lookup: {
+        email: normalizedEmail,
+        userId: normalizedUserId,
+        accountId: resolvedAccountId
+      },
+      account: resolvedAccount
+        ? {
+            ...resolvedAccount,
+            linkedBrowserIds
+          }
+        : null,
+      browser: normalizedUserId
+        ? {
+            userId: normalizedUserId,
+            linkedAccountId: browserLinkedAccountId,
+            resolvedOwnerId: ownerId
+          }
+        : null,
+      entitlement: entitlement
+        ? {
+            ...entitlement,
+            ownerId
+          }
+        : null,
+      billingStatus,
+      stripe: stripeRecovery,
+      webhooks: webhookStatus
     };
   }
 }

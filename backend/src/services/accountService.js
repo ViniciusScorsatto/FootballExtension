@@ -108,6 +108,43 @@ export class AccountService {
     return this.cacheService.getJson(buildAccountKey(ownerId));
   }
 
+  async getAccountById(accountId) {
+    if (!accountId) {
+      return null;
+    }
+
+    return this.cacheService.getJson(buildAccountKey(accountId));
+  }
+
+  async getLinkedAccountIdForUser(userId) {
+    if (!userId || userId === "anonymous") {
+      return "";
+    }
+
+    const linkedAccount = await this.cacheService.getJson(buildBrowserLinkKey(userId));
+    return linkedAccount?.accountId ?? "";
+  }
+
+  async listLinkedBrowserIds(accountId) {
+    if (!accountId) {
+      return [];
+    }
+
+    const browserLinkKeys = await this.cacheService.listKeysByPrefix("account:browser:");
+    const linkedBrowserIds = [];
+
+    for (const key of browserLinkKeys) {
+      const browserUserId = key.slice("account:browser:".length);
+      const link = await this.cacheService.getJson(key);
+
+      if (browserUserId && link?.accountId === accountId) {
+        linkedBrowserIds.push(browserUserId);
+      }
+    }
+
+    return linkedBrowserIds.sort();
+  }
+
   async linkUserToAccount(userId, accountId) {
     if (!userId || userId === "anonymous" || !accountId) {
       return null;

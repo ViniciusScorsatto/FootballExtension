@@ -7,6 +7,10 @@ export function createMatchImpactRouter(controller) {
   router.get("/public-config", controller.getPublicConfig);
   router.get("/health", controller.getHealth);
   router.get("/admin/health", controller.getAdminHealth);
+  router.get("/admin/support", controller.getSupportPage);
+  router.get("/admin/support/lookup", controller.lookupSupportState);
+  router.post("/admin/support/resync", controller.resyncSupportState);
+  router.post("/admin/support/relink", controller.relinkSupportState);
   router.get("/billing/plans", controller.getBillingPlans);
   router.get("/billing/status", controller.getBillingStatus);
   router.post("/billing/status/refresh", controller.refreshBillingStatus);

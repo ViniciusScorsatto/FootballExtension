@@ -404,3 +404,121 @@ test("checkout session creation returns a Stripe checkout URL", async () => {
   assert.equal(res.body.ok, true);
   assert.equal(res.body.checkoutUrl, "https://checkout.stripe.test/session");
 });
+
+test("support page renders when authorized by admin_token query", async () => {
+  const controller = createMatchImpactController({
+    matchImpactService: {},
+    matchDiscoveryService: {},
+    billingService: {
+      getSupportSnapshot: async () => ({
+        account: {
+          accountId: "acct_123",
+          email: "tester@example.com",
+          linkedBrowserIds: ["lmi_abc"]
+        },
+        billingStatus: {
+          plan: "pro",
+          status: "active"
+        },
+        stripe: {
+          found: true,
+          lookupSource: "customer"
+        },
+        webhooks: {
+          ok: true,
+          lastEventType: "checkout.session.completed"
+        },
+        lookup: {
+          email: "tester@example.com",
+          userId: "",
+          accountId: "acct_123"
+        }
+      })
+    },
+    stripeService: {
+      getStatus() {
+        return {
+          enabled: true,
+          pricesConfigured: true,
+          webhookConfigured: true,
+          successUrlConfigured: true,
+          cancelUrlConfigured: true
+        };
+      }
+    },
+    accountService: {},
+    cacheService: {
+      getStatus() {
+        return {
+          mode: "memory",
+          redisConfigured: false,
+          redisEnabled: false
+        };
+      }
+    },
+    apiFootballClient: {
+      getStatus() {
+        return {
+          configured: true,
+          baseUrl: "https://v3.football.api-sports.io",
+          lastRequestStatus: null
+        };
+      }
+    },
+    env: {
+      adminToken: "secret-token",
+      nodeEnv: "test",
+      trustProxy: 1,
+      requestTimeoutMs: 5000,
+      authMagicLinkMode: "preview",
+      authMagicLinkTtlMinutes: 20,
+      liveCacheTtlSeconds: 15,
+      upcomingCacheTtlSeconds: 120,
+      finishedCacheTtlSeconds: 3600,
+      standingsCacheTtlSeconds: 3600,
+      statisticsCacheTtlSeconds: 60,
+      injuriesCacheTtlSeconds: 14400,
+      eventsCacheTtlSeconds: 60,
+      betaModeEnabled: true,
+      proMonthlyPriceUsd: 5.99,
+      earlyBirdProMonthlyPriceUsd: 3.99,
+      earlyBirdOfferEnabled: true,
+      earlyBirdOfferMaxClaims: 100,
+      rateLimitEnabled: true,
+      rateLimitWindowSeconds: 60,
+      freeReadLimitPerWindow: 120,
+      proReadLimitPerWindow: 600,
+      freeAnalyticsLimitPerWindow: 60,
+      proAnalyticsLimitPerWindow: 300,
+      adminLimitPerWindow: 30,
+      supportedLeagueIds: [39],
+      featuredLeagueIds: [39],
+      posthogHost: "https://us.i.posthog.com",
+      posthogProjectApiKey: ""
+    }
+  });
+  const res = createResponseMock();
+
+  await controller.getSupportPage(
+    {
+      query: {
+        admin_token: "secret-token",
+        email: "tester@example.com"
+      },
+      body: {},
+      header() {
+        return "";
+      }
+    },
+    res,
+    (error) => {
+      throw error;
+    }
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.contentType, "html");
+  assert.match(res.body, /Support Ops/);
+  assert.match(res.body, /Admin token attached/);
+  assert.match(res.body, /tester@example\.com/);
+});

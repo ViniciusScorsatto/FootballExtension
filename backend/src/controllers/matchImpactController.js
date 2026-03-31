@@ -7,10 +7,13 @@ import {
   parseFixtureId,
   validateBillingIdentity,
   validateEarlyBirdClaimPayload,
-  validateSessionPayload
+  validateSessionPayload,
+  validateSupportLookupQuery,
+  validateSupportRelinkPayload
 } from "../utils/validators.js";
 import { renderMarketingPage } from "../views/marketingPage.js";
 import { renderMagicLinkPage } from "../views/magicLinkPage.js";
+import { renderSupportPage } from "../views/supportPage.js";
 
 function isAuthorizedAdminRequest(req, adminToken) {
   if (!adminToken) {
@@ -19,11 +22,20 @@ function isAuthorizedAdminRequest(req, adminToken) {
 
   const tokenHeader = req.header("x-admin-token");
   const authorizationHeader = req.header("authorization");
+  const queryToken =
+    typeof req.query?.admin_token === "string" ? req.query.admin_token.trim() : "";
+  const bodyToken =
+    typeof req.body?.admin_token === "string" ? req.body.admin_token.trim() : "";
   const bearerToken = authorizationHeader?.startsWith("Bearer ")
     ? authorizationHeader.slice(7).trim()
     : "";
 
-  return tokenHeader === adminToken || bearerToken === adminToken;
+  return (
+    tokenHeader === adminToken ||
+    bearerToken === adminToken ||
+    queryToken === adminToken ||
+    bodyToken === adminToken
+  );
 }
 
 export function createMatchImpactController({
@@ -145,6 +157,127 @@ export function createMatchImpactController({
           }
         }
       });
+    },
+
+    async getSupportPage(req, res, next) {
+      try {
+        if (!isAuthorizedAdminRequest(req, env.adminToken)) {
+          res.status(401).type("html").send("Unauthorized");
+          return;
+        }
+
+        let lookup = {
+          email: "",
+          userId: "",
+          accountId: ""
+        };
+        let snapshot = null;
+        const adminToken =
+          typeof req.query.admin_token === "string" ? req.query.admin_token.trim() : "";
+
+        if (req.query.email || req.query.user_id || req.query.account_id) {
+          lookup = validateSupportLookupQuery(req.query);
+          snapshot = await billingService.getSupportSnapshot(lookup);
+        }
+
+        res.type("html").send(renderSupportPage({ lookup, snapshot, adminToken }));
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async lookupSupportState(req, res, next) {
+      try {
+        if (!isAuthorizedAdminRequest(req, env.adminToken)) {
+          res.status(401).json({ error: "Unauthorized." });
+          return;
+        }
+
+        const lookup = validateSupportLookupQuery(req.query);
+        const snapshot = await billingService.getSupportSnapshot(lookup);
+        res.json(snapshot);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async relinkSupportState(req, res, next) {
+      try {
+        if (!isAuthorizedAdminRequest(req, env.adminToken)) {
+          res.status(401).json({ error: "Unauthorized." });
+          return;
+        }
+
+        const payload = validateSupportRelinkPayload(req.body);
+        const account = await accountService.findOrCreateAccountByEmail(payload.email);
+
+        if (!account?.accountId) {
+          throw new Error("Could not resolve account for email.");
+        }
+
+        await accountService.linkUserToAccount(payload.userId, account.accountId);
+        const snapshot = await billingService.getSupportSnapshot({
+          email: payload.email,
+          userId: payload.userId,
+          accountId: account.accountId
+        });
+
+        res.json({
+          ok: true,
+          accountId: account.accountId,
+          snapshot
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async resyncSupportState(req, res, next) {
+      try {
+        if (!isAuthorizedAdminRequest(req, env.adminToken)) {
+          res.status(401).json({ error: "Unauthorized." });
+          return;
+        }
+
+        const lookup = validateSupportLookupQuery(req.body);
+        const preSnapshot = await billingService.getSupportSnapshot(lookup);
+        const recoveryEmail =
+          lookup.email || preSnapshot.account?.email || preSnapshot.billingStatus?.account?.email || "";
+        const targetUserId =
+          lookup.userId ||
+          preSnapshot.lookup.accountId ||
+          lookup.accountId ||
+          preSnapshot.browser?.resolvedOwnerId ||
+          "";
+
+        const recovery = recoveryEmail
+          ? await billingService.recoverEntitlementByEmail({
+              userId: targetUserId,
+              email: recoveryEmail
+            })
+          : {
+              entitlement: null,
+              debug: {
+                attempted: false,
+                recovered: false,
+                reason: "missing_email"
+              }
+            };
+
+        const snapshot = await billingService.getSupportSnapshot({
+          email: recoveryEmail,
+          userId: lookup.userId || targetUserId,
+          accountId: lookup.accountId || preSnapshot.lookup.accountId || targetUserId
+        });
+
+        res.json({
+          ok: true,
+          recovery: recovery.debug,
+          snapshot
+        });
+      } catch (error) {
+        next(error);
+      }
     },
 
     async getMatchImpact(req, res, next) {
@@ -426,12 +559,25 @@ export function createMatchImpactController({
             break;
         }
 
+        await billingService.recordWebhookStatus({
+          ok: true,
+          lastEventType: event.type,
+          lastEventAt: new Date().toISOString(),
+          lastError: ""
+        });
+
         res.json({
           received: true,
           type: event.type,
           ...result
         });
       } catch (error) {
+        await billingService.recordWebhookStatus({
+          ok: false,
+          lastEventType: "error",
+          lastEventAt: new Date().toISOString(),
+          lastError: error.message
+        });
         next(error);
       }
     }
