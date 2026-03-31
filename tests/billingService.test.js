@@ -159,3 +159,42 @@ test("billing status migrates a legacy email-matched entitlement onto the linked
   const migratedEntitlement = await cacheService.getJson(`billing:user:${account.accountId}`);
   assert.equal(migratedEntitlement.stripeSubscriptionId, "sub_legacy");
 });
+
+test("billing status migrates a linked browser entitlement onto the account even without email metadata", async () => {
+  const { billingService, cacheService, accountService } = createBillingService();
+
+  const account = await accountService.findOrCreateAccountByEmail("tester@example.com");
+  await accountService.linkUserToAccount("browser-a", account.accountId);
+  await accountService.linkUserToAccount("browser-b", account.accountId);
+
+  await cacheService.setJson(
+    "billing:user:browser-a",
+    {
+      plan: "pro",
+      offerId: "early_bird_lifetime",
+      status: "active",
+      grandfatheredPriceUsd: 3.99,
+      betaUser: true,
+      email: "",
+      source: "stripe",
+      stripeCustomerId: "cus_linked",
+      stripeSubscriptionId: "sub_linked",
+      stripePriceId: "price_early",
+      updatedAt: new Date().toISOString()
+    },
+    60 * 60
+  );
+
+  const status = await billingService.getBillingStatus({
+    userId: "browser-b"
+  });
+
+  assert.equal(status.plan, "pro");
+  assert.equal(status.status, "active");
+  assert.equal(status.account.linked, true);
+  assert.equal(status.account.email, "tester@example.com");
+
+  const migratedEntitlement = await cacheService.getJson(`billing:user:${account.accountId}`);
+  assert.equal(migratedEntitlement.stripeSubscriptionId, "sub_linked");
+  assert.equal(migratedEntitlement.offerId, "early_bird_lifetime");
+});

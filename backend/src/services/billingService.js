@@ -19,6 +19,10 @@ function entitlementKeyPrefix() {
   return "billing:user:";
 }
 
+function browserLinkKeyPrefix() {
+  return "account:browser:";
+}
+
 function createDefaultEntitlement() {
   return {
     plan: "free",
@@ -29,6 +33,32 @@ function createDefaultEntitlement() {
     source: "default",
     updatedAt: new Date().toISOString()
   };
+}
+
+function entitlementMigrationScore(entitlement) {
+  if (!entitlement) {
+    return 0;
+  }
+
+  let score = 0;
+
+  if (entitlement.plan === "pro") {
+    score += 100;
+  }
+
+  if (entitlement.status === "active") {
+    score += 40;
+  } else if (entitlement.status === "reserved") {
+    score += 20;
+  } else if (entitlement.status && entitlement.status !== "inactive") {
+    score += 10;
+  }
+
+  if (entitlement.offerId) {
+    score += 5;
+  }
+
+  return score;
 }
 
 function mapPlan(planConfig, priceMonthlyUsd, currency) {
@@ -107,6 +137,12 @@ export class BillingService {
       entitlement = await this.migrateLegacyEntitlementToAccount({
         accountId: ownerUserId,
         email: account.email
+      });
+    }
+
+    if (!entitlement && ownerUserId?.startsWith("acct_")) {
+      entitlement = await this.migrateLinkedBrowserEntitlementToAccount({
+        accountId: ownerUserId
       });
     }
 
@@ -473,5 +509,81 @@ export class BillingService {
     }
 
     return null;
+  }
+
+  async migrateLinkedBrowserEntitlementToAccount({ accountId }) {
+    if (!accountId) {
+      return null;
+    }
+
+    const browserLinkKeys = await this.cacheService.listKeysByPrefix(browserLinkKeyPrefix());
+    let candidate = null;
+
+    for (const key of browserLinkKeys) {
+      const browserUserId = key.slice(browserLinkKeyPrefix().length);
+
+      if (!browserUserId || browserUserId === accountId) {
+        continue;
+      }
+
+      const link = await this.cacheService.getJson(key);
+
+      if (link?.accountId !== accountId) {
+        continue;
+      }
+
+      const entitlement = await this.cacheService.getJson(buildEntitlementKey(browserUserId));
+
+      if (!entitlement || entitlement.plan !== "pro") {
+        continue;
+      }
+
+      if (
+        !candidate ||
+        entitlementMigrationScore(entitlement) > entitlementMigrationScore(candidate.entitlement)
+      ) {
+        candidate = {
+          browserUserId,
+          entitlement
+        };
+      }
+    }
+
+    if (!candidate) {
+      return null;
+    }
+
+    const migratedEntitlement = {
+      ...candidate.entitlement,
+      updatedAt: new Date().toISOString(),
+      source:
+        candidate.entitlement.source === "stripe"
+          ? "stripe_browser_link_migrated"
+          : candidate.entitlement.source
+    };
+
+    await this.cacheService.setJson(
+      buildEntitlementKey(accountId),
+      migratedEntitlement,
+      BILLING_COUNTER_TTL_SECONDS
+    );
+
+    if (candidate.entitlement.stripeSubscriptionId) {
+      await this.cacheService.setJson(
+        buildSubscriptionKey(candidate.entitlement.stripeSubscriptionId),
+        { userId: accountId },
+        BILLING_COUNTER_TTL_SECONDS
+      );
+    }
+
+    if (candidate.entitlement.stripeCustomerId) {
+      await this.cacheService.setJson(
+        buildCustomerKey(candidate.entitlement.stripeCustomerId),
+        { userId: accountId },
+        BILLING_COUNTER_TTL_SECONDS
+      );
+    }
+
+    return migratedEntitlement;
   }
 }
