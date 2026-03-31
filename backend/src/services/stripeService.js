@@ -9,6 +9,14 @@ function createConfigurationError(message, code = "STRIPE_NOT_CONFIGURED") {
   return error;
 }
 
+function normalizeEmail(email) {
+  return String(email ?? "").trim().toLowerCase();
+}
+
+function isRecoverableSubscriptionStatus(status) {
+  return ["active", "trialing", "past_due", "unpaid"].includes(status);
+}
+
 export class StripeService {
   constructor({ env }) {
     this.env = env;
@@ -106,12 +114,14 @@ export class StripeService {
   }
 
   async findRecoverableSubscriptionByEmail(email) {
-    if (!this.enabled || !this.client || !email) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!this.enabled || !this.client || !normalizedEmail) {
       return null;
     }
 
     const customers = await this.client.customers.list({
-      email,
+      email: normalizedEmail,
       limit: 10
     });
 
@@ -123,12 +133,12 @@ export class StripeService {
       });
 
       const recoverableSubscription = subscriptions.data.find((subscription) =>
-        ["active", "trialing", "past_due", "unpaid"].includes(subscription.status)
+        isRecoverableSubscriptionStatus(subscription.status)
       );
 
       if (recoverableSubscription) {
         return {
-          email,
+          email: normalizedEmail,
           customerId: customer.id,
           subscriptionId: recoverableSubscription.id,
           status: recoverableSubscription.status,
@@ -136,6 +146,35 @@ export class StripeService {
           metadata: recoverableSubscription.metadata ?? {}
         };
       }
+    }
+
+    const sessions = await this.client.checkout.sessions.list({
+      limit: 25
+    });
+
+    for (const session of sessions.data) {
+      const sessionEmail = normalizeEmail(
+        session.customer_details?.email ?? session.customer_email ?? ""
+      );
+
+      if (session.mode !== "subscription" || sessionEmail !== normalizedEmail || !session.subscription) {
+        continue;
+      }
+
+      const subscription = await this.client.subscriptions.retrieve(String(session.subscription));
+
+      if (!isRecoverableSubscriptionStatus(subscription.status)) {
+        continue;
+      }
+
+      return {
+        email: normalizedEmail,
+        customerId: subscription.customer ? String(subscription.customer) : "",
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        priceId: subscription.items?.data?.[0]?.price?.id || "",
+        metadata: subscription.metadata ?? {}
+      };
     }
 
     return null;
