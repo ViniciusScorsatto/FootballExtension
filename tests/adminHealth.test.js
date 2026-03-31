@@ -110,6 +110,13 @@ function createController(envOverrides = {}) {
       }
     },
     accountService: {
+      findOrCreateAccountByEmail: async (email) => ({
+        email,
+        accountId: "acct_123"
+      }),
+      linkUserToAccount: async () => ({
+        accountId: "acct_123"
+      }),
       createMagicLinkRequest: async () => ({
         token: "abc",
         deliveryMode: "preview",
@@ -250,6 +257,32 @@ test("billing status returns the current plan snapshot", async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.plan, "free");
   assert.equal(res.body.offers.earlyBirdEligible, true);
+});
+
+test("billing refresh actively relinks the browser and returns the resolved plan", async () => {
+  const controller = createController();
+  const res = createResponseMock();
+
+  await controller.refreshBillingStatus(
+    {
+      body: {
+        userId: "tester-browser",
+        email: "tester@example.com"
+      },
+      monetization: {
+        plan: "free",
+        userId: "tester-browser"
+      }
+    },
+    res,
+    (error) => {
+      throw error;
+    }
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.ok, true);
+  assert.equal(res.body.plan, "free");
 });
 
 test("checkout session creation returns a Stripe checkout URL", async () => {

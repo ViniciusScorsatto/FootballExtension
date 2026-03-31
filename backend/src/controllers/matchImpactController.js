@@ -2,6 +2,7 @@ import {
   assertFixtureId,
   validateCheckoutPayload,
   validateMagicLinkRequestPayload,
+  validateRestoreSyncPayload,
   validateMagicLinkToken,
   parseFixtureId,
   validateBillingIdentity,
@@ -229,6 +230,29 @@ export function createMatchImpactController({
         });
 
         res.json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async refreshBillingStatus(req, res, next) {
+      try {
+        const payload = validateRestoreSyncPayload(req.body, req.monetization.userId);
+        const account = await accountService.findOrCreateAccountByEmail(payload.email);
+
+        if (account?.accountId) {
+          await accountService.linkUserToAccount(payload.userId, account.accountId);
+        }
+
+        const billingStatus = await billingService.getBillingStatus({
+          userId: payload.userId,
+          planHint: req.monetization.plan
+        });
+
+        res.json({
+          ok: true,
+          ...billingStatus
+        });
       } catch (error) {
         next(error);
       }

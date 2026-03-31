@@ -592,6 +592,83 @@ async function fetchBillingStatus() {
   }
 }
 
+async function refreshBillingStatusWithRecovery() {
+  const backendUrl = normalizeBackendUrl();
+
+  if (!validateBackendUrl(backendUrl) || !currentBilling.userId) {
+    return;
+  }
+
+  const recoveryEmail = validateEmailInput() || currentBilling.accountEmail;
+
+  if (!recoveryEmail) {
+    await fetchBillingStatus();
+    return;
+  }
+
+  const previouslyLinked = currentBilling.accountLinked;
+  const previousWasPro = isProPlan();
+  const response = await fetch(`${backendUrl}/billing/status/refresh`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({
+      userId: currentBilling.userId,
+      email: recoveryEmail
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with ${response.status}`);
+  }
+
+  const payload = await response.json();
+
+  currentBilling = {
+    ...currentBilling,
+    userId: payload.userId || currentBilling.userId,
+    plan: payload.plan || "free",
+    status: payload.status || "inactive",
+    offerId: payload.offerId || null,
+    accountLinked: Boolean(payload.account?.linked),
+    accountEmail: payload.account?.email || recoveryEmail || currentBilling.accountEmail || "",
+    earlyBirdEligible: Boolean(payload.offers?.earlyBirdEligible),
+    earlyBirdRemaining: payload.offers?.earlyBirdRemaining ?? 0,
+    earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
+  };
+
+  if (!previouslyLinked && currentBilling.accountLinked) {
+    accountCardExpanded = false;
+  }
+
+  const nowPro = isProPlan();
+  const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
+
+  currentBilling.recentlyUnlocked = justUnlocked;
+  if (currentBilling.accountLinked || nowPro) {
+    currentBilling.restorePending = false;
+    currentBilling.restoreStartedAt = null;
+  }
+  if (justUnlocked || nowPro) {
+    currentBilling.checkoutPending = false;
+    currentBilling.checkoutStartedAt = null;
+  }
+
+  await chrome.storage.sync.set({
+    billingUserId: currentBilling.userId,
+    billingPlan: currentBilling.plan,
+    billingStatus: currentBilling.status,
+    billingOfferId: currentBilling.offerId,
+    accountEmail: currentBilling.accountEmail,
+    restorePending: currentBilling.restorePending,
+    restoreStartedAt: currentBilling.restoreStartedAt,
+    billingCheckoutPending: currentBilling.checkoutPending,
+    billingCheckoutStartedAt: currentBilling.checkoutStartedAt
+  });
+
+  renderBillingCard();
+  updatePlanHint();
+}
+
 async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = null) {
   const backendUrl = normalizeBackendUrl();
 
@@ -1026,7 +1103,7 @@ billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
-    await fetchBillingStatus();
+    await refreshBillingStatusWithRecovery();
     setStatus(translate("popup.statusPlanUpdated"));
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
   } catch {
@@ -1041,7 +1118,7 @@ accountToggleButton.addEventListener("click", () => {
 accountStatusRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
-    await fetchBillingStatus();
+    await refreshBillingStatusWithRecovery();
     setStatus(translate("popup.statusPlanUpdated"));
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
   } catch {

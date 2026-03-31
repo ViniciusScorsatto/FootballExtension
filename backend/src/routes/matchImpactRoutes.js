@@ -8,6 +8,7 @@ export function createMatchImpactRouter(controller) {
   router.get("/admin/health", controller.getAdminHealth);
   router.get("/billing/plans", controller.getBillingPlans);
   router.get("/billing/status", controller.getBillingStatus);
+  router.post("/billing/status/refresh", controller.refreshBillingStatus);
   router.post("/billing/early-bird/claim", controller.claimEarlyBird);
   router.post("/billing/checkout-session", controller.createCheckoutSession);
   router.post("/auth/magic-link/request", controller.requestMagicLink);
