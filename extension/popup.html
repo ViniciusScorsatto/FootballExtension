@@ -22,6 +22,28 @@
         Pick a supported league and the overlay will explain the live match impact in seconds.
       </p>
 
+      <section class="lmi-billing-card">
+        <div class="lmi-billing-card__header">
+          <div>
+            <div id="billingEyebrow" class="lmi-popup__eyebrow">Beta Access</div>
+            <div id="billingPlanLabel" class="lmi-billing-card__title">Current plan: Free</div>
+          </div>
+          <div id="billingPlanBadge" class="lmi-plan-badge">Free</div>
+        </div>
+        <p id="billingSummary" class="lmi-popup__text lmi-popup__text--compact">
+          Featured leagues only. Unlock Pro for all supported leagues and premium insights.
+        </p>
+        <p id="billingOffer" class="lmi-billing-card__offer"></p>
+        <div class="lmi-billing-card__actions">
+          <button id="billingAction" class="lmi-button lmi-button--primary" type="button">
+            Unlock Pro
+          </button>
+          <button id="billingRefresh" class="lmi-button lmi-button--ghost" type="button">
+            Refresh Plan
+          </button>
+        </div>
+      </section>
+
       <label class="lmi-field">
         <span id="languageLabel" class="lmi-field__label">Language</span>
         <select id="language" class="lmi-field__input">
@@ -75,6 +97,7 @@
           placeholder="Optional fallback"
         />
       </label>
+      <p id="planHint" class="lmi-popup__hint"></p>
 
       <button id="startTracking" class="lmi-button lmi-button--primary" type="button">
         Start Tracking

@@ -5,7 +5,15 @@
     existingRoot.remove();
   }
 
-  const STORAGE_KEYS = ["fixtureId", "backendUrl", "trackingEnabled", "language"];
+  const STORAGE_KEYS = [
+    "fixtureId",
+    "backendUrl",
+    "trackingEnabled",
+    "language",
+    "billingUserId",
+    "billingPlan",
+    "billingStatus"
+  ];
   const DEFAULT_BACKEND_URL = "http://localhost:3000";
   const DEFAULT_LANGUAGE = globalThis.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
@@ -27,6 +35,9 @@
     fixtureId: null,
     backendUrl: DEFAULT_BACKEND_URL,
     language: DEFAULT_LANGUAGE,
+    billingUserId: "anonymous",
+    billingPlan: "free",
+    billingStatus: "inactive",
     trackingEnabled: false,
     pollTimer: null,
     renderTimer: null,
@@ -76,7 +87,14 @@
         return;
       }
 
-      if (changes.fixtureId || changes.backendUrl || changes.trackingEnabled) {
+      if (
+        changes.fixtureId ||
+        changes.backendUrl ||
+        changes.trackingEnabled ||
+        changes.billingUserId ||
+        changes.billingPlan ||
+        changes.billingStatus
+      ) {
         syncSettings(true);
       }
 
@@ -242,6 +260,10 @@
     state.fixtureId = settings.fixtureId ?? null;
     state.backendUrl = (settings.backendUrl || DEFAULT_BACKEND_URL).replace(/\/$/, "");
     state.language = normalizeLanguage(settings.language ?? DEFAULT_LANGUAGE);
+    state.billingUserId = settings.billingUserId ?? "anonymous";
+    state.billingPlan =
+      settings.billingPlan === "pro" && settings.billingStatus === "active" ? "pro" : "free";
+    state.billingStatus = settings.billingStatus ?? "inactive";
     state.trackingEnabled = Boolean(settings.trackingEnabled);
     updateStaticCopy();
 
@@ -322,8 +344,11 @@
           type: "LMI_HTTP_REQUEST",
           url,
           method: options.method || "GET",
-          headers: options.headers || {
-            "Content-Type": "application/json"
+          headers: {
+            "Content-Type": "application/json",
+            "x-live-impact-user": state.billingUserId || "anonymous",
+            "x-live-impact-plan": state.billingPlan || "free",
+            ...(options.headers || {})
           },
           body: options.body
         },

@@ -12,6 +12,24 @@
         title: "Track what a goal changes",
         description:
           "Pick a supported league and the overlay will explain the live match impact in seconds.",
+        billingEyebrow: "Beta Access",
+        currentPlan: "Current plan: {plan}",
+        freePlan: "Free",
+        proPlan: "Pro",
+        billingSummaryFree:
+          "Featured leagues only. Unlock Pro for all supported leagues and premium insights.",
+        billingSummaryPro:
+          "Pro is active. You can use every supported league and the manual fixture fallback.",
+        earlyBirdOffer:
+          "Early Bird Pro is live: {price}/month forever for the first {remaining} users.",
+        earlyBirdClosed: "Early Bird Pro is now closed.",
+        upgradeToPro: "Unlock Pro",
+        managePlan: "Refresh Plan",
+        upgradeInProgress: "Opening Stripe Checkout...",
+        statusPlanUpdated: "Plan status refreshed.",
+        statusPlanLoadFailed: "Could not load billing status.",
+        statusUpgradeFailed: "Could not start Stripe checkout.",
+        statusProActive: "Pro is active on this browser.",
         backendUrl: "Backend URL",
         refreshMatches: "Refresh Match List",
         leagueFocus: "League Focus",
@@ -31,6 +49,12 @@
         featuredLeaguePrefix: "Featured",
         noMatchesRightNow: "No matches right now",
         scoreOnlySuffix: "Live score only - no table impact",
+        featuredLeaguesOnly: "Free plan: featured leagues only",
+        proUnlocksAllLeagues: "Pro unlocks all supported leagues and manual fixture tracking.",
+        statusUpgradeRequiredLeague:
+          "This league is part of Pro. Choose a featured league or upgrade.",
+        statusUpgradeRequiredManual:
+          "Manual fixture tracking is part of Pro during beta.",
         statusEnterBackend: "Enter a valid backend URL.",
         statusLoadingMatches: "Loading matches...",
         statusMatchesUpdated: "Match lists updated.",
@@ -154,6 +178,24 @@
         title: "Acompanhe o que um gol muda",
         description:
           "Escolha uma liga suportada e a sobreposição explica o impacto ao vivo em segundos.",
+        billingEyebrow: "Acesso beta",
+        currentPlan: "Plano atual: {plan}",
+        freePlan: "Free",
+        proPlan: "Pro",
+        billingSummaryFree:
+          "Somente ligas em destaque. Desbloqueie o Pro para todas as ligas suportadas e insights premium.",
+        billingSummaryPro:
+          "O Pro está ativo. Você pode usar todas as ligas suportadas e o fallback por fixture manual.",
+        earlyBirdOffer:
+          "Early Bird Pro ativo: {price}/mês para sempre para os próximos {remaining} usuários.",
+        earlyBirdClosed: "O Early Bird Pro já encerrou.",
+        upgradeToPro: "Desbloquear Pro",
+        managePlan: "Atualizar plano",
+        upgradeInProgress: "Abrindo o Stripe Checkout...",
+        statusPlanUpdated: "Status do plano atualizado.",
+        statusPlanLoadFailed: "Não foi possível carregar o status de cobrança.",
+        statusUpgradeFailed: "Não foi possível iniciar o checkout no Stripe.",
+        statusProActive: "O Pro está ativo neste navegador.",
         backendUrl: "URL do backend",
         refreshMatches: "Atualizar lista de jogos",
         leagueFocus: "Foco de ligas",
@@ -173,6 +215,13 @@
         featuredLeaguePrefix: "Destaque",
         noMatchesRightNow: "Sem jogos agora",
         scoreOnlySuffix: "Somente placar ao vivo - sem impacto na tabela",
+        featuredLeaguesOnly: "Plano Free: apenas ligas em destaque",
+        proUnlocksAllLeagues:
+          "O Pro desbloqueia todas as ligas suportadas e o acompanhamento manual por fixture.",
+        statusUpgradeRequiredLeague:
+          "Esta liga faz parte do Pro. Escolha uma liga em destaque ou faça upgrade.",
+        statusUpgradeRequiredManual:
+          "O acompanhamento manual por fixture faz parte do Pro durante o beta.",
         statusEnterBackend: "Informe uma URL de backend válida.",
         statusLoadingMatches: "Carregando jogos...",
         statusMatchesUpdated: "Lista de jogos atualizada.",

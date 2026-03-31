@@ -90,6 +90,75 @@
   color: var(--lmi-muted);
 }
 
+.lmi-popup__text--compact {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.lmi-popup__hint {
+  min-height: 18px;
+  margin: -4px 2px 4px;
+  font-size: 12px;
+  color: var(--lmi-muted);
+}
+
+.lmi-billing-card {
+  margin: 14px 0 10px;
+  padding: 14px;
+  border: 1px solid var(--lmi-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(109, 245, 193, 0.12), transparent 36%),
+    rgba(4, 9, 18, 0.58);
+}
+
+.lmi-billing-card__header,
+.lmi-billing-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lmi-billing-card__title {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lmi-text);
+}
+
+.lmi-plan-badge {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(109, 245, 193, 0.14);
+  color: var(--lmi-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lmi-plan-badge[data-plan="pro"] {
+  background: rgba(70, 198, 255, 0.16);
+  color: #9fdcff;
+}
+
+.lmi-billing-card__offer {
+  min-height: 18px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--lmi-accent);
+}
+
+.lmi-billing-card__actions {
+  margin-top: 12px;
+}
+
+.lmi-billing-card__actions .lmi-button {
+  margin-top: 0;
+}
+
 .lmi-field {
   display: block;
   margin: 12px 0;

@@ -5,6 +5,14 @@ const { normalizeLanguage, t } = window.LMI_I18N;
 const fixtureIdInput = document.getElementById("fixtureId");
 const backendUrlInput = document.getElementById("backendUrl");
 const languageSelect = document.getElementById("language");
+const billingActionButton = document.getElementById("billingAction");
+const billingRefreshButton = document.getElementById("billingRefresh");
+const billingPlanLabel = document.getElementById("billingPlanLabel");
+const billingPlanBadge = document.getElementById("billingPlanBadge");
+const billingEyebrow = document.getElementById("billingEyebrow");
+const billingSummary = document.getElementById("billingSummary");
+const billingOffer = document.getElementById("billingOffer");
+const planHint = document.getElementById("planHint");
 const leagueFilterSelect = document.getElementById("leagueFilter");
 const liveMatchesSelect = document.getElementById("liveMatches");
 const upcomingMatchesSelect = document.getElementById("upcomingMatches");
@@ -12,6 +20,7 @@ const refreshMatchesButton = document.getElementById("refreshMatches");
 const startButton = document.getElementById("startTracking");
 const stopButton = document.getElementById("stopTracking");
 const statusMessage = document.getElementById("statusMessage");
+
 let currentLiveMatches = [];
 let currentUpcomingMatches = [];
 let currentLeagueFilter = {
@@ -20,6 +29,15 @@ let currentLeagueFilter = {
   availableLeagues: []
 };
 let currentLanguage = DEFAULT_LANGUAGE;
+let currentBilling = {
+  userId: "",
+  plan: "free",
+  status: "inactive",
+  offerId: null,
+  earlyBirdEligible: false,
+  earlyBirdRemaining: 0,
+  earlyBirdActive: false
+};
 
 const popupTextElements = {
   eyebrow: document.getElementById("popupEyebrow"),
@@ -47,6 +65,8 @@ function setLanguage(language) {
   currentLanguage = normalizeLanguage(language);
   languageSelect.value = currentLanguage;
   applyStaticTranslations();
+  renderBillingCard();
+  updatePlanHint();
 }
 
 function applyStaticTranslations() {
@@ -61,15 +81,25 @@ function applyStaticTranslations() {
   popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
   popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
   popupTextElements.manualFixtureLabel.textContent = translate("popup.manualFixtureId");
+  billingEyebrow.textContent = translate("popup.billingEyebrow");
   fixtureIdInput.placeholder = translate("popup.manualFixturePlaceholder");
   refreshMatchesButton.textContent = translate("popup.refreshMatches");
   startButton.textContent = translate("popup.startTracking");
   stopButton.textContent = translate("popup.stopTracking");
+  billingRefreshButton.textContent = translate("popup.managePlan");
 
   languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
   languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
     "language.portugueseBrazil"
   );
+}
+
+function createBillingUserId() {
+  if (typeof crypto?.randomUUID === "function") {
+    return `lmi_${crypto.randomUUID()}`;
+  }
+
+  return `lmi_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function notifyActiveTab(message) {
@@ -121,12 +151,91 @@ function validateBackendUrl(backendUrl) {
   }
 }
 
+function getRequestHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "x-live-impact-user": currentBilling.userId || "anonymous",
+    "x-live-impact-plan": currentBilling.plan || "free"
+  };
+}
+
 function formatKickoff(dateString) {
   return new Date(dateString).toLocaleString(currentLanguage === "pt-BR" ? "pt-BR" : "en-US", {
     weekday: "short",
     hour: "numeric",
     minute: "2-digit"
   });
+}
+
+function formatPrice(price) {
+  const numericPrice = Number(price);
+
+  if (!Number.isFinite(numericPrice)) {
+    return String(price ?? "");
+  }
+
+  return new Intl.NumberFormat(currentLanguage === "pt-BR" ? "pt-BR" : "en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(numericPrice);
+}
+
+function isProPlan() {
+  return currentBilling.plan === "pro" && currentBilling.status === "active";
+}
+
+function isLeagueAvailableForCurrentPlan(leagueId) {
+  if (!leagueId || isProPlan()) {
+    return true;
+  }
+
+  return currentLeagueFilter.featuredLeagueIds.includes(leagueId);
+}
+
+function renderBillingCard() {
+  const currentPlanName = isProPlan()
+    ? translate("popup.proPlan")
+    : translate("popup.freePlan");
+
+  billingPlanLabel.textContent = translate("popup.currentPlan", {
+    plan: currentPlanName
+  });
+  billingPlanBadge.textContent = currentPlanName;
+  billingPlanBadge.dataset.plan = isProPlan() ? "pro" : "free";
+  billingSummary.textContent = isProPlan()
+    ? translate("popup.billingSummaryPro")
+    : translate("popup.billingSummaryFree");
+
+  if (!isProPlan() && currentBilling.earlyBirdActive && currentBilling.earlyBirdRemaining > 0) {
+    billingOffer.textContent = translate("popup.earlyBirdOffer", {
+      price: formatPrice(3.99),
+      remaining: currentBilling.earlyBirdRemaining
+    });
+  } else if (!isProPlan()) {
+    billingOffer.textContent = translate("popup.earlyBirdClosed");
+  } else if (currentBilling.offerId === "early_bird_lifetime") {
+    billingOffer.textContent = translate("popup.earlyBirdOffer", {
+      price: formatPrice(3.99),
+      remaining: currentBilling.earlyBirdRemaining
+    });
+  } else {
+    billingOffer.textContent = "";
+  }
+
+  billingActionButton.textContent = isProPlan()
+    ? translate("popup.managePlan")
+    : translate("popup.upgradeToPro");
+}
+
+function updatePlanHint() {
+  if (isProPlan()) {
+    fixtureIdInput.disabled = false;
+    planHint.textContent = translate("popup.statusProActive");
+    return;
+  }
+
+  fixtureIdInput.disabled = true;
+  planHint.textContent = translate("popup.proUnlocksAllLeagues");
 }
 
 function buildLiveLabel(match) {
@@ -238,7 +347,9 @@ function populateLeagueFilterSelect(leagueFilter, selectedLeagueId) {
     const option = document.createElement("option");
     option.value = String(league.id);
     option.textContent = buildLeagueFilterLabel(league);
-    option.disabled = league.availableNow === false;
+    option.disabled =
+      league.availableNow === false ||
+      (!isProPlan() && !league.featured);
     option.selected = Number(selectedLeagueId) === league.id;
     leagueFilterSelect.appendChild(option);
   });
@@ -250,11 +361,15 @@ function getSelectedLeagueId() {
 }
 
 function getFilteredMatches(matches, leagueId) {
+  const planFilteredMatches = isProPlan()
+    ? matches
+    : matches.filter((match) => match.league?.featured);
+
   if (!leagueId) {
-    return matches;
+    return planFilteredMatches;
   }
 
-  return matches.filter((match) => match.league?.id === leagueId);
+  return planFilteredMatches.filter((match) => match.league?.id === leagueId);
 }
 
 function renderMatchLists(preferredFixtureId = null) {
@@ -309,14 +424,61 @@ function getSelectedFixtureId() {
   return null;
 }
 
+function getSelectedMatch() {
+  const selectedFixtureId = getSelectedFixtureId();
+
+  if (!selectedFixtureId) {
+    return null;
+  }
+
+  return [...currentLiveMatches, ...currentUpcomingMatches].find(
+    (match) => match.fixtureId === selectedFixtureId
+  ) ?? null;
+}
+
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: getRequestHeaders()
+  });
 
   if (!response.ok) {
     throw new Error(`Request failed with ${response.status}`);
   }
 
   return response.json();
+}
+
+async function fetchBillingStatus() {
+  const backendUrl = normalizeBackendUrl();
+
+  if (!validateBackendUrl(backendUrl) || !currentBilling.userId) {
+    return;
+  }
+
+  const payload = await fetchJson(
+    `${backendUrl}/billing/status?user_id=${encodeURIComponent(currentBilling.userId)}`
+  );
+
+  currentBilling = {
+    ...currentBilling,
+    userId: payload.userId || currentBilling.userId,
+    plan: payload.plan || "free",
+    status: payload.status || "inactive",
+    offerId: payload.offerId || null,
+    earlyBirdEligible: Boolean(payload.offers?.earlyBirdEligible),
+    earlyBirdRemaining: payload.offers?.earlyBirdRemaining ?? 0,
+    earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
+  };
+
+  await chrome.storage.sync.set({
+    billingUserId: currentBilling.userId,
+    billingPlan: currentBilling.plan,
+    billingStatus: currentBilling.status,
+    billingOfferId: currentBilling.offerId
+  });
+
+  renderBillingCard();
+  updatePlanHint();
 }
 
 async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = null) {
@@ -352,7 +514,7 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
     renderMatchLists(preferredFixtureId);
 
     setStatus(translate("popup.statusMatchesUpdated"));
-  } catch (error) {
+  } catch {
     currentLiveMatches = [];
     currentUpcomingMatches = [];
     currentLeagueFilter = {
@@ -385,7 +547,11 @@ async function loadSettings() {
     "backendUrl",
     "trackingEnabled",
     "leagueFilterId",
-    "language"
+    "language",
+    "billingUserId",
+    "billingPlan",
+    "billingStatus",
+    "billingOfferId"
   ]);
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
@@ -394,7 +560,22 @@ async function loadSettings() {
   setLanguage(storedLanguage);
   backendUrlInput.value = result.backendUrl ?? DEFAULT_BACKEND_URL;
   fixtureIdInput.value = storedFixtureId ?? "";
+  currentBilling = {
+    ...currentBilling,
+    userId: result.billingUserId || createBillingUserId(),
+    plan: result.billingPlan || "free",
+    status: result.billingStatus || "inactive",
+    offerId: result.billingOfferId || null
+  };
 
+  await chrome.storage.sync.set({
+    billingUserId: currentBilling.userId
+  });
+
+  renderBillingCard();
+  updatePlanHint();
+
+  await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
 
   const isInLiveList = Boolean(
@@ -418,6 +599,7 @@ async function loadSettings() {
 async function handleStartTracking() {
   const fixtureId = getSelectedFixtureId();
   const backendUrl = normalizeBackendUrl();
+  const selectedMatch = getSelectedMatch();
 
   if (!fixtureId) {
     setStatus(translate("popup.statusChooseFixture"), true);
@@ -429,12 +611,30 @@ async function handleStartTracking() {
     return;
   }
 
+  if (!isProPlan() && fixtureIdInput.value) {
+    setStatus(translate("popup.statusUpgradeRequiredManual"), true);
+    return;
+  }
+
+  if (
+    !isProPlan() &&
+    selectedMatch?.league?.id &&
+    !isLeagueAvailableForCurrentPlan(selectedMatch.league.id)
+  ) {
+    setStatus(translate("popup.statusUpgradeRequiredLeague"), true);
+    return;
+  }
+
   await ensureContentScriptInjected();
 
   await chrome.storage.sync.set({
     fixtureId,
     backendUrl,
     language: currentLanguage,
+    billingUserId: currentBilling.userId,
+    billingPlan: currentBilling.plan,
+    billingStatus: currentBilling.status,
+    billingOfferId: currentBilling.offerId,
     trackingEnabled: true
   });
 
@@ -446,13 +646,62 @@ async function handleStartTracking() {
 
 async function handleStopTracking() {
   await chrome.storage.sync.set({
-    trackingEnabled: false
+    trackingEnabled: false,
+    billingPlan: currentBilling.plan,
+    billingStatus: currentBilling.status,
+    billingOfferId: currentBilling.offerId
   });
 
   notifyActiveTab({
     type: "LMI_TRACKING_STOPPED"
   });
   setStatus(translate("popup.statusTrackingStopped"));
+}
+
+async function handleBillingAction() {
+  if (isProPlan()) {
+    try {
+      await fetchBillingStatus();
+      setStatus(translate("popup.statusPlanUpdated"));
+    } catch {
+      setStatus(translate("popup.statusPlanLoadFailed"), true);
+    }
+    return;
+  }
+
+  const backendUrl = normalizeBackendUrl();
+
+  if (!validateBackendUrl(backendUrl)) {
+    setStatus(translate("popup.statusEnterBackend"), true);
+    return;
+  }
+
+  billingActionButton.disabled = true;
+  setStatus(translate("popup.upgradeInProgress"));
+
+  try {
+    const response = await fetch(`${backendUrl}/billing/checkout-session`, {
+      method: "POST",
+      headers: getRequestHeaders(),
+      body: JSON.stringify({
+        userId: currentBilling.userId,
+        offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : null
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with ${response.status}`);
+    }
+
+    const payload = await response.json();
+    await chrome.tabs.create({
+      url: payload.checkoutUrl
+    });
+  } catch {
+    setStatus(translate("popup.statusUpgradeFailed"), true);
+  } finally {
+    billingActionButton.disabled = false;
+  }
 }
 
 liveMatchesSelect.addEventListener("change", () => {
@@ -486,6 +735,12 @@ languageSelect.addEventListener("change", async () => {
 });
 
 backendUrlInput.addEventListener("change", async () => {
+  try {
+    await fetchBillingStatus();
+  } catch {
+    setStatus(translate("popup.statusPlanLoadFailed"), true);
+  }
+
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
@@ -500,6 +755,16 @@ leagueFilterSelect.addEventListener("change", async () => {
 
 startButton.addEventListener("click", handleStartTracking);
 stopButton.addEventListener("click", handleStopTracking);
+billingActionButton.addEventListener("click", handleBillingAction);
+billingRefreshButton.addEventListener("click", async () => {
+  try {
+    await fetchBillingStatus();
+    setStatus(translate("popup.statusPlanUpdated"));
+    await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
+  } catch {
+    setStatus(translate("popup.statusPlanLoadFailed"), true);
+  }
+});
 
 loadSettings().catch(() => {
   setStatus(translate("popup.statusSettingsFailed"), true);
