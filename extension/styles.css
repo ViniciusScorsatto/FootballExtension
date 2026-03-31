@@ -560,10 +560,10 @@ select.lmi-field__input {
 .lmi-badge {
   width: 30px;
   height: 30px;
-  border-radius: 999px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(4, 9, 18, 0.9);
+  border-radius: 0;
+  object-fit: contain;
+  border: 0;
+  background: transparent;
 }
 
 .lmi-badge-divider {

@@ -628,6 +628,11 @@
       elements.awayRow.textContent = awayGroupPosition
         ? formatGroupPositionLine(payload.teams.away.name, awayGroupPosition, awayProjectedGroupPosition)
         : translate("panel.limitedAway");
+    } else if (payload.status.phase === "upcoming") {
+      elements.homeRow.textContent = translate("panel.preMatchTableHome", {
+        team: payload.teams.home.name
+      });
+      elements.awayRow.textContent = translate("panel.preMatchTableAway");
     } else {
       elements.homeRow.textContent = translate("panel.scoreOnlyHome", {
         team: payload.teams.home.name

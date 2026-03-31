@@ -168,6 +168,9 @@
         finishedShort: "FT",
         updatedAt: "Updated {time}",
         noCompetitionSwing: "No major competition swing yet.",
+        preMatchTableHome: "{team} is being tracked before kickoff",
+        preMatchTableAway: "Live table impact starts when the match kicks off",
+        preMatchCompetitionDetail: "Live table impact will start once the match kicks off.",
         momentumFallback: "Momentum is currently based on score and table movement.",
         scoreOnlyHome: "{team} live score tracked",
         scoreOnlyAway: "Table impact unavailable for this competition",
@@ -414,6 +417,9 @@
         finishedShort: "Final",
         updatedAt: "Atualizado {time}",
         noCompetitionSwing: "Ainda não houve grande mudança na competição.",
+        preMatchTableHome: "{team} está sendo acompanhado antes do pontapé inicial",
+        preMatchTableAway: "O impacto ao vivo na tabela começa quando a partida iniciar",
+        preMatchCompetitionDetail: "O impacto ao vivo na tabela começa quando a partida iniciar.",
         momentumFallback: "O momento está sendo calculado com placar e movimento na tabela.",
         scoreOnlyHome: "{team} com placar ao vivo acompanhado",
         scoreOnlyAway: "Impacto na tabela indisponível para esta competição",
@@ -600,7 +606,8 @@
         "impact.specialFormatLimited",
         []
       ],
-      [/^Live score tracked - table impact limited for this fixture\.$/, "impact.specialFormatLimited", []]
+      [/^Live score tracked - table impact limited for this fixture\.$/, "impact.specialFormatLimited", []],
+      [/^Live table impact will start once the match kicks off\.$/, "panel.preMatchCompetitionDetail", []]
     ];
 
     for (const [pattern, key, fields] of patterns) {
