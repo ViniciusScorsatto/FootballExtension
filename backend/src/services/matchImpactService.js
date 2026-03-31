@@ -82,6 +82,34 @@ function extractTeams(fixture) {
   };
 }
 
+function parseNullableScoreValue(value) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildScoreSnapshot(fixture) {
+  return {
+    home: Number(fixture?.goals?.home ?? 0),
+    away: Number(fixture?.goals?.away ?? 0),
+    penalty: {
+      home: parseNullableScoreValue(fixture?.score?.penalty?.home),
+      away: parseNullableScoreValue(fixture?.score?.penalty?.away)
+    },
+    fulltime: {
+      home: parseNullableScoreValue(fixture?.score?.fulltime?.home),
+      away: parseNullableScoreValue(fixture?.score?.fulltime?.away)
+    },
+    extratime: {
+      home: parseNullableScoreValue(fixture?.score?.extratime?.home),
+      away: parseNullableScoreValue(fixture?.score?.extratime?.away)
+    }
+  };
+}
+
 function buildRecentEvents(events) {
   return events.slice(-3).map((event) => ({
     time: event.time?.elapsed ?? 0,
@@ -93,6 +121,10 @@ function buildRecentEvents(events) {
     player: event.player?.name ?? "",
     assist: event.assist?.name ?? ""
   }));
+}
+
+function isPenaltyShootoutEvent(event) {
+  return String(event?.comments ?? "").trim().toLowerCase() === "penalty shootout";
 }
 
 function buildResourceEnvelope(data, extra = {}) {
@@ -635,6 +667,61 @@ function buildPredictionSummary(predictionPayload, teams) {
   };
 }
 
+function buildPenaltyShootoutContext(status, fixture, events, teams) {
+  const shootoutEvents = events.filter(isPenaltyShootoutEvent);
+  const homePenaltyScoreFromFixture = parseNullableScoreValue(fixture?.score?.penalty?.home);
+  const awayPenaltyScoreFromFixture = parseNullableScoreValue(fixture?.score?.penalty?.away);
+  const homePenaltyScoreFromEvents = shootoutEvents.filter(
+    (event) => event.team?.id === teams.home.id && event.detail === "Penalty"
+  ).length;
+  const awayPenaltyScoreFromEvents = shootoutEvents.filter(
+    (event) => event.team?.id === teams.away.id && event.detail === "Penalty"
+  ).length;
+  const homePenaltyScore =
+    homePenaltyScoreFromFixture ?? (shootoutEvents.length ? homePenaltyScoreFromEvents : null);
+  const awayPenaltyScore =
+    awayPenaltyScoreFromFixture ?? (shootoutEvents.length ? awayPenaltyScoreFromEvents : null);
+
+  if (
+    status.short !== "PEN" &&
+    status.short !== "P" &&
+    homePenaltyScore == null &&
+    awayPenaltyScore == null &&
+    !shootoutEvents.length
+  ) {
+    return null;
+  }
+
+  const latestKick = shootoutEvents.at(-1) ?? null;
+  const winnerTeam =
+    fixture?.teams?.home?.winner === true
+      ? teams.home.name
+      : fixture?.teams?.away?.winner === true
+      ? teams.away.name
+      : homePenaltyScore != null && awayPenaltyScore != null
+      ? homePenaltyScore > awayPenaltyScore
+        ? teams.home.name
+        : awayPenaltyScore > homePenaltyScore
+        ? teams.away.name
+        : ""
+      : "";
+
+  return {
+    available: true,
+    phase: status.short === "PEN" ? "finished" : "live",
+    home: homePenaltyScore,
+    away: awayPenaltyScore,
+    winnerTeam,
+    latestKick: latestKick
+      ? {
+          teamName: latestKick.team?.name ?? "",
+          playerName: latestKick.player?.name ?? "",
+          scored: latestKick.detail === "Penalty"
+        }
+      : null
+  };
+}
+
 function normalizeGoalType(detail) {
   switch (detail) {
     case "Normal Goal":
@@ -773,11 +860,15 @@ function shouldUseKnockoutImpact(fixture, competitionFormat) {
     return true;
   }
 
-  if (routing === "hybrid_group_knockout") {
+  if (
+    routing === "hybrid_group_knockout" ||
+    routing === "hybrid_single_table_knockout" ||
+    routing === "hybrid_groups_knockout_special"
+  ) {
     return isKnockoutRoundLabel(round);
   }
 
-  return false;
+  return isKnockoutRoundLabel(round) && competitionFormat?.impactMode !== "limited";
 }
 
 function haveSameTeamPair(leftFixture, rightFixture) {
@@ -874,7 +965,7 @@ function buildKnockoutContext(fixture, roundFixtures, competitionFormat) {
   };
 }
 
-function buildCupImpact(status, fixture, teams, knockoutContext) {
+function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext = null) {
   const score = {
     home: Number(fixture?.goals?.home ?? 0),
     away: Number(fixture?.goals?.away ?? 0)
@@ -885,6 +976,45 @@ function buildCupImpact(status, fixture, teams, knockoutContext) {
     momentum: buildCupMomentumFromScore(score),
     mode: "cup"
   };
+
+  if (penaltyContext?.available) {
+    const shootoutLine =
+      penaltyContext.home != null && penaltyContext.away != null
+        ? `${teams.home.name} ${penaltyContext.home}-${penaltyContext.away} ${teams.away.name} on penalties`
+        : "";
+    const latestKickActor =
+      penaltyContext.latestKick?.playerName || penaltyContext.latestKick?.teamName || "";
+
+    if (penaltyContext.phase === "finished") {
+      return {
+        ...baseImpact,
+        summary: penaltyContext.winnerTeam
+          ? `${penaltyContext.winnerTeam} wins on penalties`
+          : "Penalty shootout decided the tie",
+        competition: [
+          shootoutLine,
+          penaltyContext.winnerTeam ? `${penaltyContext.winnerTeam} wins on penalties` : ""
+        ].filter(Boolean)
+      };
+    }
+
+    return {
+      ...baseImpact,
+      summary:
+        penaltyContext.home != null && penaltyContext.away != null
+          ? `Penalty shootout: ${penaltyContext.home}-${penaltyContext.away}`
+          : "Penalty shootout in progress",
+      competition: [
+        shootoutLine,
+        "Penalty shootout in progress",
+        latestKickActor
+          ? penaltyContext.latestKick?.scored
+            ? `${latestKickActor} scores in the shootout`
+            : `${latestKickActor} misses in the shootout`
+          : ""
+      ].filter(Boolean)
+    };
+  }
 
   if (!knockoutContext || knockoutContext.type === "single_leg_knockout") {
     const isLevel = score.home === score.away;
@@ -972,10 +1102,7 @@ export class MatchImpactService {
     const fixture = await this.apiFootballClient.getFixture(fixtureId);
     const status = getMatchStatus(fixture);
     const teams = extractTeams(fixture);
-    const score = {
-      home: Number(fixture?.goals?.home ?? 0),
-      away: Number(fixture?.goals?.away ?? 0)
-    };
+    const score = buildScoreSnapshot(fixture);
     const baseEvent = detectScoreEvent(previousState.previousScore, score, teams);
     const prematchCadence = getPrematchCadence(fixture, this.env);
     const leagueCoverage = await this.getLeagueCoverageResource(fixture);
@@ -1013,6 +1140,7 @@ export class MatchImpactService {
       (competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group");
     const latestGoalEvent = extractLatestGoalEvent(events, baseEvent);
     const event = enrichScoreEvent(baseEvent, latestGoalEvent);
+    const penaltyContext = buildPenaltyShootoutContext(status, fixture, events, teams);
     const lineupsSummary = buildLineupsSummary(lineups, teams);
     const injuriesSummary = buildInjuriesSummary(injuries, teams);
     const prematch = buildPrematchSummary(status, teams, lineupsSummary, injuriesSummary);
@@ -1024,7 +1152,7 @@ export class MatchImpactService {
 
     if (!hasTableImpact) {
       const impact = knockoutContext
-        ? buildCupImpact(status, fixture, teams, knockoutContext)
+        ? buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext)
         : competitionFormat.impactMode === "limited"
           ? buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat)
           : buildScoreOnlyImpact(status, fixture, teams);
@@ -1085,6 +1213,7 @@ export class MatchImpactService {
           teamGroupPositions: competitionFormat.teamPositions ?? null,
           projectedTeamGroupPositions: groupProjection,
           knockoutContext,
+          penaltyContext,
           leagueCoverage
         }
       };
@@ -1162,6 +1291,7 @@ export class MatchImpactService {
         groupLabel: competitionFormat.selectedGroup?.name ?? "",
         teamGroupPositions: competitionFormat.teamPositions ?? null,
         projectedTeamGroupPositions: groupProjection,
+        penaltyContext,
         leagueCoverage
       }
     };

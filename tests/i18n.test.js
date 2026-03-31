@@ -31,6 +31,10 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Leeds entra nas vagas de acesso direto"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Bosnia & Herzegovina wins on penalties"),
+    "Bosnia & Herzegovina vence nos pênaltis"
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );
