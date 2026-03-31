@@ -83,22 +83,31 @@
         </select>
       </label>
 
-      <section class="lmi-settings-card">
-        <div id="notificationsLabel" class="lmi-field__label">Notifications</div>
-        <label class="lmi-toggle">
-          <div class="lmi-toggle__copy">
-            <span id="notifyGoalsLabel" class="lmi-toggle__title">Goal happened</span>
-            <span id="notifyGoalsHint" class="lmi-toggle__hint">Get notified when the tracked match has a goal.</span>
+      <section class="lmi-notifications-shell">
+        <button id="notificationsToggle" class="lmi-icon-button" type="button" aria-expanded="false" aria-controls="notificationsCard">
+          <span class="lmi-icon-button__glyph">🔔</span>
+          <span id="notificationsToggleLabel" class="lmi-icon-button__label">Notifications</span>
+        </button>
+        <section id="notificationsCard" class="lmi-settings-card" hidden>
+          <div class="lmi-settings-card__header">
+            <div id="notificationsLabel" class="lmi-field__label">Notifications</div>
+            <button id="notificationsClose" class="lmi-settings-card__close" type="button">Close</button>
           </div>
-          <input id="notifyGoals" class="lmi-toggle__input" type="checkbox" />
-        </label>
-        <label class="lmi-toggle">
-          <div class="lmi-toggle__copy">
-            <span id="notifyTableChangesLabel" class="lmi-toggle__title">Goal changed table position</span>
-            <span id="notifyTableChangesHint" class="lmi-toggle__hint">Send a richer alert when a goal moves a team in the table.</span>
-          </div>
-          <input id="notifyTableChanges" class="lmi-toggle__input" type="checkbox" />
-        </label>
+          <label class="lmi-toggle">
+            <div class="lmi-toggle__copy">
+              <span id="notifyGoalsLabel" class="lmi-toggle__title">Goal happened</span>
+              <span id="notifyGoalsHint" class="lmi-toggle__hint">Get notified when the tracked match has a goal.</span>
+            </div>
+            <input id="notifyGoals" class="lmi-toggle__input" type="checkbox" />
+          </label>
+          <label class="lmi-toggle">
+            <div class="lmi-toggle__copy">
+              <span id="notifyTableChangesLabel" class="lmi-toggle__title">Goal changed table position</span>
+              <span id="notifyTableChangesHint" class="lmi-toggle__hint">Send a richer alert when a goal moves a team in the table.</span>
+            </div>
+            <input id="notifyTableChanges" class="lmi-toggle__input" type="checkbox" />
+          </label>
+        </section>
       </section>
 
       <button id="refreshMatches" class="lmi-button lmi-button--ghost" type="button">

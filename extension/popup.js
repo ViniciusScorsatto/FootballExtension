@@ -8,6 +8,9 @@ const { normalizeLanguage, t } = window.LMI_I18N;
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const languageSelect = document.getElementById("language");
+const notificationsToggleButton = document.getElementById("notificationsToggle");
+const notificationsCloseButton = document.getElementById("notificationsClose");
+const notificationsCard = document.getElementById("notificationsCard");
 const notifyGoalsToggle = document.getElementById("notifyGoals");
 const notifyTableChangesToggle = document.getElementById("notifyTableChanges");
 const billingActionButton = document.getElementById("billingAction");
@@ -50,6 +53,7 @@ let currentLeagueFilter = {
 };
 let currentLanguage = DEFAULT_LANGUAGE;
 let accountCardExpanded = true;
+let notificationsCardExpanded = false;
 let currentBilling = {
   userId: "",
   plan: "free",
@@ -78,6 +82,7 @@ const popupTextElements = {
   title: document.getElementById("popupTitle"),
   description: document.getElementById("popupDescription"),
   languageLabel: document.getElementById("languageLabel"),
+  notificationsToggleLabel: document.getElementById("notificationsToggleLabel"),
   notificationsLabel: document.getElementById("notificationsLabel"),
   notifyGoalsLabel: document.getElementById("notifyGoalsLabel"),
   notifyGoalsHint: document.getElementById("notifyGoalsHint"),
@@ -139,11 +144,13 @@ function applyStaticTranslations() {
   popupTextElements.title.textContent = translate("popup.title");
   popupTextElements.description.textContent = translate("popup.description");
   popupTextElements.languageLabel.textContent = translate("language.label");
+  popupTextElements.notificationsToggleLabel.textContent = translate("popup.notifications");
   popupTextElements.notificationsLabel.textContent = translate("popup.notifications");
   popupTextElements.notifyGoalsLabel.textContent = translate("popup.notifyGoalsLabel");
   popupTextElements.notifyGoalsHint.textContent = translate("popup.notifyGoalsHint");
   popupTextElements.notifyTableChangesLabel.textContent = translate("popup.notifyTableChangesLabel");
   popupTextElements.notifyTableChangesHint.textContent = translate("popup.notifyTableChangesHint");
+  notificationsCloseButton.textContent = translate("common.close");
   popupTextElements.leagueFocusLabel.textContent = translate("popup.leagueFocus");
   popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
   popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
@@ -724,6 +731,12 @@ async function refreshBillingStatusWithRecovery() {
 
   renderBillingCard();
   updatePlanHint();
+  renderNotificationsCard();
+}
+
+function renderNotificationsCard() {
+  notificationsCard.hidden = !notificationsCardExpanded;
+  notificationsToggleButton.setAttribute("aria-expanded", String(notificationsCardExpanded));
 }
 
 async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = null) {
@@ -1199,6 +1212,16 @@ notifyTableChangesToggle.addEventListener("change", async () => {
     notifyTableChanges: currentNotifications.notifyTableChanges
   });
   setStatus(translate("popup.statusNotificationsUpdated"));
+});
+
+notificationsToggleButton.addEventListener("click", () => {
+  notificationsCardExpanded = !notificationsCardExpanded;
+  renderNotificationsCard();
+});
+
+notificationsCloseButton.addEventListener("click", () => {
+  notificationsCardExpanded = false;
+  renderNotificationsCard();
 });
 
 window.addEventListener("focus", () => {

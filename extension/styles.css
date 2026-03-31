@@ -158,6 +158,53 @@
   background: rgba(4, 9, 18, 0.42);
 }
 
+.lmi-notifications-shell {
+  margin: 14px 0 10px;
+}
+
+.lmi-icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--lmi-border);
+  border-radius: 999px;
+  background: rgba(4, 9, 18, 0.42);
+  color: var(--lmi-text);
+  cursor: pointer;
+}
+
+.lmi-icon-button__glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lmi-icon-button__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lmi-settings-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lmi-settings-card__close {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lmi-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .lmi-toggle {
   display: flex;
   align-items: flex-start;

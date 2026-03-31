@@ -6,6 +6,9 @@
         english: "English",
         portugueseBrazil: "Portuguese (Brazil)"
       },
+      common: {
+        close: "Close"
+      },
       popup: {
         eyebrow: "Foot Analysis",
         subhead: "Live Match Impact",
@@ -242,6 +245,9 @@
         label: "Idioma",
         english: "English",
         portugueseBrazil: "Português (Brasil)"
+      },
+      common: {
+        close: "Fechar"
       },
       popup: {
         eyebrow: "Foot Analysis",
