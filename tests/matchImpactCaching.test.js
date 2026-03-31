@@ -939,6 +939,172 @@ test("finished penalty shootout uses penalty impact context", async () => {
   ]);
 });
 
+test("live penalty shootout adds next-kick pressure context", async () => {
+  const fixtureId = 1538001;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1774982700,
+          date: "2026-03-31T18:45:00+00:00",
+          status: {
+            short: "P",
+            long: "Penalty In Progress",
+            elapsed: 120
+          }
+        },
+        league: {
+          id: 32,
+          name: "World Cup - Qualification Europe",
+          country: "World",
+          season: 2024,
+          standings: true,
+          round: "Final"
+        },
+        teams: {
+          home: { id: 1113, name: "Bosnia & Herzegovina", logo: "", winner: false },
+          away: { id: 768, name: "Italy", logo: "", winner: false }
+        },
+        goals: {
+          home: 1,
+          away: 1
+        },
+        score: {
+          fulltime: { home: 1, away: 1 },
+          extratime: { home: 0, away: 0 },
+          penalty: { home: 3, away: 2 }
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: true,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 1,
+                    team: { id: 1113, name: "Bosnia & Herzegovina" },
+                    points: 3,
+                    goalsDiff: 1,
+                    all: { played: 1, win: 1, draw: 0, lose: 0, goals: { for: 1, against: 0 } }
+                  },
+                  {
+                    rank: 2,
+                    team: { id: 768, name: "Italy" },
+                    points: 0,
+                    goalsDiff: -1,
+                    all: { played: 1, win: 0, draw: 0, lose: 1, goals: { for: 0, against: 1 } }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getEvents: async () => [
+        {
+          time: { elapsed: 120, extra: 1 },
+          team: { id: 1113, name: "Bosnia & Herzegovina" },
+          player: { name: "Shooter 1" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 2 },
+          team: { id: 768, name: "Italy" },
+          player: { name: "Shooter 2" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 3 },
+          team: { id: 1113, name: "Bosnia & Herzegovina" },
+          player: { name: "Shooter 3" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 4 },
+          team: { id: 768, name: "Italy" },
+          player: { name: "Shooter 4" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 5 },
+          team: { id: 1113, name: "Bosnia & Herzegovina" },
+          player: { name: "Shooter 5" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Missed Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 6 },
+          team: { id: 768, name: "Italy" },
+          player: { name: "Shooter 6" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Missed Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 7 },
+          team: { id: 1113, name: "Bosnia & Herzegovina" },
+          player: { name: "Shooter 7" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: "Penalty Shootout"
+        },
+        {
+          time: { elapsed: 120, extra: 8 },
+          team: { id: 768, name: "Italy" },
+          player: { name: "Shooter 8" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Missed Penalty",
+          comments: "Penalty Shootout"
+        }
+      ],
+      getFixturesByRound: async () => []
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.penaltyContext.phase, "live");
+  assert.equal(payload.metadata.penaltyContext.pressure.type, "score_to_win");
+  assert.equal(payload.metadata.penaltyContext.pressure.teamName, "Bosnia & Herzegovina");
+  assert.deepEqual(payload.impact.competition, [
+    "Bosnia & Herzegovina 3-2 Italy on penalties",
+    "Penalty shootout in progress",
+    "Bosnia & Herzegovina scores the next penalty to win",
+    "Shooter 8 misses in the shootout"
+  ]);
+});
+
 test("live statistics add pressure insights and competition-specific zone messages", async () => {
   const fixtureId = 9201;
   const { service } = createService({

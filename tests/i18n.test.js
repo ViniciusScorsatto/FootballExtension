@@ -35,6 +35,10 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Bosnia & Herzegovina vence nos pênaltis"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Italy must score to stay alive"),
+    "Italy precisa marcar para seguir vivo"
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );

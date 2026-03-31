@@ -693,6 +693,8 @@ function buildPenaltyShootoutContext(status, fixture, events, teams) {
   }
 
   const latestKick = shootoutEvents.at(-1) ?? null;
+  const homeTaken = shootoutEvents.filter((event) => event.team?.id === teams.home.id).length;
+  const awayTaken = shootoutEvents.filter((event) => event.team?.id === teams.away.id).length;
   const winnerTeam =
     fixture?.teams?.home?.winner === true
       ? teams.home.name
@@ -706,12 +708,42 @@ function buildPenaltyShootoutContext(status, fixture, events, teams) {
         : ""
       : "";
 
+  const nextKickTeam =
+    status.short === "PEN"
+      ? null
+      : homeTaken <= awayTaken
+      ? {
+          name: teams.home.name,
+          id: teams.home.id,
+          side: "home"
+        }
+      : {
+          name: teams.away.name,
+          id: teams.away.id,
+          side: "away"
+        };
+
+  const pressure = nextKickTeam
+    ? buildPenaltyShootoutPressure({
+        homeScore: homePenaltyScore ?? 0,
+        awayScore: awayPenaltyScore ?? 0,
+        homeTaken,
+        awayTaken,
+        nextKickTeam,
+        teams
+      })
+    : null;
+
   return {
     available: true,
     phase: status.short === "PEN" ? "finished" : "live",
     home: homePenaltyScore,
     away: awayPenaltyScore,
+    homeTaken,
+    awayTaken,
     winnerTeam,
+    nextKickTeam,
+    pressure,
     latestKick: latestKick
       ? {
           teamName: latestKick.team?.name ?? "",
@@ -720,6 +752,90 @@ function buildPenaltyShootoutContext(status, fixture, events, teams) {
         }
       : null
   };
+}
+
+function isPenaltyShootoutDecided(homeScore, awayScore, homeTaken, awayTaken) {
+  const homeRemaining = Math.max(0, 5 - homeTaken);
+  const awayRemaining = Math.max(0, 5 - awayTaken);
+
+  if (homeScore > awayScore + awayRemaining || awayScore > homeScore + homeRemaining) {
+    return true;
+  }
+
+  if (homeTaken >= 5 && awayTaken >= 5 && homeTaken === awayTaken && homeScore !== awayScore) {
+    return true;
+  }
+
+  return false;
+}
+
+function buildPenaltyShootoutPressure({
+  homeScore,
+  awayScore,
+  homeTaken,
+  awayTaken,
+  nextKickTeam,
+  teams
+}) {
+  const afterMiss =
+    nextKickTeam.side === "home"
+      ? {
+          homeScore,
+          awayScore,
+          homeTaken: homeTaken + 1,
+          awayTaken
+        }
+      : {
+          homeScore,
+          awayScore,
+          homeTaken,
+          awayTaken: awayTaken + 1
+        };
+
+  if (
+    isPenaltyShootoutDecided(
+      afterMiss.homeScore,
+      afterMiss.awayScore,
+      afterMiss.homeTaken,
+      afterMiss.awayTaken
+    )
+  ) {
+    return {
+      type: "must_score",
+      teamName: nextKickTeam.name
+    };
+  }
+
+  const afterScore =
+    nextKickTeam.side === "home"
+      ? {
+          homeScore: homeScore + 1,
+          awayScore,
+          homeTaken: homeTaken + 1,
+          awayTaken
+        }
+      : {
+          homeScore,
+          awayScore: awayScore + 1,
+          homeTaken,
+          awayTaken: awayTaken + 1
+        };
+
+  if (
+    isPenaltyShootoutDecided(
+      afterScore.homeScore,
+      afterScore.awayScore,
+      afterScore.homeTaken,
+      afterScore.awayTaken
+    )
+  ) {
+    return {
+      type: "score_to_win",
+      teamName: nextKickTeam.name
+    };
+  }
+
+  return null;
 }
 
 function normalizeGoalType(detail) {
@@ -1007,6 +1123,11 @@ function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext 
       competition: [
         shootoutLine,
         "Penalty shootout in progress",
+        penaltyContext.pressure?.type === "must_score"
+          ? `${penaltyContext.pressure.teamName} must score to stay alive`
+          : penaltyContext.pressure?.type === "score_to_win"
+          ? `${penaltyContext.pressure.teamName} scores the next penalty to win`
+          : "",
         latestKickActor
           ? penaltyContext.latestKick?.scored
             ? `${latestKickActor} scores in the shootout`
