@@ -11,7 +11,9 @@
     "language",
     "billingUserId",
     "billingPlan",
-    "billingStatus"
+    "billingStatus",
+    "notifyGoals",
+    "notifyTableChanges"
   ];
   const DEFAULT_BACKEND_URL =
     (globalThis.LMI_CONFIG?.backendUrl || "https://footballextension-staging.up.railway.app")
@@ -40,6 +42,8 @@
     billingUserId: "anonymous",
     billingPlan: "free",
     billingStatus: "inactive",
+    notifyGoals: true,
+    notifyTableChanges: true,
     trackingEnabled: false,
     pollTimer: null,
     renderTimer: null,
@@ -47,6 +51,7 @@
     isExpanded: false,
     lastSignature: "",
     lastNotifiedGoalKey: "",
+    lastNotifiedImpactKey: "",
     lastPayload: null,
     sessionStartedAt: null,
     usageTracked: false,
@@ -94,7 +99,9 @@
         changes.trackingEnabled ||
         changes.billingUserId ||
         changes.billingPlan ||
-        changes.billingStatus
+        changes.billingStatus ||
+        changes.notifyGoals ||
+        changes.notifyTableChanges
       ) {
         syncSettings(true);
       }
@@ -265,6 +272,8 @@
     state.billingPlan =
       settings.billingPlan === "pro" && settings.billingStatus === "active" ? "pro" : "free";
     state.billingStatus = settings.billingStatus ?? "inactive";
+    state.notifyGoals = settings.notifyGoals ?? true;
+    state.notifyTableChanges = settings.notifyTableChanges ?? true;
     state.trackingEnabled = Boolean(settings.trackingEnabled);
     updateStaticCopy();
 
@@ -298,6 +307,7 @@
     state.lastPayload = null;
     state.lastSignature = "";
     state.lastNotifiedGoalKey = "";
+    state.lastNotifiedImpactKey = "";
     state.backoffMs = BASE_POLL_INTERVAL_MS;
     state.sessionStartedAt = null;
     elements.root.classList.add("is-hidden");
@@ -593,7 +603,7 @@
         translate("panel.eventChangesTable", {
           team: payload.event.teamName
         });
-      notifyGoal(payload, eventLabel);
+      void notifyGoal(payload, eventLabel);
       setExpanded(true);
       window.setTimeout(() => {
         if (state.lastPayload?.fixture_id === payload.fixture_id) {
@@ -862,7 +872,7 @@
     return items;
   }
 
-  function notifyGoal(payload, eventLabel) {
+  async function notifyGoal(payload, eventLabel) {
     const goalKey = JSON.stringify({
       fixtureId: payload.fixture_id,
       score: payload.score,
@@ -874,15 +884,91 @@
       return;
     }
 
+    const hasImpactChange = hasTableChangeNotification(payload);
+    const shouldSendImpactNotification = state.notifyTableChanges && hasImpactChange;
+    const shouldSendGoalNotification = state.notifyGoals && !shouldSendImpactNotification;
+    const notificationKey = shouldSendImpactNotification
+      ? `impact:${goalKey}`
+      : `goal:${goalKey}`;
+
+    if (!(await shouldNotifyKey("lastMatchNotificationKey", notificationKey))) {
+      return;
+    }
+
     state.lastNotifiedGoalKey = goalKey;
 
+    if (shouldSendImpactNotification) {
+      state.lastNotifiedImpactKey = goalKey;
+      chrome.runtime.sendMessage({
+        type: "LMI_SHOW_NOTIFICATION",
+        notificationId: `impact-${payload.fixture_id}-${payload.status?.minute || 0}`,
+        title: translate("notifications.tableImpactTitle", {
+          scoreline: `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName}`
+        }),
+        message:
+          buildImpactSummary(state.language, payload.impact, payload.teams) ||
+          payload.event?.impactSummary ||
+          translate("notifications.goalChangedTable")
+      });
+      return;
+    }
+
+    if (!shouldSendGoalNotification) {
+      return;
+    }
+
     chrome.runtime.sendMessage({
-      type: "LMI_GOAL_NOTIFICATION",
-      title: `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName}`,
-      message: [eventLabel, buildImpactSummary(state.language, payload.impact, payload.teams)]
-        .filter(Boolean)
-        .join("\n")
+      type: "LMI_SHOW_NOTIFICATION",
+      notificationId: `goal-${payload.fixture_id}-${payload.status?.minute || 0}`,
+      title: translate("notifications.goalTitle", {
+        scoreline: `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName}`
+      }),
+      message:
+        eventLabel ||
+        payload.event?.impactSummary ||
+        translate("notifications.goalHappened")
     });
+  }
+
+  function hasTableChangeNotification(payload) {
+    const homeMovement = Number(payload.impact?.table?.home?.movement ?? 0);
+    const awayMovement = Number(payload.impact?.table?.away?.movement ?? 0);
+
+    if (homeMovement !== 0 || awayMovement !== 0) {
+      return true;
+    }
+
+    const currentHome = payload.metadata?.teamGroupPositions?.home;
+    const currentAway = payload.metadata?.teamGroupPositions?.away;
+    const projectedHome = payload.metadata?.projectedTeamGroupPositions?.home;
+    const projectedAway = payload.metadata?.projectedTeamGroupPositions?.away;
+
+    return (
+      Number(projectedHome?.projectedPosition ?? currentHome?.position ?? 0) !==
+        Number(currentHome?.position ?? 0) ||
+      Number(projectedAway?.projectedPosition ?? currentAway?.position ?? 0) !==
+        Number(currentAway?.position ?? 0)
+    );
+  }
+
+  async function shouldNotifyKey(storageKey, nextKey) {
+    if (!nextKey) {
+      return false;
+    }
+
+    try {
+      const result = await chrome.storage.local.get(storageKey);
+      if (result?.[storageKey] === nextKey) {
+        return false;
+      }
+
+      await chrome.storage.local.set({
+        [storageKey]: nextKey
+      });
+      return true;
+    } catch {
+      return true;
+    }
   }
 
   function setExpanded(expanded) {

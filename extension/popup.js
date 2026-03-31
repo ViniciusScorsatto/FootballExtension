@@ -8,6 +8,8 @@ const { normalizeLanguage, t } = window.LMI_I18N;
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const languageSelect = document.getElementById("language");
+const notifyGoalsToggle = document.getElementById("notifyGoals");
+const notifyTableChangesToggle = document.getElementById("notifyTableChanges");
 const billingActionButton = document.getElementById("billingAction");
 const billingRefreshButton = document.getElementById("billingRefresh");
 const accountRestoreButton = document.getElementById("accountRestore");
@@ -65,6 +67,10 @@ let currentBilling = {
   recentlyUnlocked: false
 };
 let lastBillingDebug = null;
+let currentNotifications = {
+  notifyGoals: true,
+  notifyTableChanges: true
+};
 
 const popupTextElements = {
   eyebrow: document.getElementById("popupEyebrow"),
@@ -72,6 +78,11 @@ const popupTextElements = {
   title: document.getElementById("popupTitle"),
   description: document.getElementById("popupDescription"),
   languageLabel: document.getElementById("languageLabel"),
+  notificationsLabel: document.getElementById("notificationsLabel"),
+  notifyGoalsLabel: document.getElementById("notifyGoalsLabel"),
+  notifyGoalsHint: document.getElementById("notifyGoalsHint"),
+  notifyTableChangesLabel: document.getElementById("notifyTableChangesLabel"),
+  notifyTableChangesHint: document.getElementById("notifyTableChangesHint"),
   leagueFocusLabel: document.getElementById("leagueFocusLabel"),
   liveMatchesLabel: document.getElementById("liveMatchesLabel"),
   upcomingMatchesLabel: document.getElementById("upcomingMatchesLabel"),
@@ -128,6 +139,11 @@ function applyStaticTranslations() {
   popupTextElements.title.textContent = translate("popup.title");
   popupTextElements.description.textContent = translate("popup.description");
   popupTextElements.languageLabel.textContent = translate("language.label");
+  popupTextElements.notificationsLabel.textContent = translate("popup.notifications");
+  popupTextElements.notifyGoalsLabel.textContent = translate("popup.notifyGoalsLabel");
+  popupTextElements.notifyGoalsHint.textContent = translate("popup.notifyGoalsHint");
+  popupTextElements.notifyTableChangesLabel.textContent = translate("popup.notifyTableChangesLabel");
+  popupTextElements.notifyTableChangesHint.textContent = translate("popup.notifyTableChangesHint");
   popupTextElements.leagueFocusLabel.textContent = translate("popup.leagueFocus");
   popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
   popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
@@ -784,7 +800,9 @@ async function loadSettings() {
     "restorePending",
     "restoreStartedAt",
     "billingCheckoutPending",
-    "billingCheckoutStartedAt"
+    "billingCheckoutStartedAt",
+    "notifyGoals",
+    "notifyTableChanges"
   ]);
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
@@ -805,9 +823,17 @@ async function loadSettings() {
     checkoutStartedAt: result.billingCheckoutStartedAt ?? null,
     recentlyUnlocked: false
   };
+  currentNotifications = {
+    notifyGoals: result.notifyGoals ?? true,
+    notifyTableChanges: result.notifyTableChanges ?? true
+  };
+  notifyGoalsToggle.checked = currentNotifications.notifyGoals;
+  notifyTableChangesToggle.checked = currentNotifications.notifyTableChanges;
 
   await chrome.storage.sync.set({
-    billingUserId: currentBilling.userId
+    billingUserId: currentBilling.userId,
+    notifyGoals: currentNotifications.notifyGoals,
+    notifyTableChanges: currentNotifications.notifyTableChanges
   });
 
   await chrome.storage.sync.remove("backendUrl");
@@ -875,6 +901,8 @@ async function handleStartTracking() {
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId,
+    notifyGoals: currentNotifications.notifyGoals,
+    notifyTableChanges: currentNotifications.notifyTableChanges,
     trackingEnabled: true
   });
 
@@ -1155,6 +1183,22 @@ accountRestoreButton.addEventListener("click", handleRestoreAccess);
 accountToggleButton.addEventListener("click", () => {
   accountCardExpanded = !accountCardExpanded;
   renderAccountCard();
+});
+
+notifyGoalsToggle.addEventListener("change", async () => {
+  currentNotifications.notifyGoals = notifyGoalsToggle.checked;
+  await chrome.storage.sync.set({
+    notifyGoals: currentNotifications.notifyGoals
+  });
+  setStatus(translate("popup.statusNotificationsUpdated"));
+});
+
+notifyTableChangesToggle.addEventListener("change", async () => {
+  currentNotifications.notifyTableChanges = notifyTableChangesToggle.checked;
+  await chrome.storage.sync.set({
+    notifyTableChanges: currentNotifications.notifyTableChanges
+  });
+  setStatus(translate("popup.statusNotificationsUpdated"));
 });
 
 window.addEventListener("focus", () => {

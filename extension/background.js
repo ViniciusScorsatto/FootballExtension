@@ -34,8 +34,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "LMI_GOAL_NOTIFICATION") {
-    chrome.notifications.create(`goal-${Date.now()}`, {
+  if (message?.type === "LMI_SHOW_NOTIFICATION" || message?.type === "LMI_GOAL_NOTIFICATION") {
+    const notificationId =
+      message.notificationId ||
+      `${message?.type === "LMI_GOAL_NOTIFICATION" ? "goal" : "lmi"}-${Date.now()}`;
+
+    chrome.notifications.create(notificationId, {
       type: "basic",
       iconUrl: chrome.runtime.getURL("assets/footanalysislogo.png"),
       title: message.title || "Goal Impact",

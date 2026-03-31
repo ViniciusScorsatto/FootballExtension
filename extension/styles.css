@@ -150,6 +150,49 @@
     rgba(4, 9, 18, 0.58);
 }
 
+.lmi-settings-card {
+  margin: 14px 0 10px;
+  padding: 14px;
+  border: 1px solid var(--lmi-border);
+  border-radius: 18px;
+  background: rgba(4, 9, 18, 0.42);
+}
+
+.lmi-toggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.lmi-toggle__copy {
+  min-width: 0;
+}
+
+.lmi-toggle__title {
+  display: block;
+  color: var(--lmi-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lmi-toggle__hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--lmi-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.lmi-toggle__input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--lmi-accent);
+  flex-shrink: 0;
+}
+
 .lmi-billing-card__restore {
   margin-top: 12px;
   padding-top: 12px;

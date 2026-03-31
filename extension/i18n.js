@@ -12,6 +12,11 @@
         title: "Track what a goal changes",
         description:
           "Pick a supported league and the overlay will explain the live match impact in seconds.",
+        notifications: "Notifications",
+        notifyGoalsLabel: "Goal happened",
+        notifyGoalsHint: "Get notified when the tracked match has a goal.",
+        notifyTableChangesLabel: "Goal changed table position",
+        notifyTableChangesHint: "Send a richer alert when a goal moves a team in the table.",
         billingEyebrow: "Beta Access",
         proActiveEyebrow: "Pro",
         currentPlan: "Current plan: {plan}",
@@ -101,7 +106,14 @@
         statusTrackingStopped: "Tracking stopped.",
         statusSidePanelOpened: "Side panel opened.",
         statusSidePanelFailed: "Could not open the side panel in this browser window.",
-        statusSettingsFailed: "Could not load saved settings."
+        statusSettingsFailed: "Could not load saved settings.",
+        statusNotificationsUpdated: "Notification settings saved."
+      },
+      notifications: {
+        goalTitle: "Goal: {scoreline}",
+        tableImpactTitle: "Goal impact: {scoreline}",
+        goalHappened: "A goal changed the match.",
+        goalChangedTable: "A goal changed the live table."
       },
       sidepanel: {
         documentTitle: "Live Match Impact Side Panel",
@@ -237,6 +249,11 @@
         title: "Acompanhe o que um gol muda",
         description:
           "Escolha uma liga suportada e a sobreposição explica o impacto ao vivo em segundos.",
+        notifications: "Notificações",
+        notifyGoalsLabel: "Gol aconteceu",
+        notifyGoalsHint: "Receba um aviso quando o jogo acompanhado tiver um gol.",
+        notifyTableChangesLabel: "Gol mudou a posição na tabela",
+        notifyTableChangesHint: "Envia um alerta mais rico quando um gol mexe na tabela.",
         billingEyebrow: "Acesso beta",
         proActiveEyebrow: "Pro",
         currentPlan: "Plano atual: {plan}",
@@ -329,7 +346,14 @@
         statusTrackingStopped: "Acompanhamento parado.",
         statusSidePanelOpened: "Painel lateral aberto.",
         statusSidePanelFailed: "Não foi possível abrir o painel lateral nesta janela.",
-        statusSettingsFailed: "Não foi possível carregar as configurações salvas."
+        statusSettingsFailed: "Não foi possível carregar as configurações salvas.",
+        statusNotificationsUpdated: "Configurações de notificação salvas."
+      },
+      notifications: {
+        goalTitle: "Gol: {scoreline}",
+        tableImpactTitle: "Impacto do gol: {scoreline}",
+        goalHappened: "Um gol mudou o jogo.",
+        goalChangedTable: "Um gol mudou a tabela ao vivo."
       },
       sidepanel: {
         documentTitle: "Painel lateral do Live Match Impact",
