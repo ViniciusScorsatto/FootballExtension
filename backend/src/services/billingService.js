@@ -592,13 +592,32 @@ export class BillingService {
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
 
     if (!normalizedEmail || !this.stripeService?.findRecoverableSubscriptionByEmail) {
-      return null;
+      return {
+        entitlement: null,
+        debug: {
+          attempted: false,
+          reason: "stripe_lookup_unavailable",
+          email: normalizedEmail
+        }
+      };
     }
 
     const subscription = await this.stripeService.findRecoverableSubscriptionByEmail(normalizedEmail);
 
     if (!subscription?.subscriptionId) {
-      return null;
+      return {
+        entitlement: null,
+        debug: {
+          attempted: true,
+          recovered: false,
+          email: normalizedEmail,
+          stripe: subscription ?? {
+            found: false,
+            lookupSource: "none",
+            email: normalizedEmail
+          }
+        }
+      };
     }
 
     const offerId =
@@ -607,7 +626,7 @@ export class BillingService {
         ? BILLING_OFFERS.early_bird_lifetime.id
         : null);
 
-    return this.activateEntitlement({
+    const entitlement = await this.activateEntitlement({
       userId,
       email: normalizedEmail,
       customerId: subscription.customerId || "",
@@ -616,5 +635,15 @@ export class BillingService {
       offerId,
       status: subscription.status || "active"
     });
+
+    return {
+      entitlement,
+      debug: {
+        attempted: true,
+        recovered: true,
+        email: normalizedEmail,
+        stripe: subscription
+      }
+    };
   }
 }

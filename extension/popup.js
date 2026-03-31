@@ -62,6 +62,7 @@ let currentBilling = {
   checkoutStartedAt: null,
   recentlyUnlocked: false
 };
+let lastBillingDebug = null;
 
 const popupTextElements = {
   eyebrow: document.getElementById("popupEyebrow"),
@@ -79,6 +80,32 @@ const popupTextElements = {
 function setStatus(message, isError = false) {
   statusMessage.textContent = message;
   statusMessage.dataset.error = String(isError);
+}
+
+function summarizeBillingDebug(debug) {
+  if (!debug) {
+    return "";
+  }
+
+  const parts = [];
+
+  if (debug.accountId) {
+    parts.push(`account=${debug.accountId}`);
+  }
+
+  if (debug.initialPlan || debug.finalPlan) {
+    parts.push(`plan=${debug.initialPlan || "?"}->${debug.finalPlan || "?"}`);
+  }
+
+  if (debug.recovery?.stripe?.lookupSource) {
+    parts.push(`stripe=${debug.recovery.stripe.lookupSource}`);
+  }
+
+  if (typeof debug.recovery?.recovered === "boolean") {
+    parts.push(`recovered=${String(debug.recovery.recovered)}`);
+  }
+
+  return parts.join(" | ");
 }
 
 function translate(key, values = {}) {
@@ -619,6 +646,8 @@ async function refreshBillingStatusWithRecovery() {
   }
 
   const payload = await response.json();
+  lastBillingDebug = payload.debug ?? null;
+  console.info("LMI billing refresh debug", lastBillingDebug);
 
   currentBilling = {
     ...currentBilling,
@@ -1100,7 +1129,17 @@ billingRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
     await refreshBillingStatusWithRecovery();
-    setStatus(translate("popup.statusPlanUpdated"));
+    if (isProPlan()) {
+      setStatus(translate("popup.statusPlanUpdated"));
+    } else {
+      const debugSummary = summarizeBillingDebug(lastBillingDebug);
+      setStatus(
+        debugSummary
+          ? `${translate("popup.statusPlanUpdated")} Debug: ${debugSummary}`
+          : `${translate("popup.statusPlanUpdated")} Debug logged to console.`,
+        true
+      );
+    }
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
   } catch {
     setStatus(translate("popup.statusPlanLoadFailed"), true);

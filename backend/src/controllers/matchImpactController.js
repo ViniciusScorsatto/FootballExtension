@@ -239,21 +239,37 @@ export function createMatchImpactController({
       try {
         const payload = validateRestoreSyncPayload(req.body, req.monetization.userId);
         const account = await accountService.findOrCreateAccountByEmail(payload.email);
+        const debug = {
+          requestedUserId: payload.userId,
+          email: payload.email,
+          accountCreatedOrFound: Boolean(account?.accountId),
+          accountId: account?.accountId ?? "",
+          linkedBrowserToAccount: false,
+          initialPlan: "",
+          initialStatus: "",
+          recovery: null,
+          finalPlan: "",
+          finalStatus: ""
+        };
 
         if (account?.accountId) {
           await accountService.linkUserToAccount(payload.userId, account.accountId);
+          debug.linkedBrowserToAccount = true;
         }
 
         let billingStatus = await billingService.getBillingStatus({
           userId: payload.userId,
           planHint: req.monetization.plan
         });
+        debug.initialPlan = billingStatus.plan;
+        debug.initialStatus = billingStatus.status;
 
         if (billingStatus.plan !== "pro") {
-          await billingService.recoverEntitlementByEmail({
+          const recoveryResult = await billingService.recoverEntitlementByEmail({
             userId: payload.userId,
             email: payload.email
           });
+          debug.recovery = recoveryResult?.debug ?? null;
 
           billingStatus = await billingService.getBillingStatus({
             userId: payload.userId,
@@ -261,9 +277,13 @@ export function createMatchImpactController({
           });
         }
 
+        debug.finalPlan = billingStatus.plan;
+        debug.finalStatus = billingStatus.status;
+
         res.json({
           ok: true,
-          ...billingStatus
+          ...billingStatus,
+          debug
         });
       } catch (error) {
         next(error);

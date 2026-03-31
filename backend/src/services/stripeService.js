@@ -138,6 +138,8 @@ export class StripeService {
 
       if (recoverableSubscription) {
         return {
+          found: true,
+          lookupSource: "customer",
           email: normalizedEmail,
           customerId: customer.id,
           subscriptionId: recoverableSubscription.id,
@@ -168,6 +170,8 @@ export class StripeService {
       }
 
       return {
+        found: true,
+        lookupSource: "checkout_session",
         email: normalizedEmail,
         customerId: subscription.customer ? String(subscription.customer) : "",
         subscriptionId: subscription.id,
@@ -177,6 +181,10 @@ export class StripeService {
       };
     }
 
-    return null;
+    return {
+      found: false,
+      lookupSource: "none",
+      email: normalizedEmail
+    };
   }
 }

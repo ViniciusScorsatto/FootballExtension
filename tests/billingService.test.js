@@ -237,11 +237,12 @@ test("billing recovery can rebuild an entitlement from Stripe by email", async (
     }
   });
 
-  const recoveredEntitlement = await billingService.recoverEntitlementByEmail({
+  const recoveryResult = await billingService.recoverEntitlementByEmail({
     userId: "restored-browser",
     email: "tester@example.com"
   });
 
+  const recoveredEntitlement = recoveryResult.entitlement;
   assert.equal(recoveredEntitlement.plan, "pro");
   assert.equal(recoveredEntitlement.status, "active");
   assert.equal(recoveredEntitlement.offerId, "early_bird_lifetime");
