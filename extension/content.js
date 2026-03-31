@@ -7,14 +7,16 @@
 
   const STORAGE_KEYS = [
     "fixtureId",
-    "backendUrl",
     "trackingEnabled",
     "language",
     "billingUserId",
     "billingPlan",
     "billingStatus"
   ];
-  const DEFAULT_BACKEND_URL = "http://localhost:3000";
+  const DEFAULT_BACKEND_URL =
+    (globalThis.LMI_CONFIG?.backendUrl || "https://footballextension-staging.up.railway.app")
+      .trim()
+      .replace(/\/$/, "");
   const DEFAULT_LANGUAGE = globalThis.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
   const MAX_POLL_INTERVAL_MS = 120000;
@@ -89,7 +91,6 @@
 
       if (
         changes.fixtureId ||
-        changes.backendUrl ||
         changes.trackingEnabled ||
         changes.billingUserId ||
         changes.billingPlan ||
@@ -258,7 +259,7 @@
   async function syncSettings(fetchImmediately) {
     const settings = await chrome.storage.sync.get(STORAGE_KEYS);
     state.fixtureId = settings.fixtureId ?? null;
-    state.backendUrl = (settings.backendUrl || DEFAULT_BACKEND_URL).replace(/\/$/, "");
+    state.backendUrl = DEFAULT_BACKEND_URL;
     state.language = normalizeLanguage(settings.language ?? DEFAULT_LANGUAGE);
     state.billingUserId = settings.billingUserId ?? "anonymous";
     state.billingPlan =

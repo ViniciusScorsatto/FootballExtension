@@ -1,10 +1,12 @@
-const DEFAULT_BACKEND_URL = "http://localhost:3000";
+const DEFAULT_BACKEND_URL =
+  (window.LMI_CONFIG?.backendUrl || "https://footballextension-staging.up.railway.app")
+    .trim()
+    .replace(/\/$/, "");
 const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
 const RESTORE_AUTO_REFRESH_WINDOW_MS = 45000;
 const { normalizeLanguage, t } = window.LMI_I18N;
 
 const fixtureIdInput = document.getElementById("fixtureId");
-const backendUrlInput = document.getElementById("backendUrl");
 const languageSelect = document.getElementById("language");
 const billingActionButton = document.getElementById("billingAction");
 const billingRefreshButton = document.getElementById("billingRefresh");
@@ -70,7 +72,6 @@ const popupTextElements = {
   title: document.getElementById("popupTitle"),
   description: document.getElementById("popupDescription"),
   languageLabel: document.getElementById("languageLabel"),
-  backendUrlLabel: document.getElementById("backendUrlLabel"),
   leagueFocusLabel: document.getElementById("leagueFocusLabel"),
   liveMatchesLabel: document.getElementById("liveMatchesLabel"),
   upcomingMatchesLabel: document.getElementById("upcomingMatchesLabel"),
@@ -127,7 +128,6 @@ function applyStaticTranslations() {
   popupTextElements.title.textContent = translate("popup.title");
   popupTextElements.description.textContent = translate("popup.description");
   popupTextElements.languageLabel.textContent = translate("language.label");
-  popupTextElements.backendUrlLabel.textContent = translate("popup.backendUrl");
   popupTextElements.leagueFocusLabel.textContent = translate("popup.leagueFocus");
   popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
   popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
@@ -192,12 +192,12 @@ async function ensureContentScriptInjected() {
 
   await chrome.scripting.executeScript({
     target: { tabId: activeTab.id },
-    files: ["i18n.js", "content.js"]
+    files: ["config.js", "i18n.js", "content.js"]
   });
 }
 
 function normalizeBackendUrl() {
-  return (backendUrlInput.value || DEFAULT_BACKEND_URL).trim().replace(/\/$/, "");
+  return DEFAULT_BACKEND_URL;
 }
 
 function validateBackendUrl(backendUrl) {
@@ -772,7 +772,6 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
 async function loadSettings() {
   const result = await chrome.storage.sync.get([
     "fixtureId",
-    "backendUrl",
     "trackingEnabled",
     "leagueFilterId",
     "language",
@@ -791,7 +790,6 @@ async function loadSettings() {
   const storedLanguage = result.language ?? DEFAULT_LANGUAGE;
 
   setLanguage(storedLanguage);
-  backendUrlInput.value = result.backendUrl ?? DEFAULT_BACKEND_URL;
   fixtureIdInput.value = storedFixtureId ?? "";
   currentBilling = {
     ...currentBilling,
@@ -810,6 +808,8 @@ async function loadSettings() {
   await chrome.storage.sync.set({
     billingUserId: currentBilling.userId
   });
+
+  await chrome.storage.sync.remove("backendUrl");
 
   renderBillingCard();
   updatePlanHint();
@@ -869,7 +869,6 @@ async function handleStartTracking() {
 
   await chrome.storage.sync.set({
     fixtureId,
-    backendUrl,
     language: currentLanguage,
     billingUserId: currentBilling.userId,
     billingPlan: currentBilling.plan,
@@ -1114,16 +1113,6 @@ languageSelect.addEventListener("change", async () => {
   await chrome.storage.sync.set({
     language: currentLanguage
   });
-  await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
-});
-
-backendUrlInput.addEventListener("change", async () => {
-  try {
-    await fetchBillingStatus();
-  } catch {
-    setStatus(translate("popup.statusPlanLoadFailed"), true);
-  }
-
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 
