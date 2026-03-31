@@ -23,12 +23,18 @@
         earlyBirdOffer:
           "Early Bird Pro is live: {price}/month forever for the first {remaining} users.",
         earlyBirdClosed: "Early Bird Pro is now closed.",
+        checkoutPending: "Finish checkout and reopen the extension to unlock Pro automatically.",
+        proUnlockedTitle: "Pro unlocked",
+        proUnlockedBody:
+          "Your payment was confirmed. All supported leagues and manual fixture tracking are now active.",
         upgradeToPro: "Unlock Pro",
         managePlan: "Refresh Plan",
         upgradeInProgress: "Opening Stripe Checkout...",
         statusPlanUpdated: "Plan status refreshed.",
         statusPlanLoadFailed: "Could not load billing status.",
         statusUpgradeFailed: "Could not start Stripe checkout.",
+        statusCheckoutPending: "Checkout opened. We will refresh your plan when you return.",
+        statusProUnlocked: "Pro unlocked successfully.",
         statusProActive: "Pro is active on this browser.",
         backendUrl: "Backend URL",
         refreshMatches: "Refresh Match List",
@@ -189,12 +195,19 @@
         earlyBirdOffer:
           "Early Bird Pro ativo: {price}/mês para sempre para os próximos {remaining} usuários.",
         earlyBirdClosed: "O Early Bird Pro já encerrou.",
+        checkoutPending: "Conclua o checkout e reabra a extensão para desbloquear o Pro automaticamente.",
+        proUnlockedTitle: "Pro desbloqueado",
+        proUnlockedBody:
+          "O pagamento foi confirmado. Todas as ligas suportadas e o acompanhamento manual por fixture já estão ativos.",
         upgradeToPro: "Desbloquear Pro",
         managePlan: "Atualizar plano",
         upgradeInProgress: "Abrindo o Stripe Checkout...",
         statusPlanUpdated: "Status do plano atualizado.",
         statusPlanLoadFailed: "Não foi possível carregar o status de cobrança.",
         statusUpgradeFailed: "Não foi possível iniciar o checkout no Stripe.",
+        statusCheckoutPending:
+          "Checkout aberto. Vamos atualizar o plano quando você voltar.",
+        statusProUnlocked: "Pro desbloqueado com sucesso.",
         statusProActive: "O Pro está ativo neste navegador.",
         backendUrl: "URL do backend",
         refreshMatches: "Atualizar lista de jogos",

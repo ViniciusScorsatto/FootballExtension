@@ -151,6 +151,13 @@
   color: var(--lmi-accent);
 }
 
+.lmi-billing-card__state-note {
+  min-height: 18px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #9fdcff;
+}
+
 .lmi-billing-card__actions {
   margin-top: 12px;
 }

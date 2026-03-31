@@ -12,6 +12,7 @@ const billingPlanBadge = document.getElementById("billingPlanBadge");
 const billingEyebrow = document.getElementById("billingEyebrow");
 const billingSummary = document.getElementById("billingSummary");
 const billingOffer = document.getElementById("billingOffer");
+const billingStateNote = document.getElementById("billingStateNote");
 const planHint = document.getElementById("planHint");
 const leagueFilterSelect = document.getElementById("leagueFilter");
 const liveMatchesSelect = document.getElementById("liveMatches");
@@ -36,7 +37,10 @@ let currentBilling = {
   offerId: null,
   earlyBirdEligible: false,
   earlyBirdRemaining: 0,
-  earlyBirdActive: false
+  earlyBirdActive: false,
+  checkoutPending: false,
+  checkoutStartedAt: null,
+  recentlyUnlocked: false
 };
 
 const popupTextElements = {
@@ -206,7 +210,19 @@ function renderBillingCard() {
     ? translate("popup.billingSummaryPro")
     : translate("popup.billingSummaryFree");
 
-  if (!isProPlan() && currentBilling.earlyBirdActive && currentBilling.earlyBirdRemaining > 0) {
+  if (currentBilling.recentlyUnlocked) {
+    billingEyebrow.textContent = translate("popup.proUnlockedTitle");
+  } else {
+    billingEyebrow.textContent = translate("popup.billingEyebrow");
+  }
+
+  if (!isProPlan() && currentBilling.checkoutPending) {
+    billingOffer.textContent = translate("popup.checkoutPending");
+  } else if (
+    !isProPlan() &&
+    currentBilling.earlyBirdActive &&
+    currentBilling.earlyBirdRemaining > 0
+  ) {
     billingOffer.textContent = translate("popup.earlyBirdOffer", {
       price: formatPrice(3.99),
       remaining: currentBilling.earlyBirdRemaining
@@ -221,6 +237,10 @@ function renderBillingCard() {
   } else {
     billingOffer.textContent = "";
   }
+
+  billingStateNote.textContent = currentBilling.recentlyUnlocked
+    ? translate("popup.proUnlockedBody")
+    : "";
 
   billingActionButton.textContent = isProPlan()
     ? translate("popup.managePlan")
@@ -455,6 +475,8 @@ async function fetchBillingStatus() {
     return;
   }
 
+  const previousWasPro = isProPlan();
+
   const payload = await fetchJson(
     `${backendUrl}/billing/status?user_id=${encodeURIComponent(currentBilling.userId)}`
   );
@@ -470,15 +492,31 @@ async function fetchBillingStatus() {
     earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
   };
 
+  const nowPro = isProPlan();
+  const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
+
+  currentBilling.recentlyUnlocked = justUnlocked;
+  if (justUnlocked || nowPro) {
+    currentBilling.checkoutPending = false;
+    currentBilling.checkoutStartedAt = null;
+  }
+
   await chrome.storage.sync.set({
     billingUserId: currentBilling.userId,
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
-    billingOfferId: currentBilling.offerId
+    billingOfferId: currentBilling.offerId,
+    billingCheckoutPending: currentBilling.checkoutPending,
+    billingCheckoutStartedAt: currentBilling.checkoutStartedAt,
+    billingRecentlyUnlocked: currentBilling.recentlyUnlocked
   });
 
   renderBillingCard();
   updatePlanHint();
+
+  if (justUnlocked) {
+    setStatus(translate("popup.statusProUnlocked"));
+  }
 }
 
 async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = null) {
@@ -551,7 +589,10 @@ async function loadSettings() {
     "billingUserId",
     "billingPlan",
     "billingStatus",
-    "billingOfferId"
+    "billingOfferId",
+    "billingCheckoutPending",
+    "billingCheckoutStartedAt",
+    "billingRecentlyUnlocked"
   ]);
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
@@ -565,7 +606,10 @@ async function loadSettings() {
     userId: result.billingUserId || createBillingUserId(),
     plan: result.billingPlan || "free",
     status: result.billingStatus || "inactive",
-    offerId: result.billingOfferId || null
+    offerId: result.billingOfferId || null,
+    checkoutPending: Boolean(result.billingCheckoutPending),
+    checkoutStartedAt: result.billingCheckoutStartedAt ?? null,
+    recentlyUnlocked: Boolean(result.billingRecentlyUnlocked)
   };
 
   await chrome.storage.sync.set({
@@ -641,7 +685,7 @@ async function handleStartTracking() {
   notifyActiveTab({
     type: "LMI_TRACKING_UPDATED"
   });
-  setStatus(translate("popup.statusTrackingStarted"));
+    setStatus(translate("popup.statusTrackingStarted"));
 }
 
 async function handleStopTracking() {
@@ -661,6 +705,7 @@ async function handleStopTracking() {
 async function handleBillingAction() {
   if (isProPlan()) {
     try {
+      currentBilling.recentlyUnlocked = false;
       await fetchBillingStatus();
       setStatus(translate("popup.statusPlanUpdated"));
     } catch {
@@ -694,9 +739,19 @@ async function handleBillingAction() {
     }
 
     const payload = await response.json();
+    currentBilling.checkoutPending = true;
+    currentBilling.checkoutStartedAt = Date.now();
+    currentBilling.recentlyUnlocked = false;
+    await chrome.storage.sync.set({
+      billingCheckoutPending: true,
+      billingCheckoutStartedAt: currentBilling.checkoutStartedAt,
+      billingRecentlyUnlocked: false
+    });
+    renderBillingCard();
     await chrome.tabs.create({
       url: payload.checkoutUrl
     });
+    setStatus(translate("popup.statusCheckoutPending"));
   } catch {
     setStatus(translate("popup.statusUpgradeFailed"), true);
   } finally {
@@ -758,6 +813,7 @@ stopButton.addEventListener("click", handleStopTracking);
 billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
   try {
+    currentBilling.recentlyUnlocked = false;
     await fetchBillingStatus();
     setStatus(translate("popup.statusPlanUpdated"));
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
