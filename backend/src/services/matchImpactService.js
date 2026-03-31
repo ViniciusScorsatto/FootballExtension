@@ -420,6 +420,35 @@ function getStatisticValue(teamStatistics, type) {
   return parseStatisticValue(stat?.value);
 }
 
+function buildStatisticsInsights(home, away, teams) {
+  const insights = [];
+  const shotsOnTargetDiff = (home.shotsOnTarget ?? 0) - (away.shotsOnTarget ?? 0);
+  const totalShotsDiff = (home.totalShots ?? 0) - (away.totalShots ?? 0);
+  const possessionDiff = (home.possession ?? 50) - (away.possession ?? 50);
+  const cornersDiff = (home.corners ?? 0) - (away.corners ?? 0);
+  const redCardsDiff = (home.redCards ?? 0) - (away.redCards ?? 0);
+
+  if (shotsOnTargetDiff >= 3 || totalShotsDiff >= 6) {
+    insights.push(`${teams.home.name} is creating the better chances`);
+  } else if (shotsOnTargetDiff <= -3 || totalShotsDiff <= -6) {
+    insights.push(`${teams.away.name} is creating the better chances`);
+  }
+
+  if (possessionDiff >= 12 && cornersDiff >= 3) {
+    insights.push(`${teams.home.name} is pinning the other side back`);
+  } else if (possessionDiff <= -12 && cornersDiff <= -3) {
+    insights.push(`${teams.away.name} is pinning the other side back`);
+  }
+
+  if (redCardsDiff < 0) {
+    insights.push(`${teams.home.name} has the extra player`);
+  } else if (redCardsDiff > 0) {
+    insights.push(`${teams.away.name} has the extra player`);
+  }
+
+  return [...new Set(insights)].slice(0, 2);
+}
+
 function buildStatisticsSummary(statistics, teams, fallbackMomentum) {
   const homeStats = statistics.find((entry) => entry.team?.id === teams.home.id);
   const awayStats = statistics.find((entry) => entry.team?.id === teams.away.id);
@@ -429,7 +458,8 @@ function buildStatisticsSummary(statistics, teams, fallbackMomentum) {
       available: false,
       home: null,
       away: null,
-      momentum: fallbackMomentum
+      momentum: fallbackMomentum,
+      insights: []
     };
   }
 
@@ -469,6 +499,7 @@ function buildStatisticsSummary(statistics, teams, fallbackMomentum) {
     available: true,
     home,
     away,
+    insights: buildStatisticsInsights(home, away, teams),
     momentum: {
       home: homeMomentum,
       away: 100 - homeMomentum
@@ -1081,7 +1112,9 @@ export class MatchImpactService {
     const simulatedTable = simulateTable(baselineStandings, fixture, {
       applyResult
     });
-    const impact = computeImpact(baselineStandings, simulatedTable, fixture);
+    const impact = computeImpact(baselineStandings, simulatedTable, fixture, {
+      zoneProfile: competitionFormat.registry?.zoneProfile ?? ""
+    });
     const statisticsSummary = buildStatisticsSummary(statistics, teams, impact.momentum);
     impact.momentum = statisticsSummary.momentum;
 

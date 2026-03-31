@@ -27,6 +27,10 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Arsenal entra no top 4"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Leeds moves into the automatic promotion spots"),
+    "Leeds entra nas vagas de acesso direto"
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );

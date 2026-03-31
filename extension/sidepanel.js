@@ -1009,7 +1009,17 @@
       }
     ];
 
-    elements.statsGrid.innerHTML = rows
+    const insightRows = (statistics.insights || [])
+      .map(
+        (insight) => `
+          <div class="lmi-stat-insight">${escapeHtml(
+            translateCompetitionMessage(state.language, insight)
+          )}</div>
+        `
+      )
+      .join("");
+
+    const statRows = rows
       .map(
         (row) => `
           <div class="lmi-stat-row">
@@ -1020,6 +1030,8 @@
         `
       )
       .join("");
+
+    elements.statsGrid.innerHTML = `${insightRows}${statRows}`;
   }
 
   function renderPrematch(payload) {

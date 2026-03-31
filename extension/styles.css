@@ -826,6 +826,14 @@ select.lmi-field__input {
   text-align: right;
 }
 
+.lmi-stat-insight {
+  margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(109, 245, 193, 0.4);
+  font-size: 13px;
+  color: var(--lmi-text);
+}
+
 .lmi-prematch-item {
   margin-top: 8px;
   color: var(--lmi-text);

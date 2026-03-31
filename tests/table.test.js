@@ -107,6 +107,76 @@ test("computeImpact highlights top-four swings", () => {
   assert.ok(impact.competition.includes("Chelsea drops out of the top 4"));
 });
 
+test("computeImpact uses Championship zone messaging when configured", () => {
+  const oldTable = [
+    { teamId: 1, name: "Leeds", rank: 3, liveRank: 3 },
+    { teamId: 2, name: "Burnley", rank: 2, liveRank: 2 },
+    { teamId: 3, name: "Sheffield United", rank: 22, liveRank: 22 },
+    { teamId: 4, name: "Plymouth", rank: 21, liveRank: 21 }
+  ];
+
+  const newTable = [
+    { teamId: 1, name: "Leeds", rank: 3, liveRank: 2 },
+    { teamId: 2, name: "Burnley", rank: 2, liveRank: 3 },
+    { teamId: 3, name: "Sheffield United", rank: 22, liveRank: 21 },
+    { teamId: 4, name: "Plymouth", rank: 21, liveRank: 22 }
+  ];
+
+  const impact = computeImpact(
+    oldTable,
+    newTable,
+    {
+      teams: {
+        home: { id: 1, name: "Leeds" },
+        away: { id: 4, name: "Plymouth" }
+      },
+      goals: {
+        home: 1,
+        away: 0
+      }
+    },
+    {
+      zoneProfile: "championship"
+    }
+  );
+
+  assert.ok(impact.competition.includes("Leeds moves into the automatic promotion spots"));
+  assert.ok(impact.competition.includes("Plymouth falls into the relegation zone"));
+});
+
+test("computeImpact uses UEFA league-phase zone messaging when configured", () => {
+  const oldTable = [
+    { teamId: 1, name: "Arsenal", rank: 9, liveRank: 9 },
+    { teamId: 2, name: "PSV", rank: 24, liveRank: 24 }
+  ];
+
+  const newTable = [
+    { teamId: 1, name: "Arsenal", rank: 9, liveRank: 8 },
+    { teamId: 2, name: "PSV", rank: 24, liveRank: 25 }
+  ];
+
+  const impact = computeImpact(
+    oldTable,
+    newTable,
+    {
+      teams: {
+        home: { id: 1, name: "Arsenal" },
+        away: { id: 2, name: "PSV" }
+      },
+      goals: {
+        home: 1,
+        away: 0
+      }
+    },
+    {
+      zoneProfile: "uefa_league_phase"
+    }
+  );
+
+  assert.ok(impact.competition.includes("Arsenal moves into the round of 16 spots"));
+  assert.ok(impact.competition.includes("PSV falls into the elimination zone"));
+});
+
 test("simulateTableSubset updates only the team present in the group table", () => {
   const standings = [
     {

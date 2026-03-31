@@ -28,7 +28,8 @@ function buildRegistryInfo(override, fixture) {
   return {
     leagueId: override.leagueId ?? fixture?.league?.id ?? null,
     leagueName: override.leagueName ?? fixture?.league?.name ?? "",
-    routing: override.routing ?? "dynamic"
+    routing: override.routing ?? "dynamic",
+    zoneProfile: override.zoneProfile ?? ""
   };
 }
 

@@ -824,3 +824,121 @@ test("second leg of a two-leg tie computes aggregate impact", async () => {
     "Vitoria needs one more goal to level the aggregate"
   ]);
 });
+
+test("live statistics add pressure insights and competition-specific zone messages", async () => {
+  const fixtureId = 9201;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775620800,
+          date: "2026-04-09T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 72
+          }
+        },
+        league: {
+          id: 40,
+          name: "Championship",
+          country: "England",
+          season: 2026,
+          standings: true,
+          round: "Regular Season - 41"
+        },
+        teams: {
+          home: { id: 31, name: "Leeds", logo: "" },
+          away: { id: 32, name: "Coventry", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: true,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 3,
+                    team: { id: 31, name: "Leeds" },
+                    points: 75,
+                    goalsDiff: 20,
+                    all: { played: 40, win: 22, draw: 9, lose: 9, goals: { for: 66, against: 46 } }
+                  },
+                  {
+                    rank: 2,
+                    team: { id: 99, name: "Burnley" },
+                    points: 75,
+                    goalsDiff: 21,
+                    all: { played: 40, win: 22, draw: 9, lose: 9, goals: { for: 67, against: 46 } }
+                  },
+                  {
+                    rank: 21,
+                    team: { id: 32, name: "Coventry" },
+                    points: 41,
+                    goalsDiff: -12,
+                    all: { played: 40, win: 10, draw: 11, lose: 19, goals: { for: 39, against: 51 } }
+                  },
+                  {
+                    rank: 22,
+                    team: { id: 98, name: "Plymouth" },
+                    points: 40,
+                    goalsDiff: -15,
+                    all: { played: 40, win: 10, draw: 10, lose: 20, goals: { for: 38, against: 53 } }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getStatistics: async () => [
+        {
+          team: { id: 31 },
+          statistics: [
+            { type: "Ball Possession", value: "66%" },
+            { type: "Shots on Goal", value: 6 },
+            { type: "Total Shots", value: 15 },
+            { type: "Corner Kicks", value: 7 },
+            { type: "Yellow Cards", value: 1 },
+            { type: "Red Cards", value: 0 }
+          ]
+        },
+        {
+          team: { id: 32 },
+          statistics: [
+            { type: "Ball Possession", value: "34%" },
+            { type: "Shots on Goal", value: 1 },
+            { type: "Total Shots", value: 5 },
+            { type: "Corner Kicks", value: 2 },
+            { type: "Yellow Cards", value: 2 },
+            { type: "Red Cards", value: 1 }
+          ]
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.ok(payload.impact.competition.includes("Leeds moves into the automatic promotion spots"));
+  assert.ok(payload.statistics.insights.includes("Leeds is creating the better chances"));
+  assert.ok(payload.statistics.insights.includes("Leeds is pinning the other side back"));
+});

@@ -33,15 +33,163 @@ function movementLabel(teamName, movement, newRank) {
   return `${teamName} stays ${formatOrdinal(newRank)}`;
 }
 
-function computeCompetitionMessages(teamName, oldRank, newRank, tableSize) {
+const ZONE_PROFILES = {
+  championship: [
+    {
+      id: "automatic_promotion",
+      priority: 1,
+      start: 1,
+      end: 2,
+      enterTemplate: "{team} moves into the automatic promotion spots"
+    },
+    {
+      id: "playoff",
+      priority: 2,
+      start: 3,
+      end: 6,
+      enterTemplate: "{team} moves into the playoff spots",
+      promoteTemplate: "{team} climbs into the playoff spots",
+      dropTemplate: "{team} drops into the playoff spots",
+      leaveTemplate: "{team} drops out of the playoff spots"
+    },
+    {
+      id: "relegation",
+      priority: 4,
+      start: 22,
+      end: 24,
+      enterTemplate: "{team} falls into the relegation zone",
+      leaveTemplate: "{team} climbs out of the relegation zone"
+    }
+  ],
+  uefa_league_phase: [
+    {
+      id: "round_of_16",
+      priority: 1,
+      start: 1,
+      end: 8,
+      enterTemplate: "{team} moves into the round of 16 spots"
+    },
+    {
+      id: "knockout_playoff",
+      priority: 2,
+      start: 9,
+      end: 24,
+      enterTemplate: "{team} moves into the knockout play-off spots",
+      promoteTemplate: "{team} climbs into the knockout play-off spots",
+      dropTemplate: "{team} drops into the knockout play-off spots",
+      leaveTemplate: "{team} drops out of the knockout play-off spots"
+    },
+    {
+      id: "elimination",
+      priority: 3,
+      start: 25,
+      end: 36,
+      enterTemplate: "{team} falls into the elimination zone"
+    }
+  ],
+  world_cup_group_stage: [
+    {
+      id: "qualification",
+      priority: 1,
+      start: 1,
+      end: 2,
+      enterTemplate: "{team} moves into the qualification spots",
+      leaveTemplate: "{team} drops out of the qualification spots"
+    }
+  ],
+  serie_c_first_stage: [
+    {
+      id: "promotion_groups",
+      priority: 1,
+      start: 1,
+      end: 8,
+      enterTemplate: "{team} moves into the promotion group spots",
+      leaveTemplate: "{team} drops out of the promotion group spots"
+    },
+    {
+      id: "relegation",
+      priority: 3,
+      start: 19,
+      end: 20,
+      enterTemplate: "{team} falls into the relegation zone",
+      leaveTemplate: "{team} climbs out of the relegation zone"
+    }
+  ]
+};
+
+function applyTemplate(template, teamName) {
+  return template.replace("{team}", teamName);
+}
+
+function getZoneForRank(zoneProfile, rank) {
+  if (!zoneProfile || !rank) {
+    return null;
+  }
+
+  return (
+    zoneProfile.find((zone) => rank >= zone.start && rank <= zone.end) ??
+    null
+  );
+}
+
+function buildZoneTransitionMessage(teamName, oldRank, newRank, zoneProfile) {
+  const previousZone = getZoneForRank(zoneProfile, oldRank);
+  const nextZone = getZoneForRank(zoneProfile, newRank);
+
+  if (previousZone?.id === nextZone?.id) {
+    return "";
+  }
+
+  if (!previousZone && nextZone?.enterTemplate) {
+    return applyTemplate(nextZone.enterTemplate, teamName);
+  }
+
+  if (previousZone && !nextZone && previousZone.leaveTemplate) {
+    return applyTemplate(previousZone.leaveTemplate, teamName);
+  }
+
+  if (!previousZone || !nextZone) {
+    return "";
+  }
+
+  if (nextZone.priority < previousZone.priority) {
+    return applyTemplate(
+      nextZone.promoteTemplate ?? nextZone.enterTemplate ?? "",
+      teamName
+    );
+  }
+
+  if (nextZone.priority > previousZone.priority) {
+    return applyTemplate(
+      nextZone.dropTemplate ?? nextZone.enterTemplate ?? previousZone.leaveTemplate ?? "",
+      teamName
+    );
+  }
+
+  return "";
+}
+
+function computeCompetitionMessages(teamName, oldRank, newRank, tableSize, options = {}) {
   const messages = [];
-  const titleCutoff = Math.min(2, tableSize);
-  const topFourCutoff = Math.min(4, tableSize);
-  const relegationCutoff = tableSize - (tableSize >= 10 ? 2 : 1);
+  const zoneProfile = ZONE_PROFILES[options.zoneProfile] ?? null;
 
   if (newRank === 1 && oldRank !== 1) {
     messages.push(`${teamName} goes top of the table`);
   }
+
+  if (zoneProfile?.length) {
+    const zoneMessage = buildZoneTransitionMessage(teamName, oldRank, newRank, zoneProfile);
+
+    if (zoneMessage) {
+      messages.push(zoneMessage);
+    }
+
+    return messages;
+  }
+
+  const titleCutoff = Math.min(2, tableSize);
+  const topFourCutoff = Math.min(4, tableSize);
+  const relegationCutoff = tableSize - (tableSize >= 10 ? 2 : 1);
 
   if (oldRank > titleCutoff && newRank <= titleCutoff) {
     messages.push(`${teamName} enters the title race`);
@@ -169,7 +317,7 @@ export function formatEventMinute(time = {}) {
   return `${elapsed}'`;
 }
 
-export function computeImpact(oldTable, newTable, fixture) {
+export function computeImpact(oldTable, newTable, fixture, options = {}) {
   const homeTeam = fixture?.teams?.home;
   const awayTeam = fixture?.teams?.away;
   const tableSize = newTable.length;
@@ -213,13 +361,15 @@ export function computeImpact(oldTable, newTable, fixture) {
       homeTeam?.name ?? "Home team",
       homeMovement.oldPosition,
       homeMovement.newPosition,
-      tableSize
+      tableSize,
+      options
     ),
     ...computeCompetitionMessages(
       awayTeam?.name ?? "Away team",
       awayMovement.oldPosition,
       awayMovement.newPosition,
-      tableSize
+      tableSize,
+      options
     )
   ];
 
