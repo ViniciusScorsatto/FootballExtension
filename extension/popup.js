@@ -90,7 +90,7 @@ function applyStaticTranslations() {
   refreshMatchesButton.textContent = translate("popup.refreshMatches");
   startButton.textContent = translate("popup.startTracking");
   stopButton.textContent = translate("popup.stopTracking");
-  billingRefreshButton.textContent = translate("popup.managePlan");
+  billingRefreshButton.textContent = translate("popup.refreshPlan");
 
   languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
   languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
@@ -197,29 +197,34 @@ function isLeagueAvailableForCurrentPlan(leagueId) {
 }
 
 function renderBillingCard() {
-  const currentPlanName = isProPlan()
+  const proActive = isProPlan();
+  const currentPlanName = proActive
     ? translate("popup.proPlan")
     : translate("popup.freePlan");
 
-  billingPlanLabel.textContent = translate("popup.currentPlan", {
-    plan: currentPlanName
-  });
+  billingPlanLabel.textContent = proActive
+    ? translate("popup.proActiveTitle")
+    : translate("popup.currentPlan", {
+        plan: currentPlanName
+      });
   billingPlanBadge.textContent = currentPlanName;
-  billingPlanBadge.dataset.plan = isProPlan() ? "pro" : "free";
-  billingSummary.textContent = isProPlan()
-    ? translate("popup.billingSummaryPro")
+  billingPlanBadge.dataset.plan = proActive ? "pro" : "free";
+  billingSummary.textContent = proActive
+    ? translate("popup.proActiveSummary")
     : translate("popup.billingSummaryFree");
 
   if (currentBilling.recentlyUnlocked) {
     billingEyebrow.textContent = translate("popup.proUnlockedTitle");
+  } else if (proActive) {
+    billingEyebrow.textContent = translate("popup.proActiveEyebrow");
   } else {
     billingEyebrow.textContent = translate("popup.billingEyebrow");
   }
 
-  if (!isProPlan() && currentBilling.checkoutPending) {
+  if (!proActive && currentBilling.checkoutPending) {
     billingOffer.textContent = translate("popup.checkoutPending");
   } else if (
-    !isProPlan() &&
+    !proActive &&
     currentBilling.earlyBirdActive &&
     currentBilling.earlyBirdRemaining > 0
   ) {
@@ -227,13 +232,8 @@ function renderBillingCard() {
       price: formatPrice(3.99),
       remaining: currentBilling.earlyBirdRemaining
     });
-  } else if (!isProPlan()) {
+  } else if (!proActive) {
     billingOffer.textContent = translate("popup.earlyBirdClosed");
-  } else if (currentBilling.offerId === "early_bird_lifetime") {
-    billingOffer.textContent = translate("popup.earlyBirdOffer", {
-      price: formatPrice(3.99),
-      remaining: currentBilling.earlyBirdRemaining
-    });
   } else {
     billingOffer.textContent = "";
   }
@@ -242,9 +242,8 @@ function renderBillingCard() {
     ? translate("popup.proUnlockedBody")
     : "";
 
-  billingActionButton.textContent = isProPlan()
-    ? translate("popup.managePlan")
-    : translate("popup.upgradeToPro");
+  billingActionButton.hidden = proActive;
+  billingActionButton.textContent = translate("popup.upgradeToPro");
 }
 
 function updatePlanHint() {
@@ -507,8 +506,7 @@ async function fetchBillingStatus() {
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId,
     billingCheckoutPending: currentBilling.checkoutPending,
-    billingCheckoutStartedAt: currentBilling.checkoutStartedAt,
-    billingRecentlyUnlocked: currentBilling.recentlyUnlocked
+    billingCheckoutStartedAt: currentBilling.checkoutStartedAt
   });
 
   renderBillingCard();
@@ -591,8 +589,7 @@ async function loadSettings() {
     "billingStatus",
     "billingOfferId",
     "billingCheckoutPending",
-    "billingCheckoutStartedAt",
-    "billingRecentlyUnlocked"
+    "billingCheckoutStartedAt"
   ]);
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
@@ -609,7 +606,7 @@ async function loadSettings() {
     offerId: result.billingOfferId || null,
     checkoutPending: Boolean(result.billingCheckoutPending),
     checkoutStartedAt: result.billingCheckoutStartedAt ?? null,
-    recentlyUnlocked: Boolean(result.billingRecentlyUnlocked)
+    recentlyUnlocked: false
   };
 
   await chrome.storage.sync.set({

@@ -13,6 +13,7 @@
         description:
           "Pick a supported league and the overlay will explain the live match impact in seconds.",
         billingEyebrow: "Beta Access",
+        proActiveEyebrow: "Pro",
         currentPlan: "Current plan: {plan}",
         freePlan: "Free",
         proPlan: "Pro",
@@ -20,6 +21,9 @@
           "Featured leagues only. Unlock Pro for all supported leagues and premium insights.",
         billingSummaryPro:
           "Pro is active. You can use every supported league and the manual fixture fallback.",
+        proActiveTitle: "All supported leagues unlocked",
+        proActiveSummary:
+          "This browser is on Pro. You can track any supported league and use manual fixture tracking.",
         earlyBirdOffer:
           "Early Bird Pro is live: {price}/month forever for the first {remaining} users.",
         earlyBirdClosed: "Early Bird Pro is now closed.",
@@ -29,6 +33,7 @@
           "Your payment was confirmed. All supported leagues and manual fixture tracking are now active.",
         upgradeToPro: "Unlock Pro",
         managePlan: "Refresh Plan",
+        refreshPlan: "Refresh status",
         upgradeInProgress: "Opening Stripe Checkout...",
         statusPlanUpdated: "Plan status refreshed.",
         statusPlanLoadFailed: "Could not load billing status.",
@@ -185,6 +190,7 @@
         description:
           "Escolha uma liga suportada e a sobreposição explica o impacto ao vivo em segundos.",
         billingEyebrow: "Acesso beta",
+        proActiveEyebrow: "Pro",
         currentPlan: "Plano atual: {plan}",
         freePlan: "Free",
         proPlan: "Pro",
@@ -192,6 +198,9 @@
           "Somente ligas em destaque. Desbloqueie o Pro para todas as ligas suportadas e insights premium.",
         billingSummaryPro:
           "O Pro está ativo. Você pode usar todas as ligas suportadas e o fallback por fixture manual.",
+        proActiveTitle: "Todas as ligas suportadas desbloqueadas",
+        proActiveSummary:
+          "Este navegador está no Pro. Você pode acompanhar qualquer liga suportada e usar o acompanhamento manual por fixture.",
         earlyBirdOffer:
           "Early Bird Pro ativo: {price}/mês para sempre para os próximos {remaining} usuários.",
         earlyBirdClosed: "O Early Bird Pro já encerrou.",
@@ -201,6 +210,7 @@
           "O pagamento foi confirmado. Todas as ligas suportadas e o acompanhamento manual por fixture já estão ativos.",
         upgradeToPro: "Desbloquear Pro",
         managePlan: "Atualizar plano",
+        refreshPlan: "Atualizar status",
         upgradeInProgress: "Abrindo o Stripe Checkout...",
         statusPlanUpdated: "Status do plano atualizado.",
         statusPlanLoadFailed: "Não foi possível carregar o status de cobrança.",
