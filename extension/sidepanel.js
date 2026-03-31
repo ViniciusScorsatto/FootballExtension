@@ -553,11 +553,21 @@
       ? `${translate("popup.featuredLeaguePrefix")} · `
       : "";
 
-    return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
+    return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match)} · ${match.league.name}`;
   }
 
-  function formatKickoff(dateString) {
-    return new Date(dateString).toLocaleString(state.language === "pt-BR" ? "pt-BR" : "en-US", {
+  function formatKickoff(match) {
+    const locale = state.language === "pt-BR" ? "pt-BR" : "en-US";
+    const kickoffDate =
+      Number.isFinite(Number(match?.timestamp))
+        ? new Date(Number(match.timestamp) * 1000)
+        : new Date(match?.startsAt);
+
+    if (!Number.isFinite(kickoffDate.getTime())) {
+      return "KO";
+    }
+
+    return kickoffDate.toLocaleString(locale, {
       weekday: "short",
       hour: "numeric",
       minute: "2-digit"
@@ -1269,10 +1279,37 @@
       return "KO";
     }
 
-    return new Date(startsAt).toLocaleTimeString(state.language === "pt-BR" ? "pt-BR" : "en-US", {
+    const locale = state.language === "pt-BR" ? "pt-BR" : "en-US";
+    const kickoff = new Date(startsAt);
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    const timeLabel = kickoff.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit"
     });
+
+    if (kickoff.toDateString() === now.toDateString()) {
+      return timeLabel;
+    }
+
+    const weekdayLabel = kickoff
+      .toLocaleDateString(locale, {
+        weekday: "short"
+      })
+      .replace(/\.$/, "");
+
+    if (kickoff.toDateString() === tomorrow.toDateString()) {
+      return `${weekdayLabel} · ${timeLabel}`;
+    }
+
+    const dayMonthLabel = kickoff.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "2-digit"
+    });
+
+    return `${weekdayLabel} ${dayMonthLabel} · ${timeLabel}`;
   }
 
   function formatGroupPositionLine(teamName, currentPosition, projectedPosition) {

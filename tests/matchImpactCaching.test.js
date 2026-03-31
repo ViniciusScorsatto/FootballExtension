@@ -40,8 +40,8 @@ function createService(overrides = {}) {
         predictionsCacheTtlSeconds: 86400,
         eventsCacheTtlSeconds: 60,
         leagueContextLiveCacheTtlSeconds: 60,
-        leagueContextUpcomingCacheTtlSeconds: 300,
-        leagueContextFinishedCacheTtlSeconds: 3600,
+        leagueContextUpcomingCacheTtlSeconds: 3600,
+        leagueContextFinishedCacheTtlSeconds: 86400,
         leagueContextMaxFixtures: 9,
         leagueContextSameWindowMinutes: 30,
         lineupsPendingCacheTtlSeconds: 300,
@@ -397,6 +397,45 @@ test("league context is cached by league, season, and round", async () => {
   await service.getLeagueContextResource(fixture, { phase: "live" });
 
   assert.equal(calls, 1);
+});
+
+test("league context uses long cache when every round fixture is finished", async () => {
+  const { service, cacheService } = createService({
+    apiFootballClient: {
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 201,
+            timestamp: 1774897200,
+            date: "2026-03-30T19:00:00+00:00",
+            status: { short: "FT", elapsed: 90 }
+          },
+          teams: {
+            home: { id: 1, name: "Home", logo: "" },
+            away: { id: 2, name: "Away", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const fixture = {
+    fixture: {
+      id: 200,
+      timestamp: 1774897200
+    },
+    league: {
+      id: 39,
+      season: 2025,
+      round: "Regular Season - 30"
+    }
+  };
+
+  await service.getLeagueRoundFixturesResource(fixture, { phase: "upcoming" });
+  const cachedPayload = await cacheService.getJson("league-context:39:2025:Regular%20Season%20-%2030");
+
+  assert.ok(cachedPayload?.last_updated);
 });
 
 test("league context excludes the tracked fixture and prioritizes same-window matches", async () => {

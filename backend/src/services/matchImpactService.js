@@ -134,12 +134,12 @@ function getLineupsCacheTtl(lineupsConfirmed, status, env) {
   return env.lineupsPendingCacheTtlSeconds;
 }
 
-function getLeagueContextCacheTtl(status, env) {
-  if (status.phase === "live") {
+function getLeagueContextCacheTtl(statuses, env) {
+  if (statuses.some((status) => status?.phase === "live")) {
     return env.leagueContextLiveCacheTtlSeconds;
   }
 
-  if (status.phase === "finished") {
+  if (statuses.length > 0 && statuses.every((status) => status?.phase === "finished")) {
     return env.leagueContextFinishedCacheTtlSeconds;
   }
 
@@ -1223,9 +1223,21 @@ export class MatchImpactService {
 
     return this.getCachedResource({
       key: buildLeagueContextKey(leagueId, season, round),
-      ttlSeconds: getLeagueContextCacheTtl(status, this.env),
-      fetcher: async () =>
-        this.apiFootballClient.getFixturesByRound(leagueId, season, round).catch(() => [])
+      ttlSeconds: getLeagueContextCacheTtl([status], this.env),
+      fetcher: async () => {
+        const fixtures = await this.apiFootballClient.getFixturesByRound(leagueId, season, round).catch(() => []);
+        const roundStatuses = fixtures.map((entry) => getMatchStatus(entry));
+        const ttlSeconds = getLeagueContextCacheTtl(roundStatuses, this.env);
+
+        await this.cacheService.setJson(
+          buildLeagueContextKey(leagueId, season, round),
+          buildResourceEnvelope(fixtures),
+          ttlSeconds
+        );
+
+        return fixtures;
+      },
+      skipAutomaticCacheWrite: true
     });
   }
 

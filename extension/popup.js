@@ -285,8 +285,18 @@ function getRequestHeaders() {
   };
 }
 
-function formatKickoff(dateString) {
-  return new Date(dateString).toLocaleString(currentLanguage === "pt-BR" ? "pt-BR" : "en-US", {
+function formatKickoff(match) {
+  const locale = currentLanguage === "pt-BR" ? "pt-BR" : "en-US";
+  const kickoffDate =
+    Number.isFinite(Number(match?.timestamp))
+      ? new Date(Number(match.timestamp) * 1000)
+      : new Date(match?.startsAt);
+
+  if (!Number.isFinite(kickoffDate.getTime())) {
+    return "KO";
+  }
+
+  return kickoffDate.toLocaleString(locale, {
     weekday: "short",
     hour: "numeric",
     minute: "2-digit"
@@ -458,7 +468,7 @@ function buildUpcomingLabel(match) {
     : "";
   const leagueSuffix = shouldIncludeLeagueInMatchLabel() ? ` · ${match.league.name}` : "";
 
-  return `${featuredPrefix}${formatMatchTeamLabel(match.teams.home)} vs ${formatMatchTeamLabel(match.teams.away)} · ${formatKickoff(match.startsAt)}${leagueSuffix}`;
+  return `${featuredPrefix}${formatMatchTeamLabel(match.teams.home)} vs ${formatMatchTeamLabel(match.teams.away)} · ${formatKickoff(match)}${leagueSuffix}`;
 }
 
 function buildLeagueFilterLabel(league) {
