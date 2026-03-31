@@ -1012,6 +1012,8 @@ export class MatchImpactService {
       const payload = {
         fixture_id: fixtureId,
         last_updated: new Date().toISOString(),
+        startsAt: fixture?.fixture?.date ?? "",
+        timestamp: fixture?.fixture?.timestamp ?? null,
         status,
         score,
         teams,
@@ -1090,6 +1092,8 @@ export class MatchImpactService {
     const payload = {
       fixture_id: fixtureId,
       last_updated: new Date().toISOString(),
+      startsAt: fixture?.fixture?.date ?? "",
+      timestamp: fixture?.fixture?.timestamp ?? null,
       status,
       score,
       teams,

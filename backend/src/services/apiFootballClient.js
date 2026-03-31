@@ -185,6 +185,28 @@ export class ApiFootballClient {
     return normalizeLeagueCoverage(seasonEntry.coverage);
   }
 
+  async getLeagueMetadata(leagueId) {
+    const response = await this.request("/leagues", {
+      id: leagueId
+    });
+
+    const leagues = response.data?.response ?? [];
+    const leagueEntry = leagues.find((entry) => Number(entry?.league?.id) === Number(leagueId)) ?? leagues[0];
+
+    if (!leagueEntry?.league?.id) {
+      return null;
+    }
+
+    return {
+      id: Number(leagueEntry.league.id),
+      name: leagueEntry.league.name ?? "",
+      country: leagueEntry.country?.name ?? "",
+      logo: leagueEntry.league.logo ?? "",
+      flag: leagueEntry.country?.flag ?? "",
+      type: leagueEntry.league.type ?? ""
+    };
+  }
+
   async getLiveFixtures() {
     return this.getFixtures({
       live: "all"

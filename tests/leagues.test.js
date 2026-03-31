@@ -95,3 +95,32 @@ test("buildLeagueFilterPayload keeps configured leagues even when no fixtures ar
     }
   ]);
 });
+
+test("buildLeagueFilterPayload prefers cached league metadata over hardcoded fallback names", () => {
+  const payload = buildLeagueFilterPayload(
+    [],
+    {
+      supportedLeagueIds: [45],
+      featuredLeagueIds: []
+    },
+    new Map([
+      [
+        45,
+        {
+          name: "FA Cup",
+          country: "England"
+        }
+      ]
+    ])
+  );
+
+  assert.deepEqual(payload.availableLeagues, [
+    {
+      id: 45,
+      name: "FA Cup",
+      country: "England",
+      featured: false,
+      availableNow: false
+    }
+  ]);
+});

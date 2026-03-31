@@ -636,7 +636,8 @@
   function render(payload) {
     const hasTableImpact = payload.metadata?.tableImpactAvailable !== false;
     const isPrematch = payload.status.phase === "upcoming";
-    const clockLabel = payload.status.phase === "upcoming" ? "KO" : `${payload.status.minute || 0}'`;
+    const clockLabel =
+      payload.status.phase === "upcoming" ? formatKickoff(payload) : `${payload.status.minute || 0}'`;
     const scoreline = `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName} · ${clockLabel}`;
     const eventLabel = buildEventLabel(payload.event);
     const competitionItems = payload.impact?.competition || [];
@@ -1231,6 +1232,23 @@
     return `${value}${suffix}`;
   }
 
+  function formatKickoff(match) {
+    const locale = state.language === "pt-BR" ? "pt-BR" : "en-US";
+    const kickoffDate =
+      Number.isFinite(Number(match?.timestamp))
+        ? new Date(Number(match.timestamp) * 1000)
+        : new Date(match?.startsAt);
+
+    if (!Number.isFinite(kickoffDate.getTime())) {
+      return "KO";
+    }
+
+    return kickoffDate.toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
   function formatLeagueContextStatus(status, startsAt) {
     if (status?.phase === "live") {
       return `${status.minute || 0}'`;
@@ -1269,10 +1287,12 @@
       return `${weekdayLabel} · ${timeLabel}`;
     }
 
-    const dayMonthLabel = kickoff.toLocaleDateString(locale, {
-      day: "2-digit",
-      month: "2-digit"
-    });
+    const dayMonthLabel = kickoff
+      .toLocaleDateString(locale, {
+        day: "2-digit",
+        month: "short"
+      })
+      .replace(/\.$/, "");
 
     return `${weekdayLabel} ${dayMonthLabel} · ${timeLabel}`;
   }

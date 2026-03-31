@@ -5,6 +5,10 @@ function buildCacheKey(mode, suffix = "default") {
   return `matches:${mode}:${suffix}`;
 }
 
+function buildLeagueMetadataKey(leagueId) {
+  return `league-metadata:${leagueId}`;
+}
+
 function toDateKey(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -140,6 +144,7 @@ export class MatchDiscoveryService {
       ttlSeconds: this.env.liveCacheTtlSeconds,
       loader: async () => {
         const fixtures = await this.apiFootballClient.getLiveFixtures();
+        const leagueMetadata = await this.getConfiguredLeagueMetadata();
         const matches = sortFixtures(
           fixtures
             .filter((fixture) => isLeagueSupported(fixture?.league?.id, this.env.supportedLeagueIds))
@@ -150,7 +155,7 @@ export class MatchDiscoveryService {
           mode: "live",
           last_updated: new Date().toISOString(),
           matches,
-          leagueFilter: buildLeagueFilterPayload(matches, this.env)
+          leagueFilter: buildLeagueFilterPayload(matches, this.env, leagueMetadata)
         };
       }
     });
@@ -169,6 +174,7 @@ export class MatchDiscoveryService {
       ttlSeconds: this.env.upcomingCacheTtlSeconds,
       loader: async () => {
         const nowMs = Date.now();
+        const leagueMetadata = await this.getConfiguredLeagueMetadata();
         const baseDate = requestedDate ? new Date(`${requestedDate}T00:00:00Z`) : new Date(nowMs);
         const datesToFetch = requestedDate
           ? [requestedDate]
@@ -197,9 +203,36 @@ export class MatchDiscoveryService {
           last_updated: new Date().toISOString(),
           dates: datesToFetch,
           matches: fixtures.slice(0, safeLimit),
-          leagueFilter: buildLeagueFilterPayload(fixtures, this.env)
+          leagueFilter: buildLeagueFilterPayload(fixtures, this.env, leagueMetadata)
         };
       }
+    });
+  }
+
+  async getConfiguredLeagueMetadata() {
+    const configuredLeagueIds = [...new Set([...this.env.supportedLeagueIds, ...this.env.featuredLeagueIds])]
+      .filter((leagueId) => Number.isInteger(Number(leagueId)) && Number(leagueId) > 0)
+      .map((leagueId) => Number(leagueId));
+
+    const metadataEntries = await Promise.all(
+      configuredLeagueIds.map(async (leagueId) => {
+        const metadata = await this.getLeagueMetadataResource(leagueId);
+        return metadata ? [leagueId, metadata] : null;
+      })
+    );
+
+    return new Map(metadataEntries.filter(Boolean));
+  }
+
+  async getLeagueMetadataResource(leagueId) {
+    if (!leagueId || !this.apiFootballClient.getLeagueMetadata) {
+      return null;
+    }
+
+    return this.getCachedList({
+      cacheKey: buildLeagueMetadataKey(leagueId),
+      ttlSeconds: this.env.leagueMetadataCacheTtlSeconds,
+      loader: () => this.apiFootballClient.getLeagueMetadata(leagueId).catch(() => null)
     });
   }
 

@@ -58,7 +58,7 @@ export function isFeaturedLeague(leagueId, featuredLeagueIds = []) {
   return featuredLeagueIds.includes(normalizedLeagueId);
 }
 
-export function buildLeagueFilterPayload(matches, env) {
+export function buildLeagueFilterPayload(matches, env, leagueMetadata = new Map()) {
   const availableLeagueMap = new Map();
   const configuredLeagueIds = new Set([
     ...env.supportedLeagueIds,
@@ -66,7 +66,8 @@ export function buildLeagueFilterPayload(matches, env) {
   ]);
 
   configuredLeagueIds.forEach((leagueId) => {
-    const knownLeague = CONFIGURED_LEAGUES.get(leagueId);
+    const metadataLeague = leagueMetadata.get(leagueId);
+    const knownLeague = metadataLeague ?? CONFIGURED_LEAGUES.get(leagueId);
 
     availableLeagueMap.set(leagueId, {
       id: leagueId,

@@ -774,7 +774,8 @@
     renderTrackedShell();
     const hasTableImpact = payload.metadata?.tableImpactAvailable !== false;
     const isPrematch = payload.status.phase === "upcoming";
-    const clockLabel = payload.status.phase === "upcoming" ? "KO" : `${payload.status.minute || 0}'`;
+    const clockLabel =
+      payload.status.phase === "upcoming" ? formatKickoff(payload) : `${payload.status.minute || 0}'`;
     const eventLabel = buildEventLabel(payload.event);
     const competitionItems = payload.impact?.competition || [];
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
@@ -1304,10 +1305,12 @@
       return `${weekdayLabel} · ${timeLabel}`;
     }
 
-    const dayMonthLabel = kickoff.toLocaleDateString(locale, {
-      day: "2-digit",
-      month: "2-digit"
-    });
+    const dayMonthLabel = kickoff
+      .toLocaleDateString(locale, {
+        day: "2-digit",
+        month: "short"
+      })
+      .replace(/\.$/, "");
 
     return `${weekdayLabel} ${dayMonthLabel} · ${timeLabel}`;
   }
