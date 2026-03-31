@@ -10,9 +10,9 @@
     backendUrls,
     backendUrl: backendUrls[releaseChannel] || backendUrls.staging,
     posthog: {
-      enabled: true,
+      enabled: false,
       host: "https://us.i.posthog.com",
-      apiKey: "phc_qxYrzMeh9rgjqHZ2LXQTVLQrrsYifB7kCj4bpZ9i8f4a"
+      apiKey: ""
     }
   };
 })(globalThis);

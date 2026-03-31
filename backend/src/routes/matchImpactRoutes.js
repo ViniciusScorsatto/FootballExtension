@@ -4,6 +4,7 @@ export function createMatchImpactRouter(controller) {
   const router = Router();
 
   router.get("/", controller.getMarketingPage);
+  router.get("/public-config", controller.getPublicConfig);
   router.get("/health", controller.getHealth);
   router.get("/admin/health", controller.getAdminHealth);
   router.get("/billing/plans", controller.getBillingPlans);

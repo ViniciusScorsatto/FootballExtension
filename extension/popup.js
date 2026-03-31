@@ -6,6 +6,7 @@ const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
 const RESTORE_AUTO_REFRESH_WINDOW_MS = 45000;
 const { normalizeLanguage, t } = window.LMI_I18N;
 const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
+const updateAnalyticsConfig = window.LMI_ANALYTICS?.updateConfig ?? (() => {});
 
 const fixtureIdInput = document.getElementById("fixtureId");
 const languageSelect = document.getElementById("language");
@@ -941,6 +942,7 @@ async function loadSettings() {
   updatePlanHint();
   accountCardExpanded = !currentBilling.accountLinked || !isProPlan();
 
+  await loadRuntimePublicConfig();
   await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
 
@@ -967,6 +969,39 @@ async function loadSettings() {
       trackingEnabled: Boolean(result.trackingEnabled)
     });
     popupOpenedTracked = true;
+  }
+}
+
+async function loadRuntimePublicConfig() {
+  const backendUrl = normalizeBackendUrl();
+
+  if (!validateBackendUrl(backendUrl)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/public-config`, {
+      headers: getRequestHeaders()
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await response.json();
+    const posthog = payload?.analytics?.posthog;
+
+    if (!posthog) {
+      return;
+    }
+
+    updateAnalyticsConfig({
+      enabled: Boolean(posthog.enabled && posthog.apiKey),
+      host: posthog.host || "https://us.i.posthog.com",
+      apiKey: posthog.apiKey || ""
+    });
+  } catch {
+    // Analytics config should never block the popup.
   }
 }
 

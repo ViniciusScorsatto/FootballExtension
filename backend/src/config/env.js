@@ -127,6 +127,8 @@ export const env = {
   earlyBirdOfferMaxClaims: readNumber("EARLY_BIRD_OFFER_MAX_CLAIMS", 100),
   supportEmail: process.env.SUPPORT_EMAIL ?? "support@footanalysis.com",
   marketingSiteUrl: process.env.MARKETING_SITE_URL ?? "",
+  posthogHost: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
+  posthogProjectApiKey: process.env.POSTHOG_PROJECT_API_KEY ?? "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   stripeNormalPriceId: process.env.STRIPE_NORMAL_PRICE_ID ?? "",

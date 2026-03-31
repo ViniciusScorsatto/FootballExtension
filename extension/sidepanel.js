@@ -16,6 +16,7 @@
   const BASE_POLL_INTERVAL_MS = 15000;
   const MAX_POLL_INTERVAL_MS = 120000;
   const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
+  const updateAnalyticsConfig = window.LMI_ANALYTICS?.updateConfig ?? (() => {});
 
   const {
     normalizeLanguage,
@@ -243,6 +244,7 @@
 
     renderStaticCopy();
     updatePlanHint();
+    await loadRuntimePublicConfig();
     await refreshMatchLists();
 
     if (!sidepanelOpenedTracked) {
@@ -266,6 +268,29 @@
     }
 
     scheduleNextPoll(0);
+  }
+
+  async function loadRuntimePublicConfig() {
+    if (!state.backendUrl) {
+      return;
+    }
+
+    try {
+      const payload = await fetchJson(`${state.backendUrl}/public-config`);
+      const posthog = payload?.analytics?.posthog;
+
+      if (!posthog) {
+        return;
+      }
+
+      updateAnalyticsConfig({
+        enabled: Boolean(posthog.enabled && posthog.apiKey),
+        host: posthog.host || "https://us.i.posthog.com",
+        apiKey: posthog.apiKey || ""
+      });
+    } catch {
+      // Analytics config should never block the side panel.
+    }
   }
 
   function renderStaticCopy() {

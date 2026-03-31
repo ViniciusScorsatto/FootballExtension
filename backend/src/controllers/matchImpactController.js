@@ -54,6 +54,18 @@ export function createMatchImpactController({
       }
     },
 
+    getPublicConfig(_req, res) {
+      res.json({
+        analytics: {
+          posthog: {
+            enabled: Boolean(env.posthogProjectApiKey),
+            host: env.posthogHost,
+            apiKey: env.posthogProjectApiKey
+          }
+        }
+      });
+    },
+
     getAdminHealth(req, res) {
       if (!isAuthorizedAdminRequest(req, env.adminToken)) {
         res.status(401).json({
@@ -119,6 +131,10 @@ export function createMatchImpactController({
           leagueContext: {
             maxFixtures: env.leagueContextMaxFixtures,
             sameWindowMinutes: env.leagueContextSameWindowMinutes
+          },
+          analytics: {
+            posthogEnabled: Boolean(env.posthogProjectApiKey),
+            posthogHost: env.posthogHost
           },
           billing: {
             betaModeEnabled: env.betaModeEnabled,

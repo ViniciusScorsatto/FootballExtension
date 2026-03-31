@@ -1,5 +1,7 @@
 (function initLmiAnalytics(globalScope) {
-  const posthogConfig = globalScope.LMI_CONFIG?.posthog ?? {};
+  function getPosthogConfig() {
+    return globalScope.LMI_CONFIG?.posthog ?? {};
+  }
 
   function sanitizeProperties(properties) {
     return Object.fromEntries(
@@ -10,6 +12,8 @@
   }
 
   function capture(eventName, options = {}) {
+    const posthogConfig = getPosthogConfig();
+
     if (!posthogConfig.enabled || !posthogConfig.apiKey || !eventName) {
       return;
     }
@@ -33,8 +37,22 @@
     }
   }
 
+  function updateConfig(nextConfig = {}) {
+    globalScope.LMI_CONFIG = {
+      ...(globalScope.LMI_CONFIG || {}),
+      posthog: {
+        ...getPosthogConfig(),
+        ...nextConfig
+      }
+    };
+  }
+
   globalScope.LMI_ANALYTICS = {
     capture,
-    enabled: Boolean(posthogConfig.enabled && posthogConfig.apiKey)
+    updateConfig,
+    isEnabled() {
+      const posthogConfig = getPosthogConfig();
+      return Boolean(posthogConfig.enabled && posthogConfig.apiKey);
+    }
   };
 })(globalThis);
