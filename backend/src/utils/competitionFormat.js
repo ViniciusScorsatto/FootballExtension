@@ -20,6 +20,18 @@ function findCompetitionOverride(fixture) {
   );
 }
 
+function buildRegistryInfo(override, fixture) {
+  if (!override) {
+    return null;
+  }
+
+  return {
+    leagueId: override.leagueId ?? fixture?.league?.id ?? null,
+    leagueName: override.leagueName ?? fixture?.league?.name ?? "",
+    routing: override.routing ?? "dynamic"
+  };
+}
+
 function findGroupsForTeam(groups, teamId) {
   if (!teamId) {
     return [];
@@ -47,6 +59,9 @@ function findTeamPosition(groups, teamId) {
 
 export function classifyCompetitionFormat({ fixture, standingsPayload }) {
   const override = findCompetitionOverride(fixture);
+  const registry = buildRegistryInfo(override, fixture);
+  const forcedOverride =
+    override?.format && override?.impactMode ? override : null;
 
   if (fixture?.league?.standings !== true || !standingsPayload) {
     return {
@@ -54,7 +69,8 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
       impactMode: "score-only",
       selectedGroup: null,
       groups: [],
-      source: "coverage"
+      source: "coverage",
+      registry
     };
   }
 
@@ -69,10 +85,10 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
       group.table.some((row) => row.teamId === awayTeamId)
   );
 
-  if (override) {
+  if (forcedOverride) {
     return {
-      format: override.format,
-      impactMode: override.impactMode,
+      format: forcedOverride.format,
+      impactMode: forcedOverride.impactMode,
       selectedGroup: sharedGroup ?? null,
       groups,
       teamPositions: {
@@ -83,7 +99,8 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
         home: findGroupsForTeam(groups, homeTeamId).map((group) => group.name),
         away: findGroupsForTeam(groups, awayTeamId).map((group) => group.name)
       },
-      source: "override"
+      source: "override",
+      registry
     };
   }
 
@@ -97,7 +114,8 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
         home: homeTeamPosition,
         away: awayTeamPosition
       },
-      source: "standings"
+      source: "standings",
+      registry
     };
   }
 
@@ -111,7 +129,8 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
         home: homeTeamPosition,
         away: awayTeamPosition
       },
-      source: "standings"
+      source: "standings",
+      registry
     };
   }
 
@@ -128,6 +147,7 @@ export function classifyCompetitionFormat({ fixture, standingsPayload }) {
       home: findGroupsForTeam(groups, homeTeamId).map((group) => group.name),
       away: findGroupsForTeam(groups, awayTeamId).map((group) => group.name)
     },
-    source: "standings"
+    source: "standings",
+    registry
   };
 }

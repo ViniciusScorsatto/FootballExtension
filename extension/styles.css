@@ -590,6 +590,9 @@ select.lmi-field__input {
   display: none;
   box-sizing: border-box;
   padding: 18px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .lmi-panel.is-expanded .lmi-expanded {
@@ -615,7 +618,12 @@ select.lmi-field__input {
 }
 
 .lmi-expanded__header {
-  flex-direction: column;
+  flex-direction: row;
+}
+
+.lmi-expanded__summary {
+  min-width: 0;
+  flex: 1;
 }
 
 .lmi-expanded__headline {
@@ -633,10 +641,51 @@ select.lmi-field__input {
 }
 
 .lmi-expanded__actions {
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
-  width: 100%;
-  justify-content: flex-end;
+  width: auto;
+  justify-content: flex-start;
+}
+
+.lmi-overlay-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--lmi-text);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.lmi-overlay-action:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.lmi-scroll-controls {
+  position: sticky;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  margin-top: 10px;
+  pointer-events: none;
+}
+
+.lmi-overlay-action--scroll {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  background: rgba(4, 9, 18, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: auto;
 }
 
 .lmi-icon-button {

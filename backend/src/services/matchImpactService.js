@@ -616,12 +616,12 @@ function buildScoreOnlyImpact(status, fixture, teams) {
 
   return {
     summary: isUpcoming
-      ? "Live score only - no table impact"
+      ? "Pre-match only - live table impact starts at kickoff"
       : `${teams.home.name} ${score.home}-${score.away} ${teams.away.name}`,
     table: null,
-    competition: [
-      "Live score only - no table impact for this competition."
-    ],
+    competition: isUpcoming
+      ? ["Live table impact will start once the match kicks off."]
+      : ["Live score only - no table impact for this competition."],
     biggestMovement: null,
     momentum: {
       home: score.home === score.away ? 50 : score.home > score.away ? 65 : 35,
@@ -725,7 +725,8 @@ export class MatchImpactService {
       round: fixture?.league?.round
     });
     const hasTableImpact =
-      competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group";
+      status.phase !== "upcoming" &&
+      (competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group");
     const latestGoalEvent = extractLatestGoalEvent(events, baseEvent);
     const event = enrichScoreEvent(baseEvent, latestGoalEvent);
     const lineupsSummary = buildLineupsSummary(lineups, teams);
@@ -775,13 +776,15 @@ export class MatchImpactService {
         metadata: {
           cacheTtlSeconds: getCacheTtl(status, this.env),
           impactBasis:
-            competitionFormat.impactMode === "limited"
+            status.phase === "upcoming"
+              ? "prematch-no-table-impact"
+              : competitionFormat.impactMode === "limited"
               ? "special-competition-format"
               : "no-standings-coverage",
           tableImpactAvailable: false,
           prematchCadence,
           competitionFormat: competitionFormat.format,
-          impactMode: competitionFormat.impactMode,
+          impactMode: impact.mode,
           groupLabel: competitionFormat.selectedGroup?.name ?? "",
           teamGroupPositions: competitionFormat.teamPositions ?? null,
           projectedTeamGroupPositions: groupProjection

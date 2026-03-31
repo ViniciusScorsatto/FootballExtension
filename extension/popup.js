@@ -248,6 +248,21 @@ function formatKickoff(dateString) {
   });
 }
 
+function formatMatchTeamLabel(team) {
+  const shortName = String(team?.shortName ?? "").trim();
+  const fullName = String(team?.name ?? "").trim();
+
+  if (shortName && shortName.length > 3) {
+    return shortName;
+  }
+
+  return fullName || shortName || "Team";
+}
+
+function shouldIncludeLeagueInMatchLabel() {
+  return !getSelectedLeagueId();
+}
+
 function formatPrice(price) {
   const numericPrice = Number(price);
 
@@ -387,15 +402,18 @@ function buildLiveLabel(match) {
     : "";
   const suffix =
     match.impactMode === "score-only" ? ` · ${translate("popup.scoreOnlySuffix")}` : "";
+  const leagueSuffix = shouldIncludeLeagueInMatchLabel() ? ` · ${match.league.name}` : "";
 
-  return `${featuredPrefix}${match.teams.home.shortName} ${match.score.home}-${match.score.away} ${match.teams.away.shortName} · ${match.status.minute || 0}' · ${match.league.name}${suffix}`;
+  return `${featuredPrefix}${formatMatchTeamLabel(match.teams.home)} ${match.score.home}-${match.score.away} ${formatMatchTeamLabel(match.teams.away)} · ${match.status.minute || 0}'${leagueSuffix}${suffix}`;
 }
 
 function buildUpcomingLabel(match) {
   const featuredPrefix = !isProPlan() && match.league?.featured
     ? `${translate("popup.featuredLeaguePrefix")} · `
     : "";
-  return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
+  const leagueSuffix = shouldIncludeLeagueInMatchLabel() ? ` · ${match.league.name}` : "";
+
+  return `${featuredPrefix}${formatMatchTeamLabel(match.teams.home)} vs ${formatMatchTeamLabel(match.teams.away)} · ${formatKickoff(match.startsAt)}${leagueSuffix}`;
 }
 
 function buildLeagueFilterLabel(league) {

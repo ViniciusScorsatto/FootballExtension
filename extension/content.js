@@ -131,7 +131,7 @@
       </button>
       <div class="lmi-expanded">
         <div class="lmi-expanded__header">
-          <div>
+          <div class="lmi-expanded__summary">
             <div class="lmi-expanded__brand">
               <div>
                 <div class="lmi-expanded__eyebrow">${escapeHtml(translate("panel.eyebrow"))}</div>
@@ -146,9 +146,46 @@
             <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
           </div>
           <div class="lmi-expanded__actions">
-            <button data-action="collapse" class="lmi-icon-button" type="button">${escapeHtml(translate("panel.collapse"))}</button>
-            <button data-action="close" class="lmi-icon-button" type="button">${escapeHtml(translate("panel.close"))}</button>
+            <button
+              data-action="collapse"
+              class="lmi-overlay-action"
+              type="button"
+              aria-label="${escapeHtml(translate("panel.collapse"))}"
+              title="${escapeHtml(translate("panel.collapse"))}"
+            >
+              <span aria-hidden="true">−</span>
+            </button>
+            <button
+              data-action="close"
+              class="lmi-overlay-action"
+              type="button"
+              aria-label="${escapeHtml(translate("panel.close"))}"
+              title="${escapeHtml(translate("panel.close"))}"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
           </div>
+        </div>
+
+        <div class="lmi-scroll-controls" aria-label="${escapeHtml(translate("panel.scrollControls"))}">
+          <button
+            data-action="scroll-top"
+            class="lmi-overlay-action lmi-overlay-action--scroll"
+            type="button"
+            aria-label="${escapeHtml(translate("panel.scrollTop"))}"
+            title="${escapeHtml(translate("panel.scrollTop"))}"
+          >
+            <span aria-hidden="true">↑</span>
+          </button>
+          <button
+            data-action="scroll-bottom"
+            class="lmi-overlay-action lmi-overlay-action--scroll"
+            type="button"
+            aria-label="${escapeHtml(translate("panel.scrollBottom"))}"
+            title="${escapeHtml(translate("panel.scrollBottom"))}"
+          >
+            <span aria-hidden="true">↓</span>
+          </button>
         </div>
 
         <div class="lmi-event-banner is-hidden">
@@ -203,6 +240,7 @@
     return {
       root,
       collapsedCard: root.querySelector(".lmi-collapsed-card"),
+      expandedPanel: root.querySelector(".lmi-expanded"),
       collapsedScore: root.querySelector(".lmi-collapsed-card__score"),
       collapsedImpact: root.querySelector(".lmi-collapsed-card__impact"),
       headline: root.querySelector(".lmi-expanded__headline"),
@@ -234,7 +272,9 @@
       eyebrow: root.querySelector(".lmi-expanded__eyebrow"),
       headlineLabel: root.querySelector(".lmi-expanded__headline"),
       collapseButton: root.querySelector('[data-action="collapse"]'),
-      closeButton: root.querySelector('[data-action="close"]')
+      closeButton: root.querySelector('[data-action="close"]'),
+      scrollTopButton: root.querySelector('[data-action="scroll-top"]'),
+      scrollBottomButton: root.querySelector('[data-action="scroll-bottom"]')
     };
   }
 
@@ -259,6 +299,20 @@
         flushSession();
         clearPollTimer();
         elements.root.classList.add("is-hidden");
+      }
+
+      if (action === "scroll-top") {
+        elements.expandedPanel.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+      }
+
+      if (action === "scroll-bottom") {
+        elements.expandedPanel.scrollTo({
+          top: elements.expandedPanel.scrollHeight,
+          behavior: "smooth"
+        });
       }
     });
   }
@@ -322,8 +376,14 @@
       ? elements.headline.textContent
       : translate("panel.waitingMatch");
     elements.eventBannerLabel.textContent = translate("panel.goalImpact");
-    elements.collapseButton.textContent = translate("panel.collapse");
-    elements.closeButton.textContent = translate("panel.close");
+    elements.collapseButton.setAttribute("aria-label", translate("panel.collapse"));
+    elements.collapseButton.setAttribute("title", translate("panel.collapse"));
+    elements.closeButton.setAttribute("aria-label", translate("panel.close"));
+    elements.closeButton.setAttribute("title", translate("panel.close"));
+    elements.scrollTopButton.setAttribute("aria-label", translate("panel.scrollTop"));
+    elements.scrollTopButton.setAttribute("title", translate("panel.scrollTop"));
+    elements.scrollBottomButton.setAttribute("aria-label", translate("panel.scrollBottom"));
+    elements.scrollBottomButton.setAttribute("title", translate("panel.scrollBottom"));
 
     if (elements.tableLabel) elements.tableLabel.textContent = translate("panel.tableImpact");
     if (elements.competitionLabel) {

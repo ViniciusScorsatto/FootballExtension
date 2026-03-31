@@ -9,6 +9,7 @@ function createService(overrides = {}) {
   });
 
   const apiFootballClient = {
+    getFixture: async () => null,
     getStandings: async () => null,
     getStatistics: async () => [],
     getInjuries: async () => [],
@@ -299,4 +300,98 @@ test("league context excludes the tracked fixture and prioritizes same-window ma
     summary.fixtures.map((fixture) => fixture.fixtureId),
     [101, 102, 103]
   );
+});
+
+test("upcoming standings-enabled fixtures do not return table impact before kickoff", async () => {
+  const fixtureId = 9001;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: Math.floor(Date.now() / 1000) + 3600,
+          date: "2026-04-01T08:00:00+00:00",
+          status: {
+            short: "NS",
+            long: "Not Started",
+            elapsed: null
+          }
+        },
+        league: {
+          id: 71,
+          name: "Serie A",
+          country: "Brazil",
+          season: 2026,
+          standings: true,
+          round: "Regular Season - 4"
+        },
+        teams: {
+          home: { id: 1, name: "Atletico Goianiense", logo: "" },
+          away: { id: 2, name: "Nautico Recife", logo: "" }
+        },
+        goals: {
+          home: 0,
+          away: 0
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 15,
+                    points: 4,
+                    goalsDiff: -2,
+                    all: { played: 3, goals: { for: 3, against: 5 } },
+                    team: { id: 1, name: "Atletico Goianiense", code: "ACG" }
+                  },
+                  {
+                    rank: 16,
+                    points: 4,
+                    goalsDiff: -3,
+                    all: { played: 3, goals: { for: 2, against: 5 } },
+                    team: { id: 2, name: "Nautico Recife", code: "NAU" }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: Math.floor(Date.now() / 1000) + 3600,
+            date: "2026-04-01T08:00:00+00:00",
+            status: {
+              short: "NS",
+              long: "Not Started",
+              elapsed: null
+            }
+          },
+          teams: {
+            home: { id: 1, name: "Atletico Goianiense", logo: "" },
+            away: { id: 2, name: "Nautico Recife", logo: "" }
+          },
+          goals: { home: 0, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.status.phase, "upcoming");
+  assert.equal(payload.metadata.tableImpactAvailable, false);
+  assert.equal(payload.metadata.impactMode, "score-only");
+  assert.equal(payload.impact.mode, "score-only");
+  assert.equal(payload.impact.table, null);
+  assert.equal(payload.metadata.impactBasis, "prematch-no-table-impact");
+  assert.deepEqual(payload.standings_snapshot, {
+    before: [],
+    after: []
+  });
 });
