@@ -33,16 +33,16 @@
 .lmi-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .lmi-brand__mark {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 164px;
-  height: 64px;
-  border-radius: 18px;
+  width: 118px;
+  height: 46px;
+  border-radius: 14px;
   background: rgba(4, 9, 18, 0.8);
   border: 1px solid var(--lmi-border);
   overflow: hidden;
@@ -60,10 +60,24 @@
 }
 
 .lmi-brand__subhead {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--lmi-text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
+}
+
+.lmi-top-plan-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(70, 198, 255, 0.16);
+  color: #9fdcff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .lmi-popup__eyebrow,
@@ -110,6 +124,10 @@
   background:
     radial-gradient(circle at top left, rgba(109, 245, 193, 0.12), transparent 36%),
     rgba(4, 9, 18, 0.58);
+}
+
+.lmi-billing-card[hidden] {
+  display: none;
 }
 
 .lmi-billing-card__header,

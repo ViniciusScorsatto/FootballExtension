@@ -13,6 +13,8 @@ const billingEyebrow = document.getElementById("billingEyebrow");
 const billingSummary = document.getElementById("billingSummary");
 const billingOffer = document.getElementById("billingOffer");
 const billingStateNote = document.getElementById("billingStateNote");
+const billingCard = document.querySelector(".lmi-billing-card");
+const topPlanPill = document.getElementById("topPlanPill");
 const planHint = document.getElementById("planHint");
 const leagueFilterSelect = document.getElementById("leagueFilter");
 const liveMatchesSelect = document.getElementById("liveMatches");
@@ -212,6 +214,9 @@ function renderBillingCard() {
   billingSummary.textContent = proActive
     ? translate("popup.proActiveSummary")
     : translate("popup.billingSummaryFree");
+  billingCard.hidden = proActive;
+  topPlanPill.hidden = !proActive;
+  topPlanPill.textContent = currentPlanName;
 
   if (currentBilling.recentlyUnlocked) {
     billingEyebrow.textContent = translate("popup.proUnlockedTitle");
