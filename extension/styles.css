@@ -150,11 +150,11 @@
     rgba(4, 9, 18, 0.58);
 }
 
-.lmi-account-card {
-  margin: 12px 0 10px;
-  border: 1px solid var(--lmi-border);
-  border-radius: 18px;
-  background: rgba(4, 9, 18, 0.4);
+.lmi-billing-card__restore {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
 }
 
 .lmi-account-card__toggle {
@@ -163,7 +163,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px;
+  padding: 0;
   border: 0;
   background: transparent;
   color: var(--lmi-text);
@@ -193,7 +193,7 @@
 }
 
 .lmi-account-card__content {
-  padding: 0 14px 14px;
+  padding: 12px 0 0;
 }
 
 .lmi-billing-card[hidden] {
