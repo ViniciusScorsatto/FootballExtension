@@ -78,10 +78,13 @@
     eventText: document.getElementById("sidepanelEventText"),
     tableLabel: document.getElementById("sidepanelTableLabel"),
     competitionLabel: document.getElementById("sidepanelCompetitionLabel"),
+    tableSection: document.getElementById("sidepanelTableLabel")?.closest(".lmi-section"),
+    competitionSection: document.getElementById("sidepanelCompetitionLabel")?.closest(".lmi-section"),
     formatSection: document.getElementById("sidepanelFormatSection"),
     formatLabel: document.getElementById("sidepanelFormatLabel"),
     formatBody: document.getElementById("sidepanelFormatBody"),
     momentumLabel: document.getElementById("sidepanelMomentumLabel"),
+    momentumSection: document.getElementById("sidepanelMomentumLabel")?.closest(".lmi-section"),
     prematchLabel: document.getElementById("sidepanelPrematchLabel"),
     leagueContextLabel: document.getElementById("sidepanelLeagueContextLabel"),
     homeRow: document.getElementById("sidepanelHomeRow"),
@@ -614,6 +617,7 @@
   function render(payload) {
     renderTrackedShell();
     const hasTableImpact = payload.metadata?.tableImpactAvailable !== false;
+    const isPrematch = payload.status.phase === "upcoming";
     const clockLabel = payload.status.phase === "upcoming" ? "KO" : `${payload.status.minute || 0}'`;
     const eventLabel = buildEventLabel(payload.event);
     const competitionItems = payload.impact?.competition || [];
@@ -625,6 +629,12 @@
     elements.summary.textContent = eventLabel || localizedImpactSummary;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
+    elements.tableSection.classList.toggle("is-hidden", isPrematch);
+    elements.competitionSection.classList.toggle("is-hidden", isPrematch);
+    elements.momentumSection.classList.toggle("is-hidden", isPrematch);
+    if (isPrematch) {
+      elements.formatSection.classList.add("is-hidden");
+    }
 
     elements.tableLabel.textContent = isLimitedImpact
       ? translate("panel.groupPositions")
@@ -882,26 +892,20 @@
     const injuries = payload.prematch.injuries;
 
     if (injuries?.available) {
-      const homeItems = (injuries.home || []).map(
-        (item) =>
-          `<div class="lmi-mini-card__line">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</div>`
-      );
-      const awayItems = (injuries.away || []).map(
-        (item) =>
-          `<div class="lmi-mini-card__line">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</div>`
-      );
+      const homeItems = (injuries.home || []).map((item) => renderInjuryItem(item));
+      const awayItems = (injuries.away || []).map((item) => renderInjuryItem(item));
 
       elements.injuriesGrid.innerHTML = `
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(
+          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
             translate("prematch.injuriesTitle", { team: payload.teams.home.name })
-          )}</div>
+          )}</span></div>
           ${homeItems.length ? homeItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(
+          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
             translate("prematch.injuriesTitle", { team: payload.teams.away.name })
-          )}</div>
+          )}</span></div>
           ${awayItems.length ? awayItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
       `;
@@ -984,6 +988,10 @@
     }
 
     return items;
+  }
+
+  function renderInjuryItem(item) {
+    return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</span></div>`;
   }
 
   function formatStat(value, suffix = "") {

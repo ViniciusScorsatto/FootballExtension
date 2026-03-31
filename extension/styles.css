@@ -624,6 +624,7 @@ select.lmi-field__input {
 .lmi-expanded__summary {
   min-width: 0;
   flex: 1;
+  text-align: center;
 }
 
 .lmi-expanded__headline {
@@ -647,6 +648,14 @@ select.lmi-field__input {
   justify-content: flex-start;
 }
 
+.lmi-expanded__summary .lmi-expanded__brand {
+  justify-content: center;
+}
+
+.lmi-expanded__summary .lmi-expanded__media-row {
+  justify-content: center;
+}
+
 .lmi-overlay-action {
   display: inline-flex;
   align-items: center;
@@ -668,14 +677,13 @@ select.lmi-field__input {
 }
 
 .lmi-scroll-controls {
-  position: sticky;
-  bottom: 10px;
+  position: absolute;
+  right: -16px;
+  top: 88px;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
-  margin-top: 10px;
+  gap: 8px;
   pointer-events: none;
 }
 
@@ -916,11 +924,39 @@ select.lmi-field__input {
   color: var(--lmi-muted);
 }
 
+.lmi-mini-card__title--icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lmi-mini-card__title-icon {
+  color: var(--lmi-danger);
+  font-size: 12px;
+  line-height: 1;
+}
+
 .lmi-mini-card__line {
   margin-top: 8px;
   color: var(--lmi-text);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.lmi-injury-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.lmi-injury-line__icon {
+  color: var(--lmi-danger);
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.lmi-injury-line__text {
+  min-width: 0;
 }
 
 @media (max-width: 720px) {

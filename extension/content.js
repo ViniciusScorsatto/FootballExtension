@@ -193,18 +193,18 @@
           <div class="lmi-event-banner__text">A goal changes the table.</div>
         </div>
 
-        <div class="lmi-section">
+        <div class="lmi-section lmi-table-section">
           <div class="lmi-section__label">${escapeHtml(translate("panel.tableImpact"))}</div>
           <div class="lmi-impact-row lmi-impact-row--home"></div>
           <div class="lmi-impact-row lmi-impact-row--away"></div>
         </div>
 
-        <div class="lmi-section">
+        <div class="lmi-section lmi-competition-section">
           <div class="lmi-section__label">${escapeHtml(translate("panel.competitionImpact"))}</div>
           <div class="lmi-competition-list"></div>
         </div>
 
-        <div class="lmi-section">
+        <div class="lmi-section lmi-momentum-section">
           <div class="lmi-section__label">${escapeHtml(translate("panel.momentum"))}</div>
           <div class="lmi-momentum">
             <div class="lmi-momentum__bar lmi-momentum__bar--home"></div>
@@ -254,6 +254,9 @@
       competitionLabel: root.querySelectorAll(".lmi-section__label")[1],
       momentumLabel: root.querySelectorAll(".lmi-section__label")[2],
       preMatchLabel: root.querySelectorAll(".lmi-section__label")[3],
+      tableSection: root.querySelector(".lmi-table-section"),
+      competitionSection: root.querySelector(".lmi-competition-section"),
+      momentumSection: root.querySelector(".lmi-momentum-section"),
       homeRow: root.querySelector(".lmi-impact-row--home"),
       awayRow: root.querySelector(".lmi-impact-row--away"),
       competitionList: root.querySelector(".lmi-competition-list"),
@@ -288,7 +291,8 @@
     });
 
     elements.root.addEventListener("click", (event) => {
-      const action = event.target?.dataset?.action;
+      const actionElement = event.target?.closest?.("[data-action]");
+      const action = actionElement?.dataset?.action;
 
       if (action === "collapse") {
         setExpanded(false);
@@ -586,6 +590,7 @@
 
   function render(payload) {
     const hasTableImpact = payload.metadata?.tableImpactAvailable !== false;
+    const isPrematch = payload.status.phase === "upcoming";
     const clockLabel = payload.status.phase === "upcoming" ? "KO" : `${payload.status.minute || 0}'`;
     const scoreline = `${payload.teams.home.shortName} ${payload.score.home}-${payload.score.away} ${payload.teams.away.shortName} · ${clockLabel}`;
     const eventLabel = buildEventLabel(payload.event);
@@ -599,6 +604,9 @@
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
+    elements.tableSection.classList.toggle("is-hidden", isPrematch);
+    elements.competitionSection.classList.toggle("is-hidden", isPrematch);
+    elements.momentumSection.classList.toggle("is-hidden", isPrematch);
 
     elements.tableLabel.textContent = isLimitedImpact
       ? translate("panel.groupPositions")
@@ -833,26 +841,20 @@
     const injuries = payload.prematch.injuries;
 
     if (injuries?.available) {
-      const homeItems = (injuries.home || []).map(
-        (item) =>
-          `<div class="lmi-mini-card__line">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</div>`
-      );
-      const awayItems = (injuries.away || []).map(
-        (item) =>
-          `<div class="lmi-mini-card__line">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</div>`
-      );
+      const homeItems = (injuries.home || []).map((item) => renderInjuryItem(item));
+      const awayItems = (injuries.away || []).map((item) => renderInjuryItem(item));
 
       elements.injuriesGrid.innerHTML = `
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(
+          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
             translate("prematch.injuriesTitle", { team: payload.teams.home.name })
-          )}</div>
+          )}</span></div>
           ${homeItems.length ? homeItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
         <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(
+          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
             translate("prematch.injuriesTitle", { team: payload.teams.away.name })
-          )}</div>
+          )}</span></div>
           ${awayItems.length ? awayItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
         </div>
       `;
@@ -935,6 +937,10 @@
     }
 
     return items;
+  }
+
+  function renderInjuryItem(item) {
+    return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</span></div>`;
   }
 
   async function notifyGoal(payload, eventLabel) {
