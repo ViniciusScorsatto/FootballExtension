@@ -21,6 +21,14 @@
           "Featured leagues only. Unlock Pro for all supported leagues and premium insights.",
         billingSummaryPro:
           "Pro is active. You can use every supported league and the manual fixture fallback.",
+        restoreEyebrow: "Restore Pro",
+        restoreTitle: "Use your billing email",
+        restoreEmailLabel: "Billing email",
+        restoreEmailPlaceholder: "you@example.com",
+        restoreSummary:
+          "Request a restore link to connect this browser to your paid account.",
+        restoreLinked: "This browser is linked to {email}.",
+        restoreAction: "Send Restore Link",
         proActiveTitle: "All supported leagues unlocked",
         proActiveSummary:
           "This browser is on Pro. You can track any supported league and use manual fixture tracking.",
@@ -38,6 +46,11 @@
         statusPlanUpdated: "Plan status refreshed.",
         statusPlanLoadFailed: "Could not load billing status.",
         statusUpgradeFailed: "Could not start Stripe checkout.",
+        statusRestoreEmailInvalid: "Enter the billing email for your Pro account.",
+        statusRestoreSent: "Restore link sent.",
+        statusRestorePreviewOpened:
+          "Restore link opened in a new tab. Finish the link there, then refresh your plan.",
+        statusRestoreFailed: "Could not create a restore link.",
         statusCheckoutPending: "Checkout opened. We will refresh your plan when you return.",
         statusProUnlocked: "Pro unlocked successfully.",
         statusProActive: "Pro is active on this browser.",
@@ -223,6 +236,14 @@
           "Somente ligas em destaque. Desbloqueie o Pro para todas as ligas suportadas e insights premium.",
         billingSummaryPro:
           "O Pro está ativo. Você pode usar todas as ligas suportadas e o fallback por fixture manual.",
+        restoreEyebrow: "Restaurar Pro",
+        restoreTitle: "Use o email da cobrança",
+        restoreEmailLabel: "Email da cobrança",
+        restoreEmailPlaceholder: "voce@exemplo.com",
+        restoreSummary:
+          "Solicite um link de restauração para conectar este navegador à sua conta paga.",
+        restoreLinked: "Este navegador está vinculado a {email}.",
+        restoreAction: "Enviar link de restauração",
         proActiveTitle: "Todas as ligas suportadas desbloqueadas",
         proActiveSummary:
           "Este navegador está no Pro. Você pode acompanhar qualquer liga suportada e usar o acompanhamento manual por fixture.",
@@ -240,6 +261,11 @@
         statusPlanUpdated: "Status do plano atualizado.",
         statusPlanLoadFailed: "Não foi possível carregar o status de cobrança.",
         statusUpgradeFailed: "Não foi possível iniciar o checkout no Stripe.",
+        statusRestoreEmailInvalid: "Informe o email de cobrança da sua conta Pro.",
+        statusRestoreSent: "Link de restauração enviado.",
+        statusRestorePreviewOpened:
+          "O link de restauração foi aberto em uma nova aba. Conclua o processo ali e depois atualize o plano.",
+        statusRestoreFailed: "Não foi possível criar o link de restauração.",
         statusCheckoutPending:
           "Checkout aberto. Vamos atualizar o plano quando você voltar.",
         statusProUnlocked: "Pro desbloqueado com sucesso.",

@@ -151,6 +151,17 @@ export class CacheService {
     this.recordWriteMetric(key);
   }
 
+  async deleteKey(key) {
+    if (this.redisEnabled && this.client) {
+      await this.client.del(key);
+      return;
+    }
+
+    this.memoryStore.values.delete(key);
+    this.memoryStore.counters.delete(key);
+    this.memoryStore.sortedScores.delete(key);
+  }
+
   async incrementScore(key, member, amount = 1) {
     if (this.redisEnabled && this.client) {
       await this.client.zIncrBy(key, amount, member);

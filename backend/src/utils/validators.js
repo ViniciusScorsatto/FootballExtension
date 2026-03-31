@@ -98,3 +98,31 @@ export function validateCheckoutPayload(payload = {}, fallbackUserId = "") {
     offerId: offerId || null
   };
 }
+
+export function validateMagicLinkRequestPayload(payload = {}, fallbackUserId = "") {
+  const userId = validateBillingIdentity(payload.userId ?? fallbackUserId, "userId");
+  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("email must be a valid email address.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    userId,
+    email
+  };
+}
+
+export function validateMagicLinkToken(value) {
+  const token = typeof value === "string" ? value.trim() : "";
+
+  if (!token || !/^[a-f0-9]{32,96}$/i.test(token)) {
+    const error = new Error("token must be a valid magic link token.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return token;
+}

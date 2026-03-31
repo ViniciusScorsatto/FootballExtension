@@ -150,6 +150,14 @@
     rgba(4, 9, 18, 0.58);
 }
 
+.lmi-account-card {
+  margin: 12px 0 10px;
+  padding: 14px;
+  border: 1px solid var(--lmi-border);
+  border-radius: 18px;
+  background: rgba(4, 9, 18, 0.4);
+}
+
 .lmi-billing-card[hidden] {
   display: none;
 }

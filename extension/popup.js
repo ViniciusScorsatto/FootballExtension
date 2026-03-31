@@ -7,6 +7,8 @@ const backendUrlInput = document.getElementById("backendUrl");
 const languageSelect = document.getElementById("language");
 const billingActionButton = document.getElementById("billingAction");
 const billingRefreshButton = document.getElementById("billingRefresh");
+const accountRestoreButton = document.getElementById("accountRestore");
+const accountStatusRefreshButton = document.getElementById("accountStatusRefresh");
 const billingPlanLabel = document.getElementById("billingPlanLabel");
 const billingPlanBadge = document.getElementById("billingPlanBadge");
 const billingEyebrow = document.getElementById("billingEyebrow");
@@ -14,6 +16,11 @@ const billingSummary = document.getElementById("billingSummary");
 const billingOffer = document.getElementById("billingOffer");
 const billingStateNote = document.getElementById("billingStateNote");
 const billingCard = document.querySelector(".lmi-billing-card");
+const accountEmailInput = document.getElementById("accountEmail");
+const accountEyebrow = document.getElementById("accountEyebrow");
+const accountTitle = document.getElementById("accountTitle");
+const accountEmailLabel = document.getElementById("accountEmailLabel");
+const accountSummary = document.getElementById("accountSummary");
 const topPlanPill = document.getElementById("topPlanPill");
 const planHint = document.getElementById("planHint");
 const leagueFilterSelect = document.getElementById("leagueFilter");
@@ -41,6 +48,8 @@ let currentBilling = {
   earlyBirdEligible: false,
   earlyBirdRemaining: 0,
   earlyBirdActive: false,
+  accountLinked: false,
+  accountEmail: "",
   checkoutPending: false,
   checkoutStartedAt: null,
   recentlyUnlocked: false
@@ -95,6 +104,12 @@ function applyStaticTranslations() {
   stopButton.textContent = translate("popup.stopTracking");
   openSidePanelButton.textContent = translate("popup.openSidePanel");
   billingRefreshButton.textContent = translate("popup.refreshPlan");
+  accountEyebrow.textContent = translate("popup.restoreEyebrow");
+  accountTitle.textContent = translate("popup.restoreTitle");
+  accountEmailLabel.textContent = translate("popup.restoreEmailLabel");
+  accountEmailInput.placeholder = translate("popup.restoreEmailPlaceholder");
+  accountRestoreButton.textContent = translate("popup.restoreAction");
+  accountStatusRefreshButton.textContent = translate("popup.refreshPlan");
 
   languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
   languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
@@ -251,6 +266,7 @@ function renderBillingCard() {
 
   billingActionButton.hidden = proActive;
   billingActionButton.textContent = translate("popup.upgradeToPro");
+  renderAccountCard();
 }
 
 function updatePlanHint() {
@@ -262,6 +278,22 @@ function updatePlanHint() {
 
   fixtureIdInput.disabled = true;
   planHint.textContent = translate("popup.proUnlocksAllLeagues");
+}
+
+function renderAccountCard() {
+  const linkedEmail = currentBilling.accountEmail || accountEmailInput.value.trim();
+
+  if (currentBilling.accountEmail && accountEmailInput.value.trim() !== currentBilling.accountEmail) {
+    accountEmailInput.value = currentBilling.accountEmail;
+  }
+
+  if (currentBilling.accountLinked && linkedEmail) {
+    accountSummary.textContent = translate("popup.restoreLinked", {
+      email: linkedEmail
+    });
+  } else {
+    accountSummary.textContent = translate("popup.restoreSummary");
+  }
 }
 
 function buildLiveLabel(match) {
@@ -493,6 +525,8 @@ async function fetchBillingStatus() {
     plan: payload.plan || "free",
     status: payload.status || "inactive",
     offerId: payload.offerId || null,
+    accountLinked: Boolean(payload.account?.linked),
+    accountEmail: payload.account?.email || currentBilling.accountEmail || "",
     earlyBirdEligible: Boolean(payload.offers?.earlyBirdEligible),
     earlyBirdRemaining: payload.offers?.earlyBirdRemaining ?? 0,
     earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
@@ -512,6 +546,7 @@ async function fetchBillingStatus() {
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId,
+    accountEmail: currentBilling.accountEmail,
     billingCheckoutPending: currentBilling.checkoutPending,
     billingCheckoutStartedAt: currentBilling.checkoutStartedAt
   });
@@ -595,6 +630,7 @@ async function loadSettings() {
     "billingPlan",
     "billingStatus",
     "billingOfferId",
+    "accountEmail",
     "billingCheckoutPending",
     "billingCheckoutStartedAt"
   ]);
@@ -611,6 +647,7 @@ async function loadSettings() {
     plan: result.billingPlan || "free",
     status: result.billingStatus || "inactive",
     offerId: result.billingOfferId || null,
+    accountEmail: result.accountEmail || "",
     checkoutPending: Boolean(result.billingCheckoutPending),
     checkoutStartedAt: result.billingCheckoutStartedAt ?? null,
     recentlyUnlocked: false
@@ -734,6 +771,7 @@ async function handleBillingAction() {
       headers: getRequestHeaders(),
       body: JSON.stringify({
         userId: currentBilling.userId,
+        email: accountEmailInput.value.trim() || undefined,
         offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : null
       })
     });
@@ -760,6 +798,71 @@ async function handleBillingAction() {
     setStatus(translate("popup.statusUpgradeFailed"), true);
   } finally {
     billingActionButton.disabled = false;
+  }
+}
+
+function validateEmailInput() {
+  const email = accountEmailInput.value.trim().toLowerCase();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return "";
+  }
+
+  return email;
+}
+
+async function handleRestoreAccess() {
+  const backendUrl = normalizeBackendUrl();
+  const email = validateEmailInput();
+
+  if (!validateBackendUrl(backendUrl)) {
+    setStatus(translate("popup.statusEnterBackend"), true);
+    return;
+  }
+
+  if (!email) {
+    setStatus(translate("popup.statusRestoreEmailInvalid"), true);
+    return;
+  }
+
+  accountRestoreButton.disabled = true;
+
+  try {
+    const response = await fetch(`${backendUrl}/auth/magic-link/request`, {
+      method: "POST",
+      headers: getRequestHeaders(),
+      body: JSON.stringify({
+        userId: currentBilling.userId,
+        email
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with ${response.status}`);
+    }
+
+    const payload = await response.json();
+    currentBilling.accountEmail = payload.account?.email || email;
+    accountEmailInput.value = currentBilling.accountEmail;
+    renderAccountCard();
+
+    await chrome.storage.sync.set({
+      accountEmail: currentBilling.accountEmail
+    });
+
+    if (payload.previewUrl) {
+      await chrome.tabs.create({
+        url: payload.previewUrl
+      });
+      setStatus(translate("popup.statusRestorePreviewOpened"));
+      return;
+    }
+
+    setStatus(translate("popup.statusRestoreSent"));
+  } catch {
+    setStatus(translate("popup.statusRestoreFailed"), true);
+  } finally {
+    accountRestoreButton.disabled = false;
   }
 }
 
@@ -846,6 +949,17 @@ stopButton.addEventListener("click", handleStopTracking);
 openSidePanelButton.addEventListener("click", handleOpenSidePanel);
 billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
+  try {
+    currentBilling.recentlyUnlocked = false;
+    await fetchBillingStatus();
+    setStatus(translate("popup.statusPlanUpdated"));
+    await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
+  } catch {
+    setStatus(translate("popup.statusPlanLoadFailed"), true);
+  }
+});
+accountRestoreButton.addEventListener("click", handleRestoreAccess);
+accountStatusRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
     await fetchBillingStatus();

@@ -1,12 +1,15 @@
 import {
   assertFixtureId,
   validateCheckoutPayload,
+  validateMagicLinkRequestPayload,
+  validateMagicLinkToken,
   parseFixtureId,
   validateBillingIdentity,
   validateEarlyBirdClaimPayload,
   validateSessionPayload
 } from "../utils/validators.js";
 import { renderMarketingPage } from "../views/marketingPage.js";
+import { renderMagicLinkPage } from "../views/magicLinkPage.js";
 
 function isAuthorizedAdminRequest(req, adminToken) {
   if (!adminToken) {
@@ -26,6 +29,7 @@ export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
   billingService,
+  accountService,
   stripeService,
   cacheService,
   apiFootballClient,
@@ -74,6 +78,10 @@ export function createMatchImpactController({
           timeoutMs: env.requestTimeoutMs
         },
         stripe: stripeService.getStatus(),
+        auth: {
+          magicLinkMode: env.authMagicLinkMode,
+          magicLinkTtlMinutes: env.authMagicLinkTtlMinutes
+        },
         cache: {
           ...cacheService.getStatus(),
           ttlSeconds: {
@@ -260,6 +268,53 @@ export function createMatchImpactController({
           offerId: selection.offerId,
           priceId: selection.priceId
         });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async requestMagicLink(req, res, next) {
+      try {
+        const payload = validateMagicLinkRequestPayload(req.body, req.monetization.userId);
+        const result = await accountService.createMagicLinkRequest(payload);
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const previewUrl =
+          env.authMagicLinkMode === "preview"
+            ? `${baseUrl}/auth/magic-link/complete?token=${encodeURIComponent(result.token)}`
+            : "";
+
+        res.status(201).json({
+          ok: true,
+          deliveryMode: result.deliveryMode,
+          previewUrl,
+          expiresAt: result.expiresAt,
+          account: {
+            email: result.account.email,
+            accountId: result.account.accountId
+          }
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async completeMagicLink(req, res, next) {
+      try {
+        const token = validateMagicLinkToken(req.query.token);
+        const restoreResult = await accountService.consumeMagicLink(token);
+        const billingStatus = await billingService.getBillingStatus({
+          userId: restoreResult.userId
+        });
+
+        res
+          .type("html")
+          .send(
+            renderMagicLinkPage({
+              email: restoreResult.account?.email,
+              plan: billingStatus.plan,
+              status: billingStatus.status
+            })
+          );
       } catch (error) {
         next(error);
       }

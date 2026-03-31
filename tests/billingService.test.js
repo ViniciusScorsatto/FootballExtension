@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { AccountService } from "../backend/src/services/accountService.js";
 import { CacheService } from "../backend/src/services/cacheService.js";
 import { BillingService } from "../backend/src/services/billingService.js";
 
@@ -7,9 +8,17 @@ function createBillingService(envOverrides = {}) {
   const cacheService = new CacheService({
     redisUrl: ""
   });
+  const accountService = new AccountService({
+    cacheService,
+    env: {
+      authMagicLinkMode: "preview",
+      authMagicLinkTtlMinutes: 20
+    }
+  });
 
   const billingService = new BillingService({
     cacheService,
+    accountService,
     env: {
       betaModeEnabled: true,
       billingCurrency: "USD",
@@ -106,7 +115,8 @@ test("stripe checkout completion activates the user's Pro entitlement", async ()
 
   assert.equal(result.processed, true);
 
-  const storedEntitlement = await cacheService.getJson("billing:user:tester-4");
+  const linkedAccount = await cacheService.getJson("account:browser:tester-4");
+  const storedEntitlement = await cacheService.getJson(`billing:user:${linkedAccount.accountId}`);
   assert.equal(storedEntitlement.status, "active");
   assert.equal(storedEntitlement.offerId, "early_bird_lifetime");
   assert.equal(storedEntitlement.stripeSubscriptionId, "sub_123");

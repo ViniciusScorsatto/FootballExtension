@@ -36,9 +36,22 @@ function mapPlan(planConfig, priceMonthlyUsd, currency) {
 }
 
 export class BillingService {
-  constructor({ cacheService, env }) {
+  constructor({ cacheService, accountService, env }) {
     this.cacheService = cacheService;
+    this.accountService = accountService;
     this.env = env;
+  }
+
+  async resolveBillingOwnerId(userId) {
+    if (!userId) {
+      return "";
+    }
+
+    if (!this.accountService) {
+      return userId;
+    }
+
+    return (await this.accountService.resolveOwnerId(userId)) || userId;
   }
 
   async getPricingCatalog() {
@@ -80,9 +93,11 @@ export class BillingService {
   }
 
   async getBillingStatus({ userId, planHint = "free" }) {
-    const entitlement = userId
-      ? (await this.cacheService.getJson(buildEntitlementKey(userId))) ?? null
+    const ownerUserId = userId ? await this.resolveBillingOwnerId(userId) : "";
+    const entitlement = ownerUserId
+      ? (await this.cacheService.getJson(buildEntitlementKey(ownerUserId))) ?? null
       : null;
+    const account = userId && this.accountService ? await this.accountService.getAccountByUserId(userId) : null;
     const pricing = await this.getPricingCatalog();
     const earlyBirdStats = pricing.offers.early_bird_lifetime;
     const effectiveEntitlement = entitlement ?? {
@@ -100,6 +115,11 @@ export class BillingService {
       offerId: effectiveEntitlement.offerId,
       grandfatheredPriceUsd: effectiveEntitlement.grandfatheredPriceUsd,
       betaUser: effectiveEntitlement.betaUser,
+      account: {
+        linked: Boolean(account),
+        accountId: account?.accountId ?? "",
+        email: account?.email ?? ""
+      },
       planDetails: pricing.plans[effectiveEntitlement.plan] ?? pricing.plans.free,
       offers: {
         earlyBirdEligible:
@@ -114,7 +134,9 @@ export class BillingService {
   }
 
   async claimEarlyBird({ userId, email }) {
-    const existingEntitlement = await this.cacheService.getJson(buildEntitlementKey(userId));
+    const ownerUserId = await this.resolveBillingOwnerId(userId);
+    const entitlementKey = buildEntitlementKey(ownerUserId);
+    const existingEntitlement = await this.cacheService.getJson(entitlementKey);
 
     if (existingEntitlement?.offerId === BILLING_OFFERS.early_bird_lifetime.id) {
       return {
@@ -159,7 +181,7 @@ export class BillingService {
     };
 
     await this.cacheService.setJson(
-      buildEntitlementKey(userId),
+      entitlementKey,
       entitlement,
       BILLING_COUNTER_TTL_SECONDS
     );
@@ -173,7 +195,8 @@ export class BillingService {
   }
 
   async createCheckoutSelection({ userId, email, offerId }) {
-    const existingEntitlement = await this.cacheService.getJson(buildEntitlementKey(userId));
+    const ownerUserId = await this.resolveBillingOwnerId(userId);
+    const existingEntitlement = await this.cacheService.getJson(buildEntitlementKey(ownerUserId));
     const wantsEarlyBird =
       offerId === BILLING_OFFERS.early_bird_lifetime.id ||
       existingEntitlement?.offerId === BILLING_OFFERS.early_bird_lifetime.id;
@@ -226,8 +249,25 @@ export class BillingService {
     offerId = null,
     status = "active"
   }) {
+    let targetUserId = await this.resolveBillingOwnerId(userId);
+
+    if (email && this.accountService) {
+      const account = await this.accountService.findOrCreateAccountByEmail(email);
+
+      if (account?.accountId) {
+        targetUserId = account.accountId;
+
+        if (userId && userId !== targetUserId) {
+          await this.accountService.linkUserToAccount(userId, targetUserId);
+        }
+      }
+    }
+
+    targetUserId = targetUserId || userId;
+
     const existingEntitlement =
-      (await this.cacheService.getJson(buildEntitlementKey(userId))) ?? createDefaultEntitlement();
+      (await this.cacheService.getJson(buildEntitlementKey(targetUserId))) ??
+      createDefaultEntitlement();
 
     const normalizedOfferId =
       offerId || (existingEntitlement.offerId === BILLING_OFFERS.early_bird_lifetime.id
@@ -252,7 +292,7 @@ export class BillingService {
     };
 
     await this.cacheService.setJson(
-      buildEntitlementKey(userId),
+      buildEntitlementKey(targetUserId),
       entitlement,
       BILLING_COUNTER_TTL_SECONDS
     );
@@ -260,7 +300,7 @@ export class BillingService {
     if (subscriptionId) {
       await this.cacheService.setJson(
         buildSubscriptionKey(subscriptionId),
-        { userId },
+        { userId: targetUserId },
         BILLING_COUNTER_TTL_SECONDS
       );
     }
@@ -268,7 +308,7 @@ export class BillingService {
     if (customerId) {
       await this.cacheService.setJson(
         buildCustomerKey(customerId),
-        { userId },
+        { userId: targetUserId },
         BILLING_COUNTER_TTL_SECONDS
       );
     }

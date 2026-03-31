@@ -109,6 +109,23 @@ function createController(envOverrides = {}) {
         };
       }
     },
+    accountService: {
+      createMagicLinkRequest: async () => ({
+        token: "abc",
+        deliveryMode: "preview",
+        expiresAt: new Date().toISOString(),
+        account: {
+          email: "tester@example.com",
+          accountId: "acct_123"
+        }
+      }),
+      consumeMagicLink: async () => ({
+        userId: "tester",
+        account: {
+          email: "tester@example.com"
+        }
+      })
+    },
     cacheService: {
       getStatus() {
         return {
@@ -132,6 +149,8 @@ function createController(envOverrides = {}) {
       nodeEnv: "test",
       trustProxy: 1,
       requestTimeoutMs: 5000,
+      authMagicLinkMode: "preview",
+      authMagicLinkTtlMinutes: 20,
       liveCacheTtlSeconds: 15,
       upcomingCacheTtlSeconds: 120,
       finishedCacheTtlSeconds: 3600,

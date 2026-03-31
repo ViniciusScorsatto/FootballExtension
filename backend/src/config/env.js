@@ -133,6 +133,8 @@ export const env = {
   stripeEarlyPriceId: process.env.STRIPE_EARLY_PRICE_ID ?? "",
   stripeSuccessUrl: process.env.STRIPE_SUCCESS_URL ?? "",
   stripeCancelUrl: process.env.STRIPE_CANCEL_URL ?? "",
+  authMagicLinkMode: process.env.AUTH_MAGIC_LINK_MODE ?? "preview",
+  authMagicLinkTtlMinutes: readNumber("AUTH_MAGIC_LINK_TTL_MINUTES", 20),
   rateLimitEnabled: readBoolean("RATE_LIMIT_ENABLED", true),
   rateLimitWindowSeconds: readNumber("RATE_LIMIT_WINDOW_SECONDS", 60),
   freeReadLimitPerWindow: readNumber("RATE_LIMIT_FREE_READS_PER_WINDOW", 120),

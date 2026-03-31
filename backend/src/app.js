@@ -6,6 +6,7 @@ import { attachMonetizationContext } from "./middleware/placeholderGuards.js";
 import { createRequestLimiter } from "./middleware/requestLimiter.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnalyticsService } from "./services/analyticsService.js";
+import { AccountService } from "./services/accountService.js";
 import { ApiFootballClient } from "./services/apiFootballClient.js";
 import { BillingService } from "./services/billingService.js";
 import { CacheService } from "./services/cacheService.js";
@@ -22,8 +23,14 @@ const analyticsService = new AnalyticsService({
   cacheService
 });
 
+const accountService = new AccountService({
+  cacheService,
+  env
+});
+
 const billingService = new BillingService({
   cacheService,
+  accountService,
   env
 });
 
@@ -54,6 +61,7 @@ const controller = createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
   billingService,
+  accountService,
   stripeService,
   cacheService,
   apiFootballClient,
