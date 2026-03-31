@@ -1,5 +1,6 @@
 const DEFAULT_BACKEND_URL = "http://localhost:3000";
 const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
+const RESTORE_AUTO_REFRESH_WINDOW_MS = 45000;
 const { normalizeLanguage, t } = window.LMI_I18N;
 
 const fixtureIdInput = document.getElementById("fixtureId");
@@ -56,6 +57,8 @@ let currentBilling = {
   earlyBirdActive: false,
   accountLinked: false,
   accountEmail: "",
+  restorePending: false,
+  restoreStartedAt: null,
   checkoutPending: false,
   checkoutStartedAt: null,
   recentlyUnlocked: false
@@ -560,6 +563,10 @@ async function fetchBillingStatus() {
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
 
   currentBilling.recentlyUnlocked = justUnlocked;
+  if (currentBilling.accountLinked || nowPro) {
+    currentBilling.restorePending = false;
+    currentBilling.restoreStartedAt = null;
+  }
   if (justUnlocked || nowPro) {
     currentBilling.checkoutPending = false;
     currentBilling.checkoutStartedAt = null;
@@ -571,6 +578,8 @@ async function fetchBillingStatus() {
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId,
     accountEmail: currentBilling.accountEmail,
+    restorePending: currentBilling.restorePending,
+    restoreStartedAt: currentBilling.restoreStartedAt,
     billingCheckoutPending: currentBilling.checkoutPending,
     billingCheckoutStartedAt: currentBilling.checkoutStartedAt
   });
@@ -655,6 +664,8 @@ async function loadSettings() {
     "billingStatus",
     "billingOfferId",
     "accountEmail",
+    "restorePending",
+    "restoreStartedAt",
     "billingCheckoutPending",
     "billingCheckoutStartedAt"
   ]);
@@ -672,6 +683,8 @@ async function loadSettings() {
     status: result.billingStatus || "inactive",
     offerId: result.billingOfferId || null,
     accountEmail: result.accountEmail || "",
+    restorePending: Boolean(result.restorePending),
+    restoreStartedAt: result.restoreStartedAt ?? null,
     checkoutPending: Boolean(result.billingCheckoutPending),
     checkoutStartedAt: result.billingCheckoutStartedAt ?? null,
     recentlyUnlocked: false
@@ -868,19 +881,23 @@ async function handleRestoreAccess() {
 
     const payload = await response.json();
     currentBilling.accountEmail = payload.account?.email || email;
+    currentBilling.restorePending = true;
+    currentBilling.restoreStartedAt = Date.now();
     accountEmailInput.value = currentBilling.accountEmail;
     renderAccountCard();
 
     await chrome.storage.sync.set({
-      accountEmail: currentBilling.accountEmail
+      accountEmail: currentBilling.accountEmail,
+      restorePending: true,
+      restoreStartedAt: currentBilling.restoreStartedAt
     });
 
     if (payload.previewUrl) {
       await chrome.tabs.create({
         url: payload.previewUrl
       });
-      setStatus(translate("popup.statusRestorePreviewOpened"));
-      return;
+    setStatus(translate("popup.statusRestorePreviewOpened"));
+    return;
     }
 
     setStatus(translate("popup.statusRestoreSent"));
@@ -888,6 +905,39 @@ async function handleRestoreAccess() {
     setStatus(translate("popup.statusRestoreFailed"), true);
   } finally {
     accountRestoreButton.disabled = false;
+  }
+}
+
+function shouldAutoRefreshRestore() {
+  if (!currentBilling.restorePending) {
+    return false;
+  }
+
+  if (!currentBilling.restoreStartedAt) {
+    return true;
+  }
+
+  return Date.now() - Number(currentBilling.restoreStartedAt) <= RESTORE_AUTO_REFRESH_WINDOW_MS;
+}
+
+async function autoRefreshAfterReturn() {
+  if (!shouldAutoRefreshRestore() && !currentBilling.checkoutPending) {
+    return;
+  }
+
+  try {
+    await fetchBillingStatus();
+
+    if (isProPlan()) {
+      setStatus(translate("popup.statusProUnlocked"));
+      return;
+    }
+
+    if (currentBilling.accountLinked) {
+      setStatus(translate("popup.statusRestoreLinked"));
+    }
+  } catch {
+    // Quiet on passive resume checks.
   }
 }
 
@@ -996,6 +1046,16 @@ accountStatusRefreshButton.addEventListener("click", async () => {
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
   } catch {
     setStatus(translate("popup.statusPlanLoadFailed"), true);
+  }
+});
+
+window.addEventListener("focus", () => {
+  void autoRefreshAfterReturn();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    void autoRefreshAfterReturn();
   }
 });
 

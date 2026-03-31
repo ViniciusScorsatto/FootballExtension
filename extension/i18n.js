@@ -53,6 +53,8 @@
         statusRestoreSent: "Restore link sent.",
         statusRestorePreviewOpened:
           "Restore link opened in a new tab. Finish the link there, then refresh your plan.",
+        statusRestoreLinked:
+          "This browser is linked. We are checking whether a Pro entitlement should be restored.",
         statusRestoreFailed: "Could not create a restore link.",
         statusCheckoutPending: "Checkout opened. We will refresh your plan when you return.",
         statusProUnlocked: "Pro unlocked successfully.",
@@ -271,6 +273,8 @@
         statusRestoreSent: "Link de restauração enviado.",
         statusRestorePreviewOpened:
           "O link de restauração foi aberto em uma nova aba. Conclua o processo ali e depois atualize o plano.",
+        statusRestoreLinked:
+          "Este navegador já está vinculado. Estamos verificando se um Pro deve ser restaurado aqui.",
         statusRestoreFailed: "Não foi possível criar o link de restauração.",
         statusCheckoutPending:
           "Checkout aberto. Vamos atualizar o plano quando você voltar.",
