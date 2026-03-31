@@ -359,7 +359,7 @@ function renderAccountCard() {
 }
 
 function buildLiveLabel(match) {
-  const featuredPrefix = match.league?.featured
+  const featuredPrefix = !isProPlan() && match.league?.featured
     ? `${translate("popup.featuredLeaguePrefix")} · `
     : "";
   const suffix =
@@ -369,14 +369,15 @@ function buildLiveLabel(match) {
 }
 
 function buildUpcomingLabel(match) {
-  const featuredPrefix = match.league?.featured
+  const featuredPrefix = !isProPlan() && match.league?.featured
     ? `${translate("popup.featuredLeaguePrefix")} · `
     : "";
   return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
 }
 
 function buildLeagueFilterLabel(league) {
-  const featuredPrefix = league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
+  const featuredPrefix =
+    !isProPlan() && league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
   const countrySuffix = league.country ? ` · ${league.country}` : "";
   const availabilitySuffix =
     league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";

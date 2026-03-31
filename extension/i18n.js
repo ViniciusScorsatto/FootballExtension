@@ -18,7 +18,7 @@
         freePlan: "Free",
         proPlan: "Pro",
         billingSummaryFree:
-          "Featured leagues only. Unlock Pro for all supported leagues and premium insights.",
+          "Featured launch leagues only. Unlock Pro for all configured leagues and premium insights.",
         billingSummaryPro:
           "Pro is active. You can use every supported league and the manual fixture fallback.",
         restoreEyebrow: "Restore Pro",
@@ -35,16 +35,16 @@
           "This browser is linked to {email}, but no active Pro subscription was found for that email yet.",
         restoreLinkedNoProCompact: "Linked to {email}, but Pro was not found yet.",
         restoreAction: "Send Restore Link",
-        proActiveTitle: "All supported leagues unlocked",
+        proActiveTitle: "All configured leagues unlocked",
         proActiveSummary:
-          "This browser is on Pro. You can track any supported league and use manual fixture tracking.",
+          "This browser is on Pro. You can track any configured league and use manual fixture tracking.",
         earlyBirdOffer:
           "Early Bird Pro is live: {price}/month forever for the first {remaining} users.",
         earlyBirdClosed: "Early Bird Pro is now closed.",
         checkoutPending: "Finish checkout and reopen the extension to unlock Pro automatically.",
         proUnlockedTitle: "Pro unlocked",
         proUnlockedBody:
-          "Your payment was confirmed. All supported leagues and manual fixture tracking are now active.",
+          "Your payment was confirmed. All configured leagues and manual fixture tracking are now active.",
         linkedNoProBody:
           "This browser is linked to the billing email, but we still did not find an active Pro subscription for it.",
         upgradeToPro: "Unlock Pro",
@@ -67,7 +67,7 @@
         backendUrl: "Backend URL",
         refreshMatches: "Refresh Match List",
         leagueFocus: "League Focus",
-        allSupportedLeagues: "All supported leagues",
+        allSupportedLeagues: "All configured leagues",
         liveMatches: "Live Matches",
         upcomingMatches: "Upcoming Matches",
         manualFixtureId: "Manual Fixture ID",
@@ -85,7 +85,7 @@
         noMatchesRightNow: "No matches right now",
         scoreOnlySuffix: "Live score only - no table impact",
         featuredLeaguesOnly: "Free plan: featured leagues only",
-        proUnlocksAllLeagues: "Pro unlocks all supported leagues and manual fixture tracking.",
+        proUnlocksAllLeagues: "Pro unlocks all configured leagues and manual fixture tracking.",
         statusUpgradeRequiredLeague:
           "This league is part of Pro. Choose a featured league or upgrade.",
         statusUpgradeRequiredManual:
@@ -260,16 +260,16 @@
           "Este navegador está vinculado a {email}, mas ainda não encontramos um Pro ativo nesse email.",
         restoreLinkedNoProCompact: "Vinculado a {email}, mas o Pro ainda não foi encontrado.",
         restoreAction: "Enviar link de restauração",
-        proActiveTitle: "Todas as ligas suportadas desbloqueadas",
+        proActiveTitle: "Todas as ligas configuradas desbloqueadas",
         proActiveSummary:
-          "Este navegador está no Pro. Você pode acompanhar qualquer liga suportada e usar o acompanhamento manual por fixture.",
+          "Este navegador está no Pro. Você pode acompanhar qualquer liga configurada e usar o acompanhamento manual por fixture.",
         earlyBirdOffer:
           "Early Bird Pro ativo: {price}/mês para sempre para os próximos {remaining} usuários.",
         earlyBirdClosed: "O Early Bird Pro já encerrou.",
         checkoutPending: "Conclua o checkout e reabra a extensão para desbloquear o Pro automaticamente.",
         proUnlockedTitle: "Pro desbloqueado",
         proUnlockedBody:
-          "O pagamento foi confirmado. Todas as ligas suportadas e o acompanhamento manual por fixture já estão ativos.",
+          "O pagamento foi confirmado. Todas as ligas configuradas e o acompanhamento manual por fixture já estão ativos.",
         linkedNoProBody:
           "Este navegador está vinculado ao email de cobrança, mas ainda não encontramos um Pro ativo para ele.",
         upgradeToPro: "Desbloquear Pro",
@@ -293,7 +293,7 @@
         backendUrl: "URL do backend",
         refreshMatches: "Atualizar lista de jogos",
         leagueFocus: "Foco de ligas",
-        allSupportedLeagues: "Todas as ligas suportadas",
+        allSupportedLeagues: "Todas as ligas configuradas",
         liveMatches: "Jogos ao vivo",
         upcomingMatches: "Próximos jogos",
         manualFixtureId: "Fixture ID manual",
@@ -312,7 +312,7 @@
         scoreOnlySuffix: "Somente placar ao vivo - sem impacto na tabela",
         featuredLeaguesOnly: "Plano Free: apenas ligas em destaque",
         proUnlocksAllLeagues:
-          "O Pro desbloqueia todas as ligas suportadas e o acompanhamento manual por fixture.",
+          "O Pro desbloqueia todas as ligas configuradas e o acompanhamento manual por fixture.",
         statusUpgradeRequiredLeague:
           "Esta liga faz parte do Pro. Escolha uma liga em destaque ou faça upgrade.",
         statusUpgradeRequiredManual:

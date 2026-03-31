@@ -325,7 +325,8 @@
   }
 
   function buildLeagueFilterLabel(league) {
-    const featuredPrefix = league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
+    const featuredPrefix =
+      !isProPlan() && league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
     const countrySuffix = league.country ? ` · ${league.country}` : "";
     const availabilitySuffix =
       league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";
@@ -397,7 +398,7 @@
   }
 
   function buildLiveLabel(match) {
-    const featuredPrefix = match.league?.featured
+    const featuredPrefix = !isProPlan() && match.league?.featured
       ? `${translate("popup.featuredLeaguePrefix")} · `
       : "";
     const suffix =
@@ -407,7 +408,7 @@
   }
 
   function buildUpcomingLabel(match) {
-    const featuredPrefix = match.league?.featured
+    const featuredPrefix = !isProPlan() && match.league?.featured
       ? `${translate("popup.featuredLeaguePrefix")} · `
       : "";
 
