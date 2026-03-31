@@ -22,6 +22,7 @@ function buildEmptyRecoveryDebug(email) {
     found: false,
     lookupSource: "none",
     email,
+    stripeEnabled: false,
     searchCustomerCount: 0,
     filteredCustomerCount: 0,
     scannedCustomerCount: 0,
@@ -200,8 +201,24 @@ export class StripeService {
   async findRecoverableSubscriptionByEmail(email) {
     const normalizedEmail = normalizeEmail(email);
 
-    if (!this.enabled || !this.client || !normalizedEmail) {
-      return null;
+    if (!normalizedEmail) {
+      return buildRecoveryResult({
+        found: false,
+        lookupSource: "none",
+        email: normalizedEmail,
+        stripeEnabled: this.enabled,
+        reason: "missing_email"
+      });
+    }
+
+    if (!this.enabled || !this.client) {
+      return buildRecoveryResult({
+        found: false,
+        lookupSource: "none",
+        email: normalizedEmail,
+        stripeEnabled: false,
+        reason: "stripe_not_enabled"
+      });
     }
 
     const searchedCustomers = await searchMatchingCustomers(this.client, normalizedEmail, 50);
@@ -223,6 +240,7 @@ export class StripeService {
           found: true,
           lookupSource: "customer_search",
           email: normalizedEmail,
+          stripeEnabled: true,
           searchCustomerCount: searchedCustomerCount,
           filteredCustomerCount: 0,
           scannedCustomerCount: 0,
@@ -254,6 +272,7 @@ export class StripeService {
           found: true,
           lookupSource: "customer",
           email: normalizedEmail,
+          stripeEnabled: true,
           searchCustomerCount: searchedCustomerCount,
           filteredCustomerCount: filteredAndScannedCustomerCount,
           scannedCustomerCount: filteredAndScannedCustomerCount,
@@ -290,6 +309,7 @@ export class StripeService {
         found: true,
         lookupSource: "checkout_session",
         email: normalizedEmail,
+        stripeEnabled: true,
         searchCustomerCount: searchedCustomerCount,
         filteredCustomerCount: filteredAndScannedCustomerCount,
         scannedCustomerCount: filteredAndScannedCustomerCount,
@@ -347,6 +367,7 @@ export class StripeService {
         found: true,
         lookupSource: "subscription_scan",
         email: normalizedEmail,
+        stripeEnabled: true,
         searchCustomerCount: searchedCustomerCount,
         filteredCustomerCount: filteredAndScannedCustomerCount,
         scannedCustomerCount: filteredAndScannedCustomerCount,
@@ -364,6 +385,7 @@ export class StripeService {
       found: false,
       lookupSource: "none",
       email: normalizedEmail,
+      stripeEnabled: true,
       searchCustomerCount: searchedCustomerCount,
       filteredCustomerCount: filteredAndScannedCustomerCount,
       scannedCustomerCount: filteredAndScannedCustomerCount,
