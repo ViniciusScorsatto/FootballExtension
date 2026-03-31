@@ -464,11 +464,28 @@ function buildUpcomingLabel(match) {
 function buildLeagueFilterLabel(league) {
   const featuredPrefix =
     !isProPlan() && league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
-  const countrySuffix = league.country ? ` · ${league.country}` : "";
   const availabilitySuffix =
     league.availableNow === false ? ` · ${translate("popup.noMatchesInCurrentWindow")}` : "";
 
-  return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
+  return `${featuredPrefix}${league.name}${availabilitySuffix}`;
+}
+
+function buildLeagueCountryGroups(leagueFilter) {
+  const countryGroups = new Map();
+
+  leagueFilter.availableLeagues.forEach((league) => {
+    const country = String(league.country || "Other").trim() || "Other";
+
+    if (!countryGroups.has(country)) {
+      countryGroups.set(country, []);
+    }
+
+    countryGroups.get(country).push(league);
+  });
+
+  return [...countryGroups.entries()].sort(([leftCountry], [rightCountry]) =>
+    leftCountry.localeCompare(rightCountry)
+  );
 }
 
 function populateMatchSelect(selectElement, matches, placeholderLabel, labelBuilder, selectedFixtureId) {
@@ -552,15 +569,22 @@ function populateLeagueFilterSelect(leagueFilter, selectedLeagueId) {
   allOption.textContent = translate("popup.allSupportedLeagues");
   leagueFilterSelect.appendChild(allOption);
 
-  leagueFilter.availableLeagues.forEach((league) => {
-    const option = document.createElement("option");
-    option.value = String(league.id);
-    option.textContent = buildLeagueFilterLabel(league);
-    option.disabled =
-      league.availableNow === false ||
-      (!isProPlan() && !league.featured);
-    option.selected = Number(selectedLeagueId) === league.id;
-    leagueFilterSelect.appendChild(option);
+  buildLeagueCountryGroups(leagueFilter).forEach(([country, leagues]) => {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = country;
+
+    leagues.forEach((league) => {
+      const option = document.createElement("option");
+      option.value = String(league.id);
+      option.textContent = buildLeagueFilterLabel(league);
+      option.disabled =
+        league.availableNow === false ||
+        (!isProPlan() && !league.featured);
+      option.selected = Number(selectedLeagueId) === league.id;
+      optgroup.appendChild(option);
+    });
+
+    leagueFilterSelect.appendChild(optgroup);
   });
 }
 
@@ -890,6 +914,7 @@ async function loadSettings() {
   const result = await chrome.storage.sync.get([
     "fixtureId",
     "trackingEnabled",
+    "activeViewMode",
     "leagueFilterId",
     "language",
     "billingUserId",
@@ -932,6 +957,7 @@ async function loadSettings() {
 
   await chrome.storage.sync.set({
     billingUserId: currentBilling.userId,
+    activeViewMode: result.activeViewMode ?? "overlay",
     notifyGoals: currentNotifications.notifyGoals,
     notifyTableChanges: currentNotifications.notifyTableChanges
   });
@@ -1039,6 +1065,7 @@ async function handleStartTracking() {
   await chrome.storage.sync.set({
     fixtureId,
     language: currentLanguage,
+    activeViewMode: "overlay",
     billingUserId: currentBilling.userId,
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
@@ -1061,6 +1088,7 @@ async function handleStopTracking() {
 
   await chrome.storage.sync.set({
     trackingEnabled: false,
+    activeViewMode: "overlay",
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId
@@ -1256,8 +1284,14 @@ async function handleOpenSidePanel() {
         path: "sidepanel.html",
         enabled: true
       });
+      await chrome.storage.sync.set({
+        activeViewMode: "sidepanel"
+      });
       await chrome.sidePanel.open({ tabId: activeTab.id });
     } else if (activeTab?.windowId) {
+      await chrome.storage.sync.set({
+        activeViewMode: "sidepanel"
+      });
       await chrome.sidePanel.open({ windowId: activeTab.windowId });
     } else {
       throw new Error("No active tab available");
@@ -1297,13 +1331,17 @@ refreshMatchesButton.addEventListener("click", async () => {
 });
 
 languageSelect.addEventListener("change", async () => {
+  const previousLanguage = currentLanguage;
   setLanguage(languageSelect.value);
   await chrome.storage.sync.set({
     language: currentLanguage
   });
-  trackAnalytics("language_selected", {
-    selectedLanguage: currentLanguage
-  });
+
+  if (currentLanguage !== previousLanguage) {
+    trackAnalytics("language_selected", {
+      selectedLanguage: currentLanguage
+    });
+  }
   await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
 });
 

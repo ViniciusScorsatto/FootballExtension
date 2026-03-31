@@ -8,6 +8,7 @@
   const STORAGE_KEYS = [
     "fixtureId",
     "trackingEnabled",
+    "activeViewMode",
     "language",
     "billingUserId",
     "billingPlan",
@@ -21,6 +22,9 @@
       .replace(/\/$/, "");
   const DEFAULT_LANGUAGE = globalThis.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
+  const PREMATCH_MEDIUM_POLL_INTERVAL_MS = 120000;
+  const PREMATCH_SLOW_POLL_INTERVAL_MS = 300000;
+  const PREMATCH_FAR_POLL_INTERVAL_MS = 900000;
   const MAX_POLL_INTERVAL_MS = 120000;
   const GOAL_MODE_DURATION_MS = 7000;
   const RENDER_DEBOUNCE_MS = 80;
@@ -46,6 +50,7 @@
     notifyGoals: true,
     notifyTableChanges: true,
     trackingEnabled: false,
+    activeViewMode: "overlay",
     pollTimer: null,
     renderTimer: null,
     backoffMs: BASE_POLL_INTERVAL_MS,
@@ -98,6 +103,7 @@
       if (
         changes.fixtureId ||
         changes.trackingEnabled ||
+        changes.activeViewMode ||
         changes.billingUserId ||
         changes.billingPlan ||
         changes.billingStatus ||
@@ -334,9 +340,15 @@
     state.notifyGoals = settings.notifyGoals ?? true;
     state.notifyTableChanges = settings.notifyTableChanges ?? true;
     state.trackingEnabled = Boolean(settings.trackingEnabled);
+    state.activeViewMode = settings.activeViewMode ?? "overlay";
     updateStaticCopy();
 
-    if (!state.trackingEnabled || !state.fixtureId || state.pageDismissed) {
+    if (
+      !state.trackingEnabled ||
+      !state.fixtureId ||
+      state.pageDismissed ||
+      state.activeViewMode === "sidepanel"
+    ) {
       stopTracking();
       return;
     }
@@ -413,6 +425,36 @@
     state.pollTimer = window.setTimeout(fetchImpact, delayMs);
   }
 
+  function getPollingIntervalMs(payload) {
+    if (payload?.status?.phase !== "upcoming") {
+      return BASE_POLL_INTERVAL_MS;
+    }
+
+    const startsAt = payload?.startsAt ?? null;
+
+    if (!startsAt) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    const kickoffMs = new Date(startsAt).getTime();
+
+    if (!Number.isFinite(kickoffMs)) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    const minutesToKickoff = (kickoffMs - Date.now()) / (60 * 1000);
+
+    if (minutesToKickoff <= 90) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    if (minutesToKickoff <= 360) {
+      return PREMATCH_SLOW_POLL_INTERVAL_MS;
+    }
+
+    return PREMATCH_FAR_POLL_INTERVAL_MS;
+  }
+
   function extensionRequest(url, options = {}) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -470,7 +512,7 @@
         return;
       }
 
-      scheduleNextPoll(BASE_POLL_INTERVAL_MS);
+      scheduleNextPoll(getPollingIntervalMs(payload));
     } catch (error) {
       renderErrorState(error);
       elements.lastUpdated.textContent = "";

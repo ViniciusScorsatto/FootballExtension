@@ -2,6 +2,7 @@
   const STORAGE_KEYS = [
     "fixtureId",
     "trackingEnabled",
+    "activeViewMode",
     "language",
     "billingUserId",
     "billingPlan",
@@ -14,6 +15,9 @@
       .replace(/\/$/, "");
   const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
+  const PREMATCH_MEDIUM_POLL_INTERVAL_MS = 120000;
+  const PREMATCH_SLOW_POLL_INTERVAL_MS = 300000;
+  const PREMATCH_FAR_POLL_INTERVAL_MS = 900000;
   const MAX_POLL_INTERVAL_MS = 120000;
   const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
   const updateAnalyticsConfig = window.LMI_ANALYTICS?.updateConfig ?? (() => {});
@@ -37,6 +41,7 @@
     billingPlan: "free",
     billingStatus: "inactive",
     trackingEnabled: false,
+    activeViewMode: "overlay",
     currentLiveMatches: [],
     currentUpcomingMatches: [],
     currentLeagueFilter: {
@@ -159,7 +164,8 @@
         source: "sidepanel"
       });
       await chrome.storage.sync.set({
-        trackingEnabled: false
+        trackingEnabled: false,
+        activeViewMode: "overlay"
       });
       renderEmptyState();
     });
@@ -211,6 +217,7 @@
       if (
         changes.fixtureId ||
         changes.trackingEnabled ||
+        changes.activeViewMode ||
         changes.billingUserId ||
         changes.billingPlan ||
         changes.billingStatus
@@ -241,6 +248,7 @@
       settings.billingPlan === "pro" && settings.billingStatus === "active" ? "pro" : "free";
     state.billingStatus = settings.billingStatus ?? "inactive";
     state.trackingEnabled = Boolean(settings.trackingEnabled);
+    state.activeViewMode = settings.activeViewMode ?? "overlay";
     state.selectedLeagueId = settings.leagueFilterId ?? null;
 
     renderStaticCopy();
@@ -255,7 +263,7 @@
       sidepanelOpenedTracked = true;
     }
 
-    if (!state.trackingEnabled || !state.fixtureId) {
+    if (!state.trackingEnabled || !state.fixtureId || state.activeViewMode !== "sidepanel") {
       clearPollTimer();
       renderEmptyState();
       return;
@@ -357,6 +365,36 @@
     state.pollTimer = window.setTimeout(fetchImpact, delayMs);
   }
 
+  function getPollingIntervalMs(payload) {
+    if (payload?.status?.phase !== "upcoming") {
+      return BASE_POLL_INTERVAL_MS;
+    }
+
+    const startsAt = payload?.startsAt ?? null;
+
+    if (!startsAt) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    const kickoffMs = new Date(startsAt).getTime();
+
+    if (!Number.isFinite(kickoffMs)) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    const minutesToKickoff = (kickoffMs - Date.now()) / (60 * 1000);
+
+    if (minutesToKickoff <= 90) {
+      return PREMATCH_MEDIUM_POLL_INTERVAL_MS;
+    }
+
+    if (minutesToKickoff <= 360) {
+      return PREMATCH_SLOW_POLL_INTERVAL_MS;
+    }
+
+    return PREMATCH_FAR_POLL_INTERVAL_MS;
+  }
+
   function extensionRequest(url, options = {}) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -405,11 +443,28 @@
   function buildLeagueFilterLabel(league) {
     const featuredPrefix =
       !isProPlan() && league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
-    const countrySuffix = league.country ? ` · ${league.country}` : "";
     const availabilitySuffix =
-      league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";
+      league.availableNow === false ? ` · ${translate("popup.noMatchesInCurrentWindow")}` : "";
 
-    return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
+    return `${featuredPrefix}${league.name}${availabilitySuffix}`;
+  }
+
+  function buildLeagueCountryGroups() {
+    const countryGroups = new Map();
+
+    state.currentLeagueFilter.availableLeagues.forEach((league) => {
+      const country = String(league.country || "Other").trim() || "Other";
+
+      if (!countryGroups.has(country)) {
+        countryGroups.set(country, []);
+      }
+
+      countryGroups.get(country).push(league);
+    });
+
+    return [...countryGroups.entries()].sort(([leftCountry], [rightCountry]) =>
+      leftCountry.localeCompare(rightCountry)
+    );
   }
 
   function mergeLeagueFilterPayloads(...payloads) {
@@ -460,13 +515,20 @@
     allOption.textContent = translate("popup.allSupportedLeagues");
     elements.leagueFilter.appendChild(allOption);
 
-    state.currentLeagueFilter.availableLeagues.forEach((league) => {
-      const option = document.createElement("option");
-      option.value = String(league.id);
-      option.textContent = buildLeagueFilterLabel(league);
-      option.disabled = league.availableNow === false || (!isProPlan() && !league.featured);
-      option.selected = Number(state.selectedLeagueId) === league.id;
-      elements.leagueFilter.appendChild(option);
+    buildLeagueCountryGroups().forEach(([country, leagues]) => {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = country;
+
+      leagues.forEach((league) => {
+        const option = document.createElement("option");
+        option.value = String(league.id);
+        option.textContent = buildLeagueFilterLabel(league);
+        option.disabled = league.availableNow === false || (!isProPlan() && !league.featured);
+        option.selected = Number(state.selectedLeagueId) === league.id;
+        optgroup.appendChild(option);
+      });
+
+      elements.leagueFilter.appendChild(optgroup);
     });
   }
 
@@ -595,6 +657,7 @@
     await chrome.storage.sync.set({
       fixtureId,
       trackingEnabled: true,
+      activeViewMode: "sidepanel",
       leagueFilterId: getSelectedLeagueId(),
       billingPlan: state.billingPlan,
       billingStatus: state.billingStatus
@@ -631,7 +694,7 @@
         return;
       }
 
-      scheduleNextPoll(BASE_POLL_INTERVAL_MS);
+      scheduleNextPoll(getPollingIntervalMs(payload));
     } catch (error) {
       renderErrorState(error);
       state.backoffMs = Math.min(state.backoffMs * 2, MAX_POLL_INTERVAL_MS);
