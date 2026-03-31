@@ -2,6 +2,24 @@ import axios from "axios";
 import { getFixturePhase } from "../utils/impact.js";
 import { normalizeUpstreamApiError } from "../utils/errors.js";
 
+function normalizeCoverageBoolean(value) {
+  return typeof value === "boolean" ? value : null;
+}
+
+function normalizeLeagueCoverage(coverage = {}) {
+  return {
+    standings: normalizeCoverageBoolean(coverage?.standings),
+    injuries: normalizeCoverageBoolean(coverage?.injuries),
+    players: normalizeCoverageBoolean(coverage?.players),
+    fixtures: {
+      events: normalizeCoverageBoolean(coverage?.fixtures?.events),
+      lineups: normalizeCoverageBoolean(coverage?.fixtures?.lineups),
+      statisticsFixtures: normalizeCoverageBoolean(coverage?.fixtures?.statistics_fixtures),
+      statisticsPlayers: normalizeCoverageBoolean(coverage?.fixtures?.statistics_players)
+    }
+  };
+}
+
 export class ApiFootballClient {
   constructor({ baseUrl, apiKey, timeoutMs }) {
     this.baseUrl = baseUrl;
@@ -136,6 +154,26 @@ export class ApiFootballClient {
     });
 
     return response.data;
+  }
+
+  async getLeagueCoverage(leagueId, season) {
+    const response = await this.request("/leagues", {
+      id: leagueId,
+      season
+    });
+
+    const leagues = response.data?.response ?? [];
+    const leagueEntry = leagues.find((entry) => Number(entry?.league?.id) === Number(leagueId)) ?? leagues[0];
+    const seasonEntry =
+      leagueEntry?.seasons?.find((entry) => Number(entry?.year) === Number(season)) ??
+      leagueEntry?.seasons?.[0] ??
+      null;
+
+    if (!seasonEntry?.coverage) {
+      return null;
+    }
+
+    return normalizeLeagueCoverage(seasonEntry.coverage);
   }
 
   async getLiveFixtures() {

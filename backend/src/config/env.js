@@ -101,6 +101,7 @@ export const env = {
   upcomingCacheTtlSeconds: readNumber("UPCOMING_CACHE_TTL_SECONDS", 120),
   finishedCacheTtlSeconds: readNumber("FINISHED_CACHE_TTL_SECONDS", 3600),
   standingsCacheTtlSeconds: readNumber("STANDINGS_CACHE_TTL_SECONDS", 3600),
+  leagueCoverageCacheTtlSeconds: readNumber("LEAGUE_COVERAGE_CACHE_TTL_SECONDS", 3600),
   statisticsCacheTtlSeconds: readNumber("STATISTICS_CACHE_TTL_SECONDS", 60),
   injuriesCacheTtlSeconds: readNumber("INJURIES_CACHE_TTL_SECONDS", 14400),
   eventsCacheTtlSeconds: readNumber("EVENTS_CACHE_TTL_SECONDS", 60),

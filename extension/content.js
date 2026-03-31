@@ -640,6 +640,7 @@
     const competitionItems = payload.impact?.competition || [];
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
     const isLimitedImpact = payload.impact?.mode === "limited";
+    const isCupImpact = payload.impact?.mode === "cup";
 
     elements.collapsedScore.textContent = scoreline;
     elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
@@ -647,18 +648,23 @@
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
-    elements.tableSection.classList.toggle("is-hidden", isPrematch);
+    elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
     elements.competitionSection.classList.toggle("is-hidden", isPrematch);
     elements.momentumSection.classList.toggle("is-hidden", isPrematch);
 
     elements.tableLabel.textContent = isLimitedImpact
       ? translate("panel.groupPositions")
       : translate("panel.tableImpact");
-    elements.competitionLabel.textContent = isLimitedImpact
+    elements.competitionLabel.textContent = isCupImpact
+      ? translate("panel.tieImpact")
+      : isLimitedImpact
       ? translate("panel.limitedCompetition")
       : translate("panel.competitionImpact");
 
-    if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
+    if (isCupImpact) {
+      elements.homeRow.textContent = "";
+      elements.awayRow.textContent = "";
+    } else if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
       elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
         state.language,
         payload.impact.table.home.newPosition

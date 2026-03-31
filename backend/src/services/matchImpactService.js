@@ -19,6 +19,10 @@ function buildStandingsKey(leagueId, season) {
   return `standings:${leagueId}:${season}`;
 }
 
+function buildLeagueCoverageKey(leagueId, season) {
+  return `league-coverage:${leagueId}:${season}`;
+}
+
 function buildStatisticsKey(fixtureId) {
   return `statistics:${fixtureId}`;
 }
@@ -656,6 +660,196 @@ function buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat
   };
 }
 
+function isCoverageAvailable(value) {
+  return value !== false;
+}
+
+function isKnockoutRoundLabel(round) {
+  const normalizedRound = String(round ?? "").trim().toLowerCase();
+
+  if (!normalizedRound) {
+    return false;
+  }
+
+  if (normalizedRound.includes("group") || normalizedRound.includes("grupos")) {
+    return false;
+  }
+
+  return /(round of|quarter|semi|final|play-?off|knockout|oitavas|quartas|semifinal|semi-final|1\/8|1\/4|1\/2)/i.test(
+    normalizedRound
+  );
+}
+
+function shouldUseKnockoutImpact(fixture, competitionFormat) {
+  const routing = competitionFormat?.registry?.routing ?? "";
+  const round = fixture?.league?.round ?? "";
+
+  if (routing === "knockout_cup") {
+    return true;
+  }
+
+  if (routing === "hybrid_group_knockout") {
+    return isKnockoutRoundLabel(round);
+  }
+
+  return false;
+}
+
+function haveSameTeamPair(leftFixture, rightFixture) {
+  const leftTeamIds = [leftFixture?.teams?.home?.id, leftFixture?.teams?.away?.id]
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+  const rightTeamIds = [rightFixture?.teams?.home?.id, rightFixture?.teams?.away?.id]
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+
+  if (leftTeamIds.length !== 2 || rightTeamIds.length !== 2) {
+    return false;
+  }
+
+  return leftTeamIds[0] === rightTeamIds[0] && leftTeamIds[1] === rightTeamIds[1];
+}
+
+function findPairedLegFixture(fixture, roundFixtures) {
+  if (!Array.isArray(roundFixtures) || !roundFixtures.length) {
+    return null;
+  }
+
+  const currentFixtureId = fixture?.fixture?.id ?? null;
+  const currentTimestamp = getKickoffTimestamp(fixture);
+
+  const candidates = roundFixtures
+    .filter((candidate) => candidate?.fixture?.id && candidate.fixture.id !== currentFixtureId)
+    .filter((candidate) => haveSameTeamPair(fixture, candidate))
+    .sort((left, right) => {
+      const leftDistance = Math.abs(getKickoffTimestamp(left) - currentTimestamp);
+      const rightDistance = Math.abs(getKickoffTimestamp(right) - currentTimestamp);
+      return leftDistance - rightDistance;
+    });
+
+  return candidates[0] ?? null;
+}
+
+function getGoalsForTeamInFixture(fixture, teamId) {
+  if (!fixture || !teamId) {
+    return 0;
+  }
+
+  if (fixture?.teams?.home?.id === teamId) {
+    return Number(fixture?.goals?.home ?? 0);
+  }
+
+  if (fixture?.teams?.away?.id === teamId) {
+    return Number(fixture?.goals?.away ?? 0);
+  }
+
+  return 0;
+}
+
+function buildCupMomentumFromScore(score) {
+  return {
+    home: score.home === score.away ? 50 : score.home > score.away ? 65 : 35,
+    away: score.home === score.away ? 50 : score.away > score.home ? 65 : 35
+  };
+}
+
+function buildKnockoutContext(fixture, roundFixtures, competitionFormat) {
+  if (!shouldUseKnockoutImpact(fixture, competitionFormat)) {
+    return null;
+  }
+
+  const pairedLeg = findPairedLegFixture(fixture, roundFixtures);
+  const currentTimestamp = getKickoffTimestamp(fixture);
+  const pairedTimestamp = getKickoffTimestamp(pairedLeg);
+
+  if (!pairedLeg) {
+    return {
+      type: "single_leg_knockout",
+      pairedFixtureId: null,
+      pairedFixtureStatus: null,
+      round: fixture?.league?.round ?? ""
+    };
+  }
+
+  if (currentTimestamp && pairedTimestamp && currentTimestamp < pairedTimestamp) {
+    return {
+      type: "two_leg_first_leg",
+      pairedFixtureId: pairedLeg?.fixture?.id ?? null,
+      pairedFixtureStatus: getMatchStatus(pairedLeg),
+      round: fixture?.league?.round ?? ""
+    };
+  }
+
+  return {
+    type: "two_leg_aggregate",
+    pairedFixtureId: pairedLeg?.fixture?.id ?? null,
+    pairedFixtureStatus: getMatchStatus(pairedLeg),
+    pairedLeg,
+    round: fixture?.league?.round ?? ""
+  };
+}
+
+function buildCupImpact(status, fixture, teams, knockoutContext) {
+  const score = {
+    home: Number(fixture?.goals?.home ?? 0),
+    away: Number(fixture?.goals?.away ?? 0)
+  };
+  const baseImpact = {
+    table: null,
+    biggestMovement: null,
+    momentum: buildCupMomentumFromScore(score),
+    mode: "cup"
+  };
+
+  if (!knockoutContext || knockoutContext.type === "single_leg_knockout") {
+    const isLevel = score.home === score.away;
+    const leadingTeam = score.home > score.away ? teams.home.name : teams.away.name;
+    const trailingTeam = score.home > score.away ? teams.away.name : teams.home.name;
+
+    return {
+      ...baseImpact,
+      summary: isLevel ? "This tie is currently heading to penalties" : `${leadingTeam} is currently going through`,
+      competition: isLevel
+        ? ["Winner advances from this tie.", "Level score would send this tie to penalties."]
+        : ["Winner advances from this tie.", `${trailingTeam} needs one goal to level the tie.`]
+    };
+  }
+
+  if (knockoutContext.type === "two_leg_first_leg") {
+    const isLevel = score.home === score.away;
+    const leadingTeam = score.home > score.away ? teams.home.name : teams.away.name;
+
+    return {
+      ...baseImpact,
+      summary: isLevel ? "The tie is level heading into the return leg" : `${leadingTeam} takes a first-leg advantage`,
+      competition: isLevel
+        ? ["This is the first leg of a two-leg tie.", "The tie is level heading into the return leg."]
+        : ["This is the first leg of a two-leg tie.", `${leadingTeam} takes a first-leg advantage`]
+    };
+  }
+
+  const pairedLeg = knockoutContext.pairedLeg;
+  const aggregateHome =
+    score.home + getGoalsForTeamInFixture(pairedLeg, fixture?.teams?.home?.id);
+  const aggregateAway =
+    score.away + getGoalsForTeamInFixture(pairedLeg, fixture?.teams?.away?.id);
+  const isAggregateLevel = aggregateHome === aggregateAway;
+  const leadingTeam = aggregateHome > aggregateAway ? teams.home.name : teams.away.name;
+  const trailingTeam = aggregateHome > aggregateAway ? teams.away.name : teams.home.name;
+
+  return {
+    ...baseImpact,
+    summary: isAggregateLevel ? "Aggregate score is level" : `${leadingTeam} is currently going through`,
+    competition: [
+      `${teams.home.name} ${aggregateHome}-${aggregateAway} ${teams.away.name} on aggregate`,
+      isAggregateLevel ? "Aggregate score is level" : `${leadingTeam} is currently going through`,
+      Math.abs(aggregateHome - aggregateAway) === 1
+        ? `${trailingTeam} needs one more goal to level the aggregate`
+        : ""
+    ].filter(Boolean)
+  };
+}
+
 export class MatchImpactService {
   constructor({ apiFootballClient, cacheService, analyticsService, env }) {
     this.apiFootballClient = apiFootballClient;
@@ -699,22 +893,25 @@ export class MatchImpactService {
     };
     const baseEvent = detectScoreEvent(previousState.previousScore, score, teams);
     const prematchCadence = getPrematchCadence(fixture, this.env);
+    const leagueCoverage = await this.getLeagueCoverageResource(fixture);
     const [events, standings, statistics, lineups, injuries, roundFixtures] = await Promise.all([
       this.getEventsResource({
         fixtureId,
         status,
-        scoreEvent: baseEvent
+        scoreEvent: baseEvent,
+        leagueCoverage
       }),
-      this.getStandingsResource(fixture),
-      this.getStatisticsResource(fixtureId, status),
-      this.getLineupsResource(fixtureId, status, prematchCadence),
-      this.getInjuriesResource(fixtureId, status, prematchCadence),
+      this.getStandingsResource(fixture, leagueCoverage),
+      this.getStatisticsResource(fixtureId, status, leagueCoverage),
+      this.getLineupsResource(fixtureId, status, prematchCadence, leagueCoverage),
+      this.getInjuriesResource(fixtureId, status, prematchCadence, leagueCoverage),
       this.getLeagueRoundFixturesResource(fixture, status).catch(() => [])
     ]);
     const competitionFormat = classifyCompetitionFormat({
       fixture,
       standingsPayload: standings
     });
+    const knockoutContext = buildKnockoutContext(fixture, roundFixtures, competitionFormat);
     const groupProjection = buildGroupProjection(competitionFormat, roundFixtures);
     const leagueContext = buildLeagueContextSummary({
       fixtures: roundFixtures,
@@ -725,6 +922,7 @@ export class MatchImpactService {
       round: fixture?.league?.round
     });
     const hasTableImpact =
+      !knockoutContext &&
       status.phase !== "upcoming" &&
       (competitionFormat.impactMode === "full" || competitionFormat.impactMode === "group");
     const latestGoalEvent = extractLatestGoalEvent(events, baseEvent);
@@ -734,8 +932,9 @@ export class MatchImpactService {
     const prematch = buildPrematchSummary(status, teams, lineupsSummary, injuriesSummary);
 
     if (!hasTableImpact) {
-      const impact =
-        competitionFormat.impactMode === "limited"
+      const impact = knockoutContext
+        ? buildCupImpact(status, fixture, teams, knockoutContext)
+        : competitionFormat.impactMode === "limited"
           ? buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat)
           : buildScoreOnlyImpact(status, fixture, teams);
       const statisticsSummary = buildStatisticsSummary(statistics, teams, impact.momentum);
@@ -743,7 +942,9 @@ export class MatchImpactService {
 
       if (event.type === "GOAL") {
         event.impactSummary =
-          competitionFormat.impactMode === "limited"
+          knockoutContext
+            ? impact.summary
+            : competitionFormat.impactMode === "limited"
             ? "Goal changes the score. Table impact is limited for this fixture."
             : "Goal changes the score. Table impact is unavailable.";
       }
@@ -776,7 +977,9 @@ export class MatchImpactService {
         metadata: {
           cacheTtlSeconds: getCacheTtl(status, this.env),
           impactBasis:
-            status.phase === "upcoming"
+            knockoutContext
+              ? "knockout-tie"
+              : status.phase === "upcoming"
               ? "prematch-no-table-impact"
               : competitionFormat.impactMode === "limited"
               ? "special-competition-format"
@@ -787,7 +990,9 @@ export class MatchImpactService {
           impactMode: impact.mode,
           groupLabel: competitionFormat.selectedGroup?.name ?? "",
           teamGroupPositions: competitionFormat.teamPositions ?? null,
-          projectedTeamGroupPositions: groupProjection
+          projectedTeamGroupPositions: groupProjection,
+          knockoutContext,
+          leagueCoverage
         }
       };
 
@@ -859,7 +1064,8 @@ export class MatchImpactService {
         impactMode: competitionFormat.impactMode,
         groupLabel: competitionFormat.selectedGroup?.name ?? "",
         teamGroupPositions: competitionFormat.teamPositions ?? null,
-        projectedTeamGroupPositions: groupProjection
+        projectedTeamGroupPositions: groupProjection,
+        leagueCoverage
       }
     };
 
@@ -898,11 +1104,31 @@ export class MatchImpactService {
     return this.analyticsService.getSummary();
   }
 
-  async getStandingsResource(fixture) {
+  async getLeagueCoverageResource(fixture) {
     const leagueId = fixture?.league?.id;
     const season = fixture?.league?.season;
 
-    if (fixture?.league?.standings !== true || !leagueId || !season) {
+    if (!leagueId || !season || !this.apiFootballClient.getLeagueCoverage) {
+      return null;
+    }
+
+    return this.getCachedResource({
+      key: buildLeagueCoverageKey(leagueId, season),
+      ttlSeconds: this.env.leagueCoverageCacheTtlSeconds,
+      fetcher: () => this.apiFootballClient.getLeagueCoverage(leagueId, season).catch(() => null)
+    });
+  }
+
+  async getStandingsResource(fixture, leagueCoverage = null) {
+    const leagueId = fixture?.league?.id;
+    const season = fixture?.league?.season;
+
+    if (
+      fixture?.league?.standings !== true ||
+      !leagueId ||
+      !season ||
+      !isCoverageAvailable(leagueCoverage?.standings)
+    ) {
       return null;
     }
 
@@ -943,8 +1169,11 @@ export class MatchImpactService {
     });
   }
 
-  async getStatisticsResource(fixtureId, status) {
-    if (status.phase === "upcoming") {
+  async getStatisticsResource(fixtureId, status, leagueCoverage = null) {
+    if (
+      status.phase === "upcoming" ||
+      !isCoverageAvailable(leagueCoverage?.fixtures?.statisticsFixtures)
+    ) {
       return [];
     }
 
@@ -955,7 +1184,11 @@ export class MatchImpactService {
     });
   }
 
-  async getInjuriesResource(fixtureId, status, prematchCadence) {
+  async getInjuriesResource(fixtureId, status, prematchCadence, leagueCoverage = null) {
+    if (!isCoverageAvailable(leagueCoverage?.injuries)) {
+      return [];
+    }
+
     const ttlSeconds =
       status.phase === "upcoming"
         ? prematchCadence?.injuriesTtlSeconds ?? this.env.injuriesCacheTtlSeconds
@@ -968,7 +1201,11 @@ export class MatchImpactService {
     });
   }
 
-  async getLineupsResource(fixtureId, status, prematchCadence) {
+  async getLineupsResource(fixtureId, status, prematchCadence, leagueCoverage = null) {
+    if (!isCoverageAvailable(leagueCoverage?.fixtures?.lineups)) {
+      return [];
+    }
+
     const cacheKey = buildLineupsKey(fixtureId);
     const cachedLineups = await this.cacheService.getJson(cacheKey);
 
@@ -1005,8 +1242,8 @@ export class MatchImpactService {
     return lineups;
   }
 
-  async getEventsResource({ fixtureId, status, scoreEvent }) {
-    if (status.phase === "upcoming") {
+  async getEventsResource({ fixtureId, status, scoreEvent, leagueCoverage = null }) {
+    if (status.phase === "upcoming" || !isCoverageAvailable(leagueCoverage?.fixtures?.events)) {
       return [];
     }
 

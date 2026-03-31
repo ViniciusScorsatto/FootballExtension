@@ -768,13 +768,14 @@
     const competitionItems = payload.impact?.competition || [];
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
     const isLimitedImpact = payload.impact?.mode === "limited";
+    const isCupImpact = payload.impact?.mode === "cup";
 
     elements.leagueName.textContent = payload.league?.name || translate("panel.matchTracker");
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
     elements.summary.textContent = eventLabel || localizedImpactSummary;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
-    elements.tableSection.classList.toggle("is-hidden", isPrematch);
+    elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
     elements.competitionSection.classList.toggle("is-hidden", isPrematch);
     elements.momentumSection.classList.toggle("is-hidden", isPrematch);
     if (isPrematch) {
@@ -784,11 +785,16 @@
     elements.tableLabel.textContent = isLimitedImpact
       ? translate("panel.groupPositions")
       : translate("panel.tableImpact");
-    elements.competitionLabel.textContent = isLimitedImpact
+    elements.competitionLabel.textContent = isCupImpact
+      ? translate("panel.tieImpact")
+      : isLimitedImpact
       ? translate("panel.limitedCompetition")
       : translate("panel.competitionImpact");
 
-    if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
+    if (isCupImpact) {
+      elements.homeRow.textContent = "";
+      elements.awayRow.textContent = "";
+    } else if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
       elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
         state.language,
         payload.impact.table.home.newPosition
@@ -934,6 +940,15 @@
       message = translate("sidepanel.groupedSameGroupContext", {
         group: groupLabel
       });
+    } else if (impactMode === "cup") {
+      const tieType = payload.metadata?.knockoutContext?.type ?? "";
+      if (tieType === "single_leg_knockout") {
+        message = translate("sidepanel.cupSingleLegContext");
+      } else if (tieType === "two_leg_first_leg") {
+        message = translate("sidepanel.cupFirstLegContext");
+      } else {
+        message = translate("sidepanel.cupTwoLegContext");
+      }
     } else if (format === "grouped_cross_play" && hasGroupPositions) {
       message = translate("sidepanel.groupedCrossPlayContext");
     } else if (impactMode === "limited") {

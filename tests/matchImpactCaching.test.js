@@ -33,6 +33,7 @@ function createService(overrides = {}) {
         upcomingCacheTtlSeconds: 120,
         finishedCacheTtlSeconds: 3600,
         standingsCacheTtlSeconds: 3600,
+        leagueCoverageCacheTtlSeconds: 3600,
         statisticsCacheTtlSeconds: 60,
         injuriesCacheTtlSeconds: 14400,
         eventsCacheTtlSeconds: 60,
@@ -81,6 +82,40 @@ test("standings are cached per league and season", async () => {
 
   await service.getStandingsResource(fixture);
   await service.getStandingsResource(fixture);
+
+  assert.equal(calls, 1);
+});
+
+test("league coverage is cached per league and season", async () => {
+  let calls = 0;
+  const { service } = createService({
+    apiFootballClient: {
+      getLeagueCoverage: async () => {
+        calls += 1;
+        return {
+          standings: true,
+          injuries: true,
+          players: true,
+          fixtures: {
+            events: true,
+            lineups: true,
+            statisticsFixtures: true,
+            statisticsPlayers: false
+          }
+        };
+      }
+    }
+  });
+
+  const fixture = {
+    league: {
+      id: 73,
+      season: 2026
+    }
+  };
+
+  await service.getLeagueCoverageResource(fixture);
+  await service.getLeagueCoverageResource(fixture);
 
   assert.equal(calls, 1);
 });
@@ -141,6 +176,84 @@ test("events are refreshed immediately after a score change", async () => {
   });
 
   assert.equal(calls, 2);
+});
+
+test("coverage flags skip unsupported resource endpoints", async () => {
+  let standingsCalls = 0;
+  let eventsCalls = 0;
+  let statisticsCalls = 0;
+  let lineupsCalls = 0;
+  let injuriesCalls = 0;
+
+  const { service } = createService({
+    apiFootballClient: {
+      getLeagueCoverage: async () => ({
+        standings: false,
+        injuries: false,
+        players: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => {
+        standingsCalls += 1;
+        return {};
+      },
+      getEvents: async () => {
+        eventsCalls += 1;
+        return [];
+      },
+      getStatistics: async () => {
+        statisticsCalls += 1;
+        return [];
+      },
+      getLineups: async () => {
+        lineupsCalls += 1;
+        return [];
+      },
+      getInjuries: async () => {
+        injuriesCalls += 1;
+        return [];
+      }
+    }
+  });
+
+  const fixture = {
+    league: {
+      id: 13,
+      season: 2026,
+      standings: true
+    }
+  };
+
+  const coverage = await service.getLeagueCoverageResource(fixture);
+  const status = { phase: "live" };
+
+  assert.equal(await service.getStandingsResource(fixture, coverage), null);
+  assert.deepEqual(
+    await service.getEventsResource({
+      fixtureId: 123,
+      status,
+      scoreEvent: { type: "NONE" },
+      leagueCoverage: coverage
+    }),
+    []
+  );
+  assert.deepEqual(await service.getStatisticsResource(123, status, coverage), []);
+  assert.deepEqual(
+    await service.getLineupsResource(123, { phase: "upcoming" }, { lineupsTtlSeconds: 300 }, coverage),
+    []
+  );
+  assert.deepEqual(await service.getInjuriesResource(123, status, { injuriesTtlSeconds: 300 }, coverage), []);
+
+  assert.equal(standingsCalls, 0);
+  assert.equal(eventsCalls, 0);
+  assert.equal(statisticsCalls, 0);
+  assert.equal(lineupsCalls, 0);
+  assert.equal(injuriesCalls, 0);
 });
 
 test("upcoming fixtures use slower lineup cadence far from kickoff", async () => {
@@ -394,4 +507,218 @@ test("upcoming standings-enabled fixtures do not return table impact before kick
     before: [],
     after: []
   });
+});
+
+test("single-leg knockout fixtures use cup impact instead of table impact", async () => {
+  const fixtureId = 9101;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: Math.floor(Date.now() / 1000),
+          date: "2026-04-01T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 72
+          }
+        },
+        league: {
+          id: 73,
+          name: "Copa do Brasil",
+          country: "Brazil",
+          season: 2026,
+          standings: false,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 1, name: "Cruzeiro", logo: "" },
+          away: { id: 2, name: "Vitoria", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getFixturesByRound: async () => []
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.impact.mode, "cup");
+  assert.equal(payload.metadata.tableImpactAvailable, false);
+  assert.equal(payload.metadata.impactBasis, "knockout-tie");
+  assert.equal(payload.metadata.knockoutContext.type, "single_leg_knockout");
+  assert.equal(payload.impact.summary, "Cruzeiro is currently going through");
+  assert.deepEqual(payload.impact.competition, [
+    "Winner advances from this tie.",
+    "Vitoria needs one goal to level the tie."
+  ]);
+});
+
+test("first leg of a two-leg tie reports first-leg advantage context", async () => {
+  const fixtureId = 9102;
+  const kickoff = 1775016000;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: kickoff,
+          date: "2026-04-02T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 61
+          }
+        },
+        league: {
+          id: 13,
+          name: "CONMEBOL Libertadores",
+          country: "South America",
+          season: 2026,
+          standings: true,
+          round: "Round of 16"
+        },
+        teams: {
+          home: { id: 10, name: "Sao Paulo", logo: "" },
+          away: { id: 11, name: "River Plate", logo: "" }
+        },
+        goals: {
+          home: 2,
+          away: 1
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 1,
+                    points: 10,
+                    goalsDiff: 4,
+                    all: { played: 4, goals: { for: 8, against: 4 } },
+                    team: { id: 10, name: "Sao Paulo", code: "SAO" }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: kickoff
+          },
+          teams: {
+            home: { id: 10, name: "Sao Paulo", logo: "" },
+            away: { id: 11, name: "River Plate", logo: "" }
+          },
+          goals: { home: 2, away: 1 }
+        },
+        {
+          fixture: {
+            id: 9103,
+            timestamp: kickoff + 604800,
+            status: { short: "NS", long: "Not Started", elapsed: null }
+          },
+          teams: {
+            home: { id: 11, name: "River Plate", logo: "" },
+            away: { id: 10, name: "Sao Paulo", logo: "" }
+          },
+          goals: { home: 0, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.impact.mode, "cup");
+  assert.equal(payload.metadata.knockoutContext.type, "two_leg_first_leg");
+  assert.equal(payload.impact.summary, "Sao Paulo takes a first-leg advantage");
+  assert.deepEqual(payload.impact.competition, [
+    "This is the first leg of a two-leg tie.",
+    "Sao Paulo takes a first-leg advantage"
+  ]);
+});
+
+test("second leg of a two-leg tie computes aggregate impact", async () => {
+  const fixtureId = 9104;
+  const kickoff = 1775620800;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: kickoff,
+          date: "2026-04-09T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 74
+          }
+        },
+        league: {
+          id: 73,
+          name: "Copa do Brasil",
+          country: "Brazil",
+          season: 2026,
+          standings: false,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 21, name: "Cruzeiro", logo: "" },
+          away: { id: 22, name: "Vitoria", logo: "" }
+        },
+        goals: {
+          home: 2,
+          away: 0
+        }
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9105,
+            timestamp: kickoff - 604800,
+            status: { short: "FT", long: "Match Finished", elapsed: 90 }
+          },
+          teams: {
+            home: { id: 22, name: "Vitoria", logo: "" },
+            away: { id: 21, name: "Cruzeiro", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: kickoff,
+            status: { short: "2H", long: "Second Half", elapsed: 74 }
+          },
+          teams: {
+            home: { id: 21, name: "Cruzeiro", logo: "" },
+            away: { id: 22, name: "Vitoria", logo: "" }
+          },
+          goals: { home: 2, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.impact.mode, "cup");
+  assert.equal(payload.metadata.knockoutContext.type, "two_leg_aggregate");
+  assert.equal(payload.impact.summary, "Cruzeiro is currently going through");
+  assert.deepEqual(payload.impact.competition, [
+    "Cruzeiro 2-1 Vitoria on aggregate",
+    "Cruzeiro is currently going through",
+    "Vitoria needs one more goal to level the aggregate"
+  ]);
 });

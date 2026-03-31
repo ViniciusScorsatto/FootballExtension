@@ -136,6 +136,12 @@
           "This competition uses groups. Live movement is being evaluated inside {group}.",
         groupedCrossPlayContext:
           "This is a cross-group fixture. We project each team inside its own group instead of claiming one shared table move.",
+        cupSingleLegContext:
+          "This is a single-leg knockout tie. Winner advances from this match.",
+        cupTwoLegContext:
+          "This is a two-leg knockout tie. Aggregate score decides who goes through.",
+        cupFirstLegContext:
+          "This is the first leg of a two-leg tie. The return leg will decide the aggregate outcome.",
         limitedFormatContext:
           "This competition uses a special format, so we keep the insight focused on score and group context instead of risky qualification claims.",
         scoreOnlyFormatContext:
@@ -156,6 +162,7 @@
         config: "Config",
         matchTracker: "Match Tracker",
         tableImpact: "Table Impact",
+        tieImpact: "Tie Impact",
         competitionImpact: "Competition Impact",
         groupPositions: "Group Positions",
         limitedCompetition: "Why impact is limited",
@@ -223,6 +230,17 @@
         dropsOutTop: "{team} drops out of the top {cutoff}",
         climbsOutRelegation: "{team} climbs out of the relegation zone",
         fallsIntoRelegation: "{team} falls into the relegation zone",
+        aggregateScore: "{homeTeam} {homeGoals}-{awayGoals} {awayTeam} on aggregate",
+        aggregateLevel: "Aggregate score is level",
+        currentlyAdvancing: "{team} is currently going through",
+        needsOneMoreAggregate: "{team} needs one more goal to level the aggregate",
+        needsOneMoreTie: "{team} needs one goal to level the tie",
+        winnerAdvances: "Winner advances from this tie.",
+        tieToPenalties: "Level score would send this tie to penalties.",
+        headingPenalties: "This tie is currently heading to penalties",
+        firstLegTie: "This is the first leg of a two-leg tie.",
+        firstLegAdvantage: "{team} takes a first-leg advantage",
+        returnLegLevel: "The tie is level heading into the return leg",
         specialFormatLimited: "Special competition format - table impact limited",
         scoreOnly: "Live score only",
         goal: "Goal",
@@ -386,6 +404,12 @@
           "Esta competição usa grupos. O movimento ao vivo está sendo avaliado dentro do {group}.",
         groupedCrossPlayContext:
           "Este é um confronto entre grupos. Projetamos cada time dentro do próprio grupo em vez de afirmar uma única mudança compartilhada na tabela.",
+        cupSingleLegContext:
+          "Este é um confronto de mata-mata em jogo único. Quem vencer avança.",
+        cupTwoLegContext:
+          "Este é um mata-mata em dois jogos. O agregado decide quem avança.",
+        cupFirstLegContext:
+          "Este é o jogo de ida de um confronto em dois jogos. A volta vai decidir o agregado.",
         limitedFormatContext:
           "Esta competição usa um formato especial, então mantemos o insight focado em placar e contexto de grupo, sem forçar conclusões arriscadas de classificação.",
         scoreOnlyFormatContext:
@@ -406,6 +430,7 @@
         config: "Config",
         matchTracker: "Monitor de jogo",
         tableImpact: "Impacto na tabela",
+        tieImpact: "Impacto no confronto",
         competitionImpact: "Impacto na competição",
         groupPositions: "Posições nos grupos",
         limitedCompetition: "Por que o impacto é limitado",
@@ -474,6 +499,17 @@
         dropsOutTop: "{team} sai do top {cutoff}",
         climbsOutRelegation: "{team} sai da zona de rebaixamento",
         fallsIntoRelegation: "{team} entra na zona de rebaixamento",
+        aggregateScore: "{homeTeam} {homeGoals}-{awayGoals} {awayTeam} no agregado",
+        aggregateLevel: "Agregado empatado",
+        currentlyAdvancing: "{team} vai avançando",
+        needsOneMoreAggregate: "{team} precisa de mais um gol para empatar o agregado",
+        needsOneMoreTie: "{team} precisa de um gol para empatar o confronto",
+        winnerAdvances: "Quem vencer este confronto avança.",
+        tieToPenalties: "Empate leva a decisão para os pênaltis.",
+        headingPenalties: "No momento, este confronto vai para os pênaltis",
+        firstLegTie: "Este é o jogo de ida de um confronto em dois jogos.",
+        firstLegAdvantage: "{team} abre vantagem no jogo de ida",
+        returnLegLevel: "O confronto fica empatado para a volta",
         specialFormatLimited: "Formato especial de competição - impacto limitado na tabela",
         scoreOnly: "Somente placar ao vivo",
         goal: "Gol",
@@ -645,6 +681,17 @@
       [/^(.+) drops out of the top (\d+)$/, "impact.dropsOutTop", ["team", "cutoff"]],
       [/^(.+) climbs out of the relegation zone$/, "impact.climbsOutRelegation", ["team"]],
       [/^(.+) falls into the relegation zone$/, "impact.fallsIntoRelegation", ["team"]],
+      [/^(.+) (\d+)-(\d+) (.+) on aggregate$/, "impact.aggregateScore", ["homeTeam", "homeGoals", "awayGoals", "awayTeam"]],
+      [/^Aggregate score is level$/, "impact.aggregateLevel", []],
+      [/^(.+) is currently going through$/, "impact.currentlyAdvancing", ["team"]],
+      [/^(.+) needs one more goal to level the aggregate$/, "impact.needsOneMoreAggregate", ["team"]],
+      [/^(.+) needs one goal to level the tie\.$/, "impact.needsOneMoreTie", ["team"]],
+      [/^Winner advances from this tie\.$/, "impact.winnerAdvances", []],
+      [/^Level score would send this tie to penalties\.$/, "impact.tieToPenalties", []],
+      [/^This tie is currently heading to penalties$/, "impact.headingPenalties", []],
+      [/^This is the first leg of a two-leg tie\.$/, "impact.firstLegTie", []],
+      [/^(.+) takes a first-leg advantage$/, "impact.firstLegAdvantage", ["team"]],
+      [/^The tie is level heading into the return leg$/, "impact.returnLegLevel", []],
       [
         /^Cross-group fixtures limit live table impact for this fixture\.$/,
         "impact.specialFormatLimited",
@@ -673,6 +720,10 @@
   }
 
   function buildImpactSummary(language, impact, teams) {
+    if (impact?.mode === "cup") {
+      return translateCompetitionMessage(language, impact.summary || "");
+    }
+
     if (impact?.mode === "limited") {
       return t(language, "impact.specialFormatLimited");
     }
