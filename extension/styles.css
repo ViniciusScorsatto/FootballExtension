@@ -588,6 +588,7 @@ select.lmi-field__input {
 
 .lmi-expanded {
   display: none;
+  position: relative;
   box-sizing: border-box;
   padding: 18px;
   max-height: calc(100vh - 40px);
@@ -678,21 +679,22 @@ select.lmi-field__input {
 
 .lmi-scroll-controls {
   position: absolute;
-  right: -16px;
-  top: 88px;
-  z-index: 2;
+  right: 12px;
+  bottom: 16px;
+  z-index: 4;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   pointer-events: none;
 }
 
 .lmi-overlay-action--scroll {
-  width: 32px;
-  height: 32px;
-  font-size: 15px;
-  background: rgba(4, 9, 18, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  background: rgba(4, 9, 18, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
   pointer-events: auto;
 }
 

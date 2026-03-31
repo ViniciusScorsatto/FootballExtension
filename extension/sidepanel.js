@@ -24,6 +24,7 @@
     formatOrdinal,
     formatMovement,
     translateGoalType,
+    translateInjuryReason,
     translateCompetitionMessage,
     buildImpactSummary
   } = window.LMI_I18N;
@@ -1072,7 +1073,9 @@
   }
 
   function renderInjuryItem(item) {
-    return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${item.reason ? ` - ${escapeHtml(item.reason)}` : ""}</span></div>`;
+    const localizedReason = translateInjuryReason(state.language, item.reason);
+
+    return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${localizedReason ? ` - ${escapeHtml(localizedReason)}` : ""}</span></div>`;
   }
 
   function formatStat(value, suffix = "") {

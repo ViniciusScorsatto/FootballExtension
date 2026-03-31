@@ -1,14 +1,38 @@
+import { competitionFormatOverrides } from "../config/competitionFormats.js";
+
 function normalizeLeagueId(leagueId) {
   return Number.isInteger(leagueId) ? leagueId : Number(leagueId);
 }
 
 const KNOWN_LEAGUES = new Map([
+  [11, { name: "Copa Sudamericana", country: "South America" }],
+  [13, { name: "Copa Libertadores", country: "South America" }],
   [39, { name: "Premier League", country: "England" }],
   [140, { name: "La Liga", country: "Spain" }],
   [135, { name: "Serie A", country: "Italy" }],
   [78, { name: "Bundesliga", country: "Germany" }],
-  [61, { name: "Ligue 1", country: "France" }]
+  [61, { name: "Ligue 1", country: "France" }],
+  [71, { name: "Serie A", country: "Brazil" }],
+  [72, { name: "Serie B", country: "Brazil" }],
+  [73, { name: "Copa do Brasil", country: "Brazil" }],
+  [740, { name: "Brasileiro U20 A", country: "Brazil" }],
+  [1128, { name: "Copa do Nordeste", country: "Brazil" }]
 ]);
+
+const CONFIGURED_LEAGUES = new Map(KNOWN_LEAGUES);
+
+competitionFormatOverrides.forEach((entry) => {
+  if (!entry?.leagueId) {
+    return;
+  }
+
+  const existingLeague = CONFIGURED_LEAGUES.get(entry.leagueId) ?? {};
+
+  CONFIGURED_LEAGUES.set(entry.leagueId, {
+    name: existingLeague.name ?? entry.leagueName ?? `League ${entry.leagueId}`,
+    country: existingLeague.country ?? entry.country ?? ""
+  });
+});
 
 export function isLeagueSupported(leagueId, supportedLeagueIds = []) {
   const normalizedLeagueId = normalizeLeagueId(leagueId);
@@ -42,7 +66,7 @@ export function buildLeagueFilterPayload(matches, env) {
   ]);
 
   configuredLeagueIds.forEach((leagueId) => {
-    const knownLeague = KNOWN_LEAGUES.get(leagueId);
+    const knownLeague = CONFIGURED_LEAGUES.get(leagueId);
 
     availableLeagueMap.set(leagueId, {
       id: leagueId,

@@ -594,6 +594,48 @@
     }
   }
 
+  function translateInjuryReason(language, reason) {
+    const normalizedReason = String(reason ?? "").trim();
+
+    if (!normalizedReason) {
+      return "";
+    }
+
+    if (language !== "pt-BR") {
+      return normalizedReason;
+    }
+
+    const exactMatches = new Map([
+      ["Injury", "Lesão"],
+      ["Knee Injury", "Lesão no joelho"],
+      ["Hamstring Injury", "Lesão na coxa"],
+      ["Back Injury", "Lesão nas costas"],
+      ["Foot Injury", "Lesão no pé"],
+      ["Muscle Injury", "Lesão muscular"],
+      ["Hip Injury", "Lesão no quadril"],
+      ["Ankle Injury", "Lesão no tornozelo"],
+      ["Calf Injury", "Lesão na panturrilha"],
+      ["Thigh Injury", "Lesão na coxa"],
+      ["Groin Injury", "Lesão na virilha"],
+      ["Shoulder Injury", "Lesão no ombro"],
+      ["Head Injury", "Lesão na cabeça"]
+    ]);
+
+    if (exactMatches.has(normalizedReason)) {
+      return exactMatches.get(normalizedReason);
+    }
+
+    if (normalizedReason.endsWith(" Injury")) {
+      const bodyPart = normalizedReason.slice(0, -7).trim();
+
+      if (bodyPart) {
+        return `Lesão em ${bodyPart.toLowerCase()}`;
+      }
+    }
+
+    return normalizedReason;
+  }
+
   function translateCompetitionMessage(language, message) {
     const patterns = [
       [/^(.+) goes top of the table$/, "impact.goesTop", ["team"]],
@@ -686,6 +728,7 @@
     formatOrdinal,
     formatMovement,
     translateGoalType,
+    translateInjuryReason,
     translateCompetitionMessage,
     buildImpactSummary
   };
