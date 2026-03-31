@@ -152,10 +152,48 @@
 
 .lmi-account-card {
   margin: 12px 0 10px;
-  padding: 14px;
   border: 1px solid var(--lmi-border);
   border-radius: 18px;
   background: rgba(4, 9, 18, 0.4);
+}
+
+.lmi-account-card__toggle {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--lmi-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lmi-account-card__toggle-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lmi-account-card__compact-summary {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--lmi-muted);
+  line-height: 1.4;
+}
+
+.lmi-account-card__chevron {
+  width: 22px;
+  text-align: center;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--lmi-muted);
+}
+
+.lmi-account-card__content {
+  padding: 0 14px 14px;
 }
 
 .lmi-billing-card[hidden] {

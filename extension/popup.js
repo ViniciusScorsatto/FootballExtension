@@ -9,6 +9,7 @@ const billingActionButton = document.getElementById("billingAction");
 const billingRefreshButton = document.getElementById("billingRefresh");
 const accountRestoreButton = document.getElementById("accountRestore");
 const accountStatusRefreshButton = document.getElementById("accountStatusRefresh");
+const accountToggleButton = document.getElementById("accountToggle");
 const billingPlanLabel = document.getElementById("billingPlanLabel");
 const billingPlanBadge = document.getElementById("billingPlanBadge");
 const billingEyebrow = document.getElementById("billingEyebrow");
@@ -19,6 +20,10 @@ const billingCard = document.querySelector(".lmi-billing-card");
 const accountEmailInput = document.getElementById("accountEmail");
 const accountEyebrow = document.getElementById("accountEyebrow");
 const accountTitle = document.getElementById("accountTitle");
+const accountCompactSummary = document.getElementById("accountCompactSummary");
+const accountContent = document.getElementById("accountContent");
+const accountStatusPill = document.getElementById("accountStatusPill");
+const accountChevron = document.getElementById("accountChevron");
 const accountEmailLabel = document.getElementById("accountEmailLabel");
 const accountSummary = document.getElementById("accountSummary");
 const topPlanPill = document.getElementById("topPlanPill");
@@ -40,6 +45,7 @@ let currentLeagueFilter = {
   availableLeagues: []
 };
 let currentLanguage = DEFAULT_LANGUAGE;
+let accountCardExpanded = true;
 let currentBilling = {
   userId: "",
   plan: "free",
@@ -106,6 +112,7 @@ function applyStaticTranslations() {
   billingRefreshButton.textContent = translate("popup.refreshPlan");
   accountEyebrow.textContent = translate("popup.restoreEyebrow");
   accountTitle.textContent = translate("popup.restoreTitle");
+  accountCompactSummary.textContent = translate("popup.restoreSummary");
   accountEmailLabel.textContent = translate("popup.restoreEmailLabel");
   accountEmailInput.placeholder = translate("popup.restoreEmailPlaceholder");
   accountRestoreButton.textContent = translate("popup.restoreAction");
@@ -287,12 +294,24 @@ function renderAccountCard() {
     accountEmailInput.value = currentBilling.accountEmail;
   }
 
+  accountStatusPill.textContent = currentBilling.accountLinked
+    ? translate("popup.restoreLinkedPill")
+    : translate("popup.restorePill");
+  accountStatusPill.dataset.plan = currentBilling.accountLinked ? "pro" : "free";
+  accountToggleButton.setAttribute("aria-expanded", String(accountCardExpanded));
+  accountContent.hidden = !accountCardExpanded;
+  accountChevron.textContent = accountCardExpanded ? "−" : "+";
+
   if (currentBilling.accountLinked && linkedEmail) {
     accountSummary.textContent = translate("popup.restoreLinked", {
       email: linkedEmail
     });
+    accountCompactSummary.textContent = translate("popup.restoreLinkedCompact", {
+      email: linkedEmail
+    });
   } else {
     accountSummary.textContent = translate("popup.restoreSummary");
+    accountCompactSummary.textContent = translate("popup.restoreSummary");
   }
 }
 
@@ -513,6 +532,7 @@ async function fetchBillingStatus() {
     return;
   }
 
+  const previouslyLinked = currentBilling.accountLinked;
   const previousWasPro = isProPlan();
 
   const payload = await fetchJson(
@@ -531,6 +551,10 @@ async function fetchBillingStatus() {
     earlyBirdRemaining: payload.offers?.earlyBirdRemaining ?? 0,
     earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
   };
+
+  if (!previouslyLinked && currentBilling.accountLinked) {
+    accountCardExpanded = false;
+  }
 
   const nowPro = isProPlan();
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
@@ -659,6 +683,7 @@ async function loadSettings() {
 
   renderBillingCard();
   updatePlanHint();
+  accountCardExpanded = !currentBilling.accountLinked;
 
   await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
@@ -959,6 +984,10 @@ billingRefreshButton.addEventListener("click", async () => {
   }
 });
 accountRestoreButton.addEventListener("click", handleRestoreAccess);
+accountToggleButton.addEventListener("click", () => {
+  accountCardExpanded = !accountCardExpanded;
+  renderAccountCard();
+});
 accountStatusRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;

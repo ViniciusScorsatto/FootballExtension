@@ -25,9 +25,12 @@
         restoreTitle: "Use your billing email",
         restoreEmailLabel: "Billing email",
         restoreEmailPlaceholder: "you@example.com",
+        restorePill: "Restore",
+        restoreLinkedPill: "Linked",
         restoreSummary:
           "Request a restore link to connect this browser to your paid account.",
         restoreLinked: "This browser is linked to {email}.",
+        restoreLinkedCompact: "Linked to {email}.",
         restoreAction: "Send Restore Link",
         proActiveTitle: "All supported leagues unlocked",
         proActiveSummary:
@@ -240,9 +243,12 @@
         restoreTitle: "Use o email da cobrança",
         restoreEmailLabel: "Email da cobrança",
         restoreEmailPlaceholder: "voce@exemplo.com",
+        restorePill: "Restaurar",
+        restoreLinkedPill: "Vinculado",
         restoreSummary:
           "Solicite um link de restauração para conectar este navegador à sua conta paga.",
         restoreLinked: "Este navegador está vinculado a {email}.",
+        restoreLinkedCompact: "Vinculado a {email}.",
         restoreAction: "Enviar link de restauração",
         proActiveTitle: "Todas as ligas suportadas desbloqueadas",
         proActiveSummary:

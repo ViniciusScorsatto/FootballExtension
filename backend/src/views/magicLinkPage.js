@@ -11,8 +11,8 @@ export function renderMagicLinkPage({ email = "", plan = "free", status = "inact
   const planLabel = plan === "pro" && status === "active" ? "Pro restored" : "Account linked";
   const bodyCopy =
     plan === "pro" && status === "active"
-      ? "This browser is now linked to your paid account. Reopen the extension and refresh the plan status."
-      : "This browser is now linked to your account. Reopen the extension and refresh the plan status.";
+      ? "This browser is now linked to your paid account. You can close this tab and refresh the extension plan status."
+      : "This browser is now linked to your account. You can close this tab and refresh the extension plan status.";
 
   return `<!DOCTYPE html>
   <html lang="en">
@@ -62,6 +62,25 @@ export function renderMagicLinkPage({ email = "", plan = "free", status = "inact
           color: #6df5c1;
           font-weight: 700;
         }
+        .actions {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
+        button {
+          padding: 12px 16px;
+          border-radius: 14px;
+          border: 0;
+          cursor: pointer;
+          font-weight: 700;
+          background: linear-gradient(135deg, #6df5c1 0%, #46c6ff 100%);
+          color: #07121f;
+        }
+        .hint {
+          margin-top: 14px;
+          font-size: 13px;
+        }
       </style>
     </head>
     <body>
@@ -71,6 +90,10 @@ export function renderMagicLinkPage({ email = "", plan = "free", status = "inact
         <p>${escapeHtml(bodyCopy)}</p>
         <p>${escapeHtml(email ? `Linked email: ${email}` : "")}</p>
         <div class="pill">${escapeHtml(plan === "pro" ? "Live Match Impact Pro" : "Live Match Impact")}</div>
+        <div class="actions">
+          <button type="button" onclick="window.close()">Close this tab</button>
+        </div>
+        <p class="hint">If the tab does not close automatically in your browser, you can close it manually.</p>
       </main>
     </body>
   </html>`;
