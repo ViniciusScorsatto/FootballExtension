@@ -35,7 +35,8 @@ function createBillingService(envOverrides = {}) {
 
   return {
     billingService,
-    cacheService
+    cacheService,
+    accountService
   };
 }
 
@@ -120,4 +121,41 @@ test("stripe checkout completion activates the user's Pro entitlement", async ()
   assert.equal(storedEntitlement.status, "active");
   assert.equal(storedEntitlement.offerId, "early_bird_lifetime");
   assert.equal(storedEntitlement.stripeSubscriptionId, "sub_123");
+});
+
+test("billing status migrates a legacy email-matched entitlement onto the linked account", async () => {
+  const { billingService, cacheService, accountService } = createBillingService();
+
+  await cacheService.setJson(
+    "billing:user:legacy-browser",
+    {
+      plan: "pro",
+      offerId: "early_bird_lifetime",
+      status: "active",
+      grandfatheredPriceUsd: 3.99,
+      betaUser: true,
+      email: "tester@example.com",
+      source: "stripe",
+      stripeCustomerId: "cus_legacy",
+      stripeSubscriptionId: "sub_legacy",
+      stripePriceId: "price_early",
+      updatedAt: new Date().toISOString()
+    },
+    60 * 60
+  );
+
+  const account = await accountService.findOrCreateAccountByEmail("tester@example.com");
+  await accountService.linkUserToAccount("restored-browser", account.accountId);
+
+  const status = await billingService.getBillingStatus({
+    userId: "restored-browser"
+  });
+
+  assert.equal(status.plan, "pro");
+  assert.equal(status.status, "active");
+  assert.equal(status.account.linked, true);
+  assert.equal(status.account.email, "tester@example.com");
+
+  const migratedEntitlement = await cacheService.getJson(`billing:user:${account.accountId}`);
+  assert.equal(migratedEntitlement.stripeSubscriptionId, "sub_legacy");
 });

@@ -15,6 +15,10 @@ function buildCustomerKey(customerId) {
   return `billing:customer:${customerId}`;
 }
 
+function entitlementKeyPrefix() {
+  return "billing:user:";
+}
+
 function createDefaultEntitlement() {
   return {
     plan: "free",
@@ -94,10 +98,18 @@ export class BillingService {
 
   async getBillingStatus({ userId, planHint = "free" }) {
     const ownerUserId = userId ? await this.resolveBillingOwnerId(userId) : "";
-    const entitlement = ownerUserId
+    let entitlement = ownerUserId
       ? (await this.cacheService.getJson(buildEntitlementKey(ownerUserId))) ?? null
       : null;
     const account = userId && this.accountService ? await this.accountService.getAccountByUserId(userId) : null;
+
+    if (!entitlement && ownerUserId?.startsWith("acct_") && account?.email) {
+      entitlement = await this.migrateLegacyEntitlementToAccount({
+        accountId: ownerUserId,
+        email: account.email
+      });
+    }
+
     const pricing = await this.getPricingCatalog();
     const earlyBirdStats = pricing.offers.early_bird_lifetime;
     const effectiveEntitlement = entitlement ?? {
@@ -399,5 +411,67 @@ export class BillingService {
 
     const mapping = await this.cacheService.getJson(buildCustomerKey(customerId));
     return mapping?.userId ?? "";
+  }
+
+  async migrateLegacyEntitlementToAccount({ accountId, email }) {
+    const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+    if (!accountId || !normalizedEmail) {
+      return null;
+    }
+
+    const entitlementKeys = await this.cacheService.listKeysByPrefix(entitlementKeyPrefix());
+
+    for (const key of entitlementKeys) {
+      if (key === buildEntitlementKey(accountId)) {
+        continue;
+      }
+
+      const entitlement = await this.cacheService.getJson(key);
+
+      if (!entitlement?.email || String(entitlement.email).trim().toLowerCase() !== normalizedEmail) {
+        continue;
+      }
+
+      const legacyUserId = key.slice(entitlementKeyPrefix().length);
+
+      await this.cacheService.setJson(
+        buildEntitlementKey(accountId),
+        {
+          ...entitlement,
+          updatedAt: new Date().toISOString(),
+          source: entitlement.source === "stripe" ? "stripe_account_migrated" : entitlement.source
+        },
+        BILLING_COUNTER_TTL_SECONDS
+      );
+
+      if (this.accountService && legacyUserId && legacyUserId !== accountId) {
+        await this.accountService.linkUserToAccount(legacyUserId, accountId);
+      }
+
+      if (entitlement.stripeSubscriptionId) {
+        await this.cacheService.setJson(
+          buildSubscriptionKey(entitlement.stripeSubscriptionId),
+          { userId: accountId },
+          BILLING_COUNTER_TTL_SECONDS
+        );
+      }
+
+      if (entitlement.stripeCustomerId) {
+        await this.cacheService.setJson(
+          buildCustomerKey(entitlement.stripeCustomerId),
+          { userId: accountId },
+          BILLING_COUNTER_TTL_SECONDS
+        );
+      }
+
+      return {
+        ...entitlement,
+        updatedAt: new Date().toISOString(),
+        source: entitlement.source === "stripe" ? "stripe_account_migrated" : entitlement.source
+      };
+    }
+
+    return null;
   }
 }

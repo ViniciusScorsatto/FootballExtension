@@ -74,6 +74,10 @@ class InMemoryStore {
         score
       }));
   }
+
+  listKeysByPrefix(prefix) {
+    return [...this.values.keys()].filter((key) => key.startsWith(prefix));
+  }
 }
 
 function createEmptyMetrics() {
@@ -218,6 +222,22 @@ export class CacheService {
     }
 
     return entry.count;
+  }
+
+  async listKeysByPrefix(prefix) {
+    if (this.redisEnabled && this.client) {
+      const keys = [];
+
+      for await (const key of this.client.scanIterator({
+        MATCH: `${prefix}*`
+      })) {
+        keys.push(key);
+      }
+
+      return keys;
+    }
+
+    return this.memoryStore.listKeysByPrefix(prefix);
   }
 
   getStatus() {
