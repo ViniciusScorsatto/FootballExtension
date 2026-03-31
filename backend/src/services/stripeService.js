@@ -17,6 +17,49 @@ function isRecoverableSubscriptionStatus(status) {
   return ["active", "trialing", "past_due", "unpaid"].includes(status);
 }
 
+function buildEmptyRecoveryDebug(email) {
+  return {
+    found: false,
+    lookupSource: "none",
+    email,
+    searchCustomerCount: 0,
+    filteredCustomerCount: 0,
+    scannedCustomerCount: 0,
+    sessionCount: 0,
+    subscriptionCount: 0
+  };
+}
+
+function buildRecoveryResult(overrides) {
+  return {
+    ...buildEmptyRecoveryDebug(overrides.email || ""),
+    ...overrides
+  };
+}
+
+function escapeStripeSearchValue(value) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+async function searchMatchingCustomers(client, normalizedEmail, limit = 20) {
+  if (!normalizedEmail || typeof client.customers.search !== "function") {
+    return [];
+  }
+
+  try {
+    const response = await client.customers.search({
+      query: `email:'${escapeStripeSearchValue(normalizedEmail)}'`,
+      limit: Math.min(limit, 100)
+    });
+
+    return response.data.filter(
+      (customer) => normalizeEmail(customer.email ?? "") === normalizedEmail
+    );
+  } catch {
+    return [];
+  }
+}
+
 async function listMatchingCustomers(client, normalizedEmail, limit = 100) {
   if (!normalizedEmail) {
     return [];
@@ -161,8 +204,39 @@ export class StripeService {
       return null;
     }
 
+    const searchedCustomers = await searchMatchingCustomers(this.client, normalizedEmail, 50);
+    const searchedCustomerCount = searchedCustomers.length;
+
+    for (const customer of searchedCustomers) {
+      const subscriptions = await this.client.subscriptions.list({
+        customer: customer.id,
+        status: "all",
+        limit: 25
+      });
+
+      const recoverableSubscription = subscriptions.data.find((subscription) =>
+        isRecoverableSubscriptionStatus(subscription.status)
+      );
+
+      if (recoverableSubscription) {
+        return buildRecoveryResult({
+          found: true,
+          lookupSource: "customer_search",
+          email: normalizedEmail,
+          searchCustomerCount: searchedCustomerCount,
+          filteredCustomerCount: 0,
+          scannedCustomerCount: 0,
+          customerId: customer.id,
+          subscriptionId: recoverableSubscription.id,
+          status: recoverableSubscription.status,
+          priceId: recoverableSubscription.items?.data?.[0]?.price?.id || "",
+          metadata: recoverableSubscription.metadata ?? {}
+        });
+      }
+    }
+
     const customers = await listMatchingCustomers(this.client, normalizedEmail, 100);
-    const customerCount = customers.length;
+    const filteredAndScannedCustomerCount = customers.length;
 
     for (const customer of customers) {
       const subscriptions = await this.client.subscriptions.list({
@@ -176,23 +250,24 @@ export class StripeService {
       );
 
       if (recoverableSubscription) {
-        return {
+        return buildRecoveryResult({
           found: true,
           lookupSource: "customer",
           email: normalizedEmail,
-          customerCount,
-          sessionCount: 0,
+          searchCustomerCount: searchedCustomerCount,
+          filteredCustomerCount: filteredAndScannedCustomerCount,
+          scannedCustomerCount: filteredAndScannedCustomerCount,
           customerId: customer.id,
           subscriptionId: recoverableSubscription.id,
           status: recoverableSubscription.status,
           priceId: recoverableSubscription.items?.data?.[0]?.price?.id || "",
           metadata: recoverableSubscription.metadata ?? {}
-        };
+        });
       }
     }
 
     const sessions = await this.client.checkout.sessions.list({
-      limit: 25
+      limit: 100
     });
     const sessionCount = sessions.data.length;
 
@@ -211,28 +286,47 @@ export class StripeService {
         continue;
       }
 
-      return {
+      return buildRecoveryResult({
         found: true,
         lookupSource: "checkout_session",
         email: normalizedEmail,
-        customerCount,
+        searchCustomerCount: searchedCustomerCount,
+        filteredCustomerCount: filteredAndScannedCustomerCount,
+        scannedCustomerCount: filteredAndScannedCustomerCount,
         sessionCount,
-        subscriptionCount: 0,
         customerId: subscription.customer ? String(subscription.customer) : "",
         subscriptionId: subscription.id,
         status: subscription.status,
         priceId: subscription.items?.data?.[0]?.price?.id || "",
         metadata: subscription.metadata ?? {}
-      };
+      });
     }
 
-    const subscriptions = await this.client.subscriptions.list({
-      status: "all",
-      limit: 100
-    });
-    const subscriptionCount = subscriptions.data.length;
+    const subscriptions = [];
+    let startingAfter = "";
 
-    for (const subscription of subscriptions.data) {
+    while (subscriptions.length < 200) {
+      const page = await this.client.subscriptions.list({
+        status: "all",
+        limit: Math.min(100, 200 - subscriptions.length),
+        starting_after: startingAfter || undefined
+      });
+
+      subscriptions.push(...page.data);
+
+      if (!page.has_more || page.data.length === 0) {
+        break;
+      }
+
+      startingAfter = page.data[page.data.length - 1]?.id || "";
+      if (!startingAfter) {
+        break;
+      }
+    }
+
+    const subscriptionCount = subscriptions.length;
+
+    for (const subscription of subscriptions) {
       const customerId =
         typeof subscription.customer === "string"
           ? subscription.customer
@@ -249,11 +343,13 @@ export class StripeService {
         continue;
       }
 
-      return {
+      return buildRecoveryResult({
         found: true,
         lookupSource: "subscription_scan",
         email: normalizedEmail,
-        customerCount,
+        searchCustomerCount: searchedCustomerCount,
+        filteredCustomerCount: filteredAndScannedCustomerCount,
+        scannedCustomerCount: filteredAndScannedCustomerCount,
         sessionCount,
         subscriptionCount,
         customerId,
@@ -261,16 +357,18 @@ export class StripeService {
         status: subscription.status,
         priceId: subscription.items?.data?.[0]?.price?.id || "",
         metadata: subscription.metadata ?? {}
-      };
+      });
     }
 
-    return {
+    return buildRecoveryResult({
       found: false,
       lookupSource: "none",
       email: normalizedEmail,
-      customerCount,
+      searchCustomerCount: searchedCustomerCount,
+      filteredCustomerCount: filteredAndScannedCustomerCount,
+      scannedCustomerCount: filteredAndScannedCustomerCount,
       sessionCount,
       subscriptionCount
-    };
+    });
   }
 }
