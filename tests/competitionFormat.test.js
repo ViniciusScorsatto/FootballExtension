@@ -276,3 +276,153 @@ test("registry can tag hybrid competitions without overriding standings-based gr
   assert.equal(result.source, "standings");
   assert.equal(result.registry?.routing, "hybrid_group_knockout");
 });
+
+test("registry can tag single-league-phase european competitions without overriding table logic", () => {
+  const result = classifyCompetitionFormat({
+    fixture: {
+      league: {
+        id: 2,
+        name: "UEFA Champions League",
+        standings: true
+      },
+      teams: {
+        home: { id: 1 },
+        away: { id: 2 }
+      }
+    },
+    standingsPayload: {
+      response: [
+        {
+          league: {
+            standings: [
+              [
+                {
+                  rank: 7,
+                  points: 14,
+                  goalsDiff: 5,
+                  all: { played: 8, goals: { for: 12, against: 7 } },
+                  team: { id: 1, name: "Home", code: "HOM" }
+                },
+                {
+                  rank: 18,
+                  points: 10,
+                  goalsDiff: 1,
+                  all: { played: 8, goals: { for: 10, against: 9 } },
+                  team: { id: 2, name: "Away", code: "AWY" }
+                }
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  });
+
+  assert.equal(result.format, "single_table");
+  assert.equal(result.impactMode, "full");
+  assert.equal(result.registry?.routing, "hybrid_single_table_knockout");
+});
+
+test("registry can tag phased domestic competitions without overriding later grouped logic", () => {
+  const result = classifyCompetitionFormat({
+    fixture: {
+      league: {
+        id: 75,
+        name: "Serie C",
+        standings: true
+      },
+      teams: {
+        home: { id: 1 },
+        away: { id: 2 }
+      }
+    },
+    standingsPayload: {
+      response: [
+        {
+          league: {
+            standings: [
+              [
+                {
+                  group: "Group A",
+                  rank: 1,
+                  points: 9,
+                  goalsDiff: 4,
+                  all: { played: 4, goals: { for: 7, against: 3 } },
+                  team: { id: 1, name: "Home", code: "HOM" }
+                },
+                {
+                  group: "Group A",
+                  rank: 2,
+                  points: 7,
+                  goalsDiff: 2,
+                  all: { played: 4, goals: { for: 5, against: 3 } },
+                  team: { id: 2, name: "Away", code: "AWY" }
+                }
+              ],
+              [
+                {
+                  group: "Group B",
+                  rank: 1,
+                  points: 8,
+                  goalsDiff: 3,
+                  all: { played: 4, goals: { for: 6, against: 3 } },
+                  team: { id: 3, name: "Other", code: "OTH" }
+                }
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  });
+
+  assert.equal(result.format, "grouped_same_group");
+  assert.equal(result.impactMode, "group");
+  assert.equal(result.registry?.routing, "hybrid_single_table_groups");
+});
+
+test("registry can mark portuguese cups as knockout competitions", () => {
+  const result = classifyCompetitionFormat({
+    fixture: {
+      league: {
+        id: 96,
+        name: "Taça de Portugal",
+        standings: true
+      },
+      teams: {
+        home: { id: 1 },
+        away: { id: 2 }
+      }
+    },
+    standingsPayload: {
+      response: [
+        {
+          league: {
+            standings: [
+              [
+                {
+                  rank: 1,
+                  points: 0,
+                  goalsDiff: 0,
+                  all: { played: 0, goals: { for: 0, against: 0 } },
+                  team: { id: 1, name: "Home", code: "HOM" }
+                },
+                {
+                  rank: 2,
+                  points: 0,
+                  goalsDiff: 0,
+                  all: { played: 0, goals: { for: 0, against: 0 } },
+                  team: { id: 2, name: "Away", code: "AWY" }
+                }
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  });
+
+  assert.equal(result.registry?.routing, "knockout_cup");
+  assert.equal(result.format, "single_table");
+  assert.equal(result.impactMode, "full");
+});
