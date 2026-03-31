@@ -17,6 +17,47 @@ function isRecoverableSubscriptionStatus(status) {
   return ["active", "trialing", "past_due", "unpaid"].includes(status);
 }
 
+async function listMatchingCustomers(client, normalizedEmail, limit = 100) {
+  if (!normalizedEmail) {
+    return [];
+  }
+
+  const filteredCustomers = await client.customers.list({
+    email: normalizedEmail,
+    limit: Math.min(limit, 100)
+  });
+
+  if (filteredCustomers.data.length > 0) {
+    return filteredCustomers.data;
+  }
+
+  const allCustomers = [];
+  let startingAfter = "";
+
+  while (allCustomers.length < limit) {
+    const page = await client.customers.list({
+      limit: Math.min(100, limit - allCustomers.length),
+      starting_after: startingAfter || undefined
+    });
+
+    const matches = page.data.filter(
+      (customer) => normalizeEmail(customer.email ?? "") === normalizedEmail
+    );
+    allCustomers.push(...matches);
+
+    if (!page.has_more || page.data.length === 0) {
+      break;
+    }
+
+    startingAfter = page.data[page.data.length - 1]?.id || "";
+    if (!startingAfter) {
+      break;
+    }
+  }
+
+  return allCustomers;
+}
+
 export class StripeService {
   constructor({ env }) {
     this.env = env;
@@ -120,13 +161,10 @@ export class StripeService {
       return null;
     }
 
-    const customers = await this.client.customers.list({
-      email: normalizedEmail,
-      limit: 10
-    });
-    const customerCount = customers.data.length;
+    const customers = await listMatchingCustomers(this.client, normalizedEmail, 100);
+    const customerCount = customers.length;
 
-    for (const customer of customers.data) {
+    for (const customer of customers) {
       const subscriptions = await this.client.subscriptions.list({
         customer: customer.id,
         status: "all",
