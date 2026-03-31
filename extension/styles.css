@@ -151,8 +151,8 @@
 }
 
 .lmi-billing-card__restore {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
 }
@@ -178,7 +178,7 @@
 }
 
 .lmi-account-card__compact-summary {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--lmi-muted);
   line-height: 1.4;
@@ -193,7 +193,7 @@
 }
 
 .lmi-account-card__content {
-  padding: 12px 0 0;
+  padding: 10px 0 0;
 }
 
 .lmi-billing-card[hidden] {
@@ -247,11 +247,15 @@
 }
 
 .lmi-billing-card__actions {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .lmi-billing-card__actions .lmi-button {
   margin-top: 0;
+}
+
+.lmi-billing-card__actions .lmi-button:only-child {
+  width: 100%;
 }
 
 .lmi-field {
@@ -260,7 +264,7 @@
 }
 
 .lmi-field--tight {
-  margin: 0;
+  margin: 8px 0;
 }
 
 .lmi-field__label {

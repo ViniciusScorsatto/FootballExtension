@@ -7,7 +7,6 @@ const fixtureIdInput = document.getElementById("fixtureId");
 const backendUrlInput = document.getElementById("backendUrl");
 const languageSelect = document.getElementById("language");
 const billingActionButton = document.getElementById("billingAction");
-const billingRefreshButton = document.getElementById("billingRefresh");
 const accountRestoreButton = document.getElementById("accountRestore");
 const accountStatusRefreshButton = document.getElementById("accountStatusRefresh");
 const accountToggleButton = document.getElementById("accountToggle");
@@ -112,7 +111,6 @@ function applyStaticTranslations() {
   startButton.textContent = translate("popup.startTracking");
   stopButton.textContent = translate("popup.stopTracking");
   openSidePanelButton.textContent = translate("popup.openSidePanel");
-  billingRefreshButton.textContent = translate("popup.refreshPlan");
   accountEyebrow.textContent = translate("popup.restoreEyebrow");
   accountTitle.textContent = translate("popup.restoreTitle");
   accountCompactSummary.textContent = translate("popup.restoreSummary");
@@ -1100,16 +1098,6 @@ startButton.addEventListener("click", handleStartTracking);
 stopButton.addEventListener("click", handleStopTracking);
 openSidePanelButton.addEventListener("click", handleOpenSidePanel);
 billingActionButton.addEventListener("click", handleBillingAction);
-billingRefreshButton.addEventListener("click", async () => {
-  try {
-    currentBilling.recentlyUnlocked = false;
-    await refreshBillingStatusWithRecovery();
-    setStatus(translate("popup.statusPlanUpdated"));
-    await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
-  } catch {
-    setStatus(translate("popup.statusPlanLoadFailed"), true);
-  }
-});
 accountRestoreButton.addEventListener("click", handleRestoreAccess);
 accountToggleButton.addEventListener("click", () => {
   accountCardExpanded = !accountCardExpanded;
