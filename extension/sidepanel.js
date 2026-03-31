@@ -617,12 +617,12 @@
               <span class="lmi-league-context-card__team lmi-league-context-card__team--home">
                 ${renderLeagueContextBadge(fixture.teams.home.logo, fixture.teams.home.name)}
                 <span class="lmi-league-context-card__team-name">${escapeHtml(
-                  fixture.teams.home.shortName
+                  compactLeagueContextTeamName(fixture.teams.home)
                 )}</span>
               </span>
               <span class="lmi-league-context-card__team lmi-league-context-card__team--away">
                 <span class="lmi-league-context-card__team-name">${escapeHtml(
-                  fixture.teams.away.shortName
+                  compactLeagueContextTeamName(fixture.teams.away)
                 )}</span>
                 ${renderLeagueContextBadge(fixture.teams.away.logo, fixture.teams.away.name)}
               </span>
@@ -726,6 +726,30 @@
     }
 
     return `<img class="lmi-league-context-card__badge" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
+  }
+
+  function compactLeagueContextTeamName(team) {
+    const shortName = String(team?.shortName ?? "").trim();
+
+    if (shortName && shortName.length <= 4 && !/\s/.test(shortName)) {
+      return shortName.toUpperCase();
+    }
+
+    const parts = String(team?.name ?? "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (parts.length >= 2) {
+      return parts
+        .slice(0, 3)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+    }
+
+    const fallback = shortName || String(team?.name ?? "");
+    return fallback.slice(0, 3).toUpperCase() || "---";
   }
 
   function escapeHtml(value) {

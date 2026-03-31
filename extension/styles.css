@@ -634,8 +634,8 @@ select.lmi-field__input {
 }
 
 .lmi-league-context-card__teams {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   align-items: center;
   color: var(--lmi-text);
@@ -662,7 +662,6 @@ select.lmi-field__input {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  max-width: calc(50% - 8px);
   overflow: hidden;
 }
 
@@ -683,7 +682,9 @@ select.lmi-field__input {
 }
 
 .lmi-league-context-card__team-name {
+  display: inline-block;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
