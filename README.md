@@ -49,6 +49,8 @@ The backend exposes:
 - `GET /billing/plans`
 - `GET /billing/status`
 - `POST /billing/early-bird/claim`
+- `POST /billing/checkout-session`
+- `POST /billing/webhooks/stripe`
 - `GET /matches/live`
 - `GET /matches/upcoming`
 - `GET /match-impact?fixture_id=12345`
@@ -89,8 +91,8 @@ The backend exposes:
 
 ## Production considerations
 
-- Add a real auth layer before enabling paid tiers.
-- Use Stripe Checkout or your own billing backend later; the current billing structure is pricing-ready but not payment-enabled yet.
+- Add a real auth layer before enabling paid tiers broadly.
+- Stripe Checkout is now wired into the backend, but production launch still needs real customer auth/account linking beyond device-style identifiers.
 - Tune the rate-limit env vars for your expected traffic and plan tiers before launch.
 - Configure `ALLOWED_ORIGINS` with your deployed extension/web origins in production.
 - Run Redis in production so all backend instances share the same cache and analytics counters.
@@ -101,6 +103,8 @@ The backend exposes:
 - `GET /billing/plans` returns the public plan catalog and Early Bird availability.
 - `GET /billing/status` returns the current plan state for a given user or request context.
 - `POST /billing/early-bird/claim` reserves the lifetime-discount Early Bird offer for a user identifier.
+- `POST /billing/checkout-session` creates a Stripe Checkout session for Pro or Early Bird Pro.
+- `POST /billing/webhooks/stripe` activates or updates Pro entitlements from Stripe subscription events.
 - The current billing model is:
   - `Free`
   - `Pro`
@@ -116,6 +120,12 @@ EARLY_BIRD_PRO_MONTHLY_PRICE_USD=3.99
 EARLY_BIRD_OFFER_ENABLED=true
 EARLY_BIRD_OFFER_MAX_CLAIMS=100
 SUPPORT_EMAIL=support@footanalysis.com
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_NORMAL_PRICE_ID=price_...
+STRIPE_EARLY_PRICE_ID=price_...
+STRIPE_SUCCESS_URL=https://your-site.com/billing/success
+STRIPE_CANCEL_URL=https://your-site.com/billing/cancel
 ```
 
 ## Rate limiting

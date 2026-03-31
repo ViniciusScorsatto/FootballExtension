@@ -11,6 +11,7 @@ import { BillingService } from "./services/billingService.js";
 import { CacheService } from "./services/cacheService.js";
 import { MatchImpactService } from "./services/matchImpactService.js";
 import { MatchDiscoveryService } from "./services/matchDiscoveryService.js";
+import { StripeService } from "./services/stripeService.js";
 import { createAllowedOrigins, isOriginAllowed } from "./utils/origins.js";
 
 const cacheService = new CacheService({
@@ -23,6 +24,10 @@ const analyticsService = new AnalyticsService({
 
 const billingService = new BillingService({
   cacheService,
+  env
+});
+
+const stripeService = new StripeService({
   env
 });
 
@@ -49,6 +54,7 @@ const controller = createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
   billingService,
+  stripeService,
   cacheService,
   apiFootballClient,
   env
@@ -63,6 +69,15 @@ const allowedOrigins = createAllowedOrigins(env);
 
 app.locals.bootstrapPromise = cacheService.connect();
 app.set("trust proxy", env.trustProxy);
+
+async function ensureBootstrap(_req, _res, next) {
+  try {
+    await app.locals.bootstrapPromise;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
 
 if (env.nodeEnv === "production" && allowedOrigins.includes("*")) {
   console.warn("ALLOWED_ORIGINS is set to '*' in production. Restrict it before public launch.");
@@ -80,16 +95,15 @@ app.use(
     }
   })
 );
+app.post(
+  "/billing/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  ensureBootstrap,
+  controller.handleStripeWebhook
+);
 app.use(express.json({ limit: "100kb" }));
 app.use(attachMonetizationContext);
-app.use(async (_req, _res, next) => {
-  try {
-    await app.locals.bootstrapPromise;
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
+app.use(ensureBootstrap);
 app.use(requestLimiter);
 
 registerRoutes(app, controller);

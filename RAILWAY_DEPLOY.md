@@ -55,6 +55,12 @@ EARLY_BIRD_PRO_MONTHLY_PRICE_USD=3.99
 EARLY_BIRD_OFFER_ENABLED=true
 EARLY_BIRD_OFFER_MAX_CLAIMS=100
 SUPPORT_EMAIL=support@footanalysis.com
+STRIPE_SECRET_KEY=sk_live_or_sk_test
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_NORMAL_PRICE_ID=price_...
+STRIPE_EARLY_PRICE_ID=price_...
+STRIPE_SUCCESS_URL=https://your-site.com/billing/success
+STRIPE_CANCEL_URL=https://your-site.com/billing/cancel
 ```
 
 Set `REDIS_URL` by attaching the Railway Redis service.
@@ -91,3 +97,4 @@ ALLOWED_EXTENSION_IDS=your_published_extension_id
 - Railway injects `PORT`, and the backend already listens on it.
 - Keep `ALLOWED_ORIGINS` narrow in production. Do not leave it as `*`.
 - Redis is strongly recommended in Railway so all backend instances share cache and throttling state.
+- Configure a Stripe webhook that points to `https://your-service.up.railway.app/billing/webhooks/stripe`.

@@ -74,3 +74,27 @@ export function validateEarlyBirdClaimPayload(payload = {}) {
     email
   };
 }
+
+export function validateCheckoutPayload(payload = {}, fallbackUserId = "") {
+  const userId = validateBillingIdentity(payload.userId ?? fallbackUserId, "userId");
+  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+  const offerId = typeof payload.offerId === "string" ? payload.offerId.trim() : "";
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("email must be a valid email address.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (offerId && offerId !== "early_bird_lifetime") {
+    const error = new Error("offerId is not supported.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    userId,
+    email,
+    offerId: offerId || null
+  };
+}

@@ -18,6 +18,8 @@ function createBillingService(envOverrides = {}) {
       earlyBirdOfferEnabled: true,
       earlyBirdOfferMaxClaims: 100,
       supportEmail: "support@example.com",
+      stripeNormalPriceId: "price_normal",
+      stripeEarlyPriceId: "price_early",
       ...envOverrides
     }
   });
@@ -66,4 +68,46 @@ test("claiming early bird stores a reserved pro entitlement", async () => {
 
   const storedEntitlement = await cacheService.getJson("billing:user:tester-2");
   assert.equal(storedEntitlement.grandfatheredPriceUsd, 3.99);
+});
+
+test("checkout selection chooses the Early Bird Stripe price when reserved", async () => {
+  const { billingService } = createBillingService();
+
+  await billingService.claimEarlyBird({
+    userId: "tester-3",
+    email: "tester@example.com"
+  });
+
+  const selection = await billingService.createCheckoutSelection({
+    userId: "tester-3",
+    email: "tester@example.com",
+    offerId: "early_bird_lifetime"
+  });
+
+  assert.equal(selection.priceId, "price_early");
+  assert.equal(selection.offerId, "early_bird_lifetime");
+});
+
+test("stripe checkout completion activates the user's Pro entitlement", async () => {
+  const { billingService, cacheService } = createBillingService();
+
+  const result = await billingService.handleStripeCheckoutCompleted({
+    metadata: {
+      userId: "tester-4",
+      offerId: "early_bird_lifetime",
+      priceId: "price_early"
+    },
+    customer_details: {
+      email: "tester@example.com"
+    },
+    customer: "cus_123",
+    subscription: "sub_123"
+  });
+
+  assert.equal(result.processed, true);
+
+  const storedEntitlement = await cacheService.getJson("billing:user:tester-4");
+  assert.equal(storedEntitlement.status, "active");
+  assert.equal(storedEntitlement.offerId, "early_bird_lifetime");
+  assert.equal(storedEntitlement.stripeSubscriptionId, "sub_123");
 });

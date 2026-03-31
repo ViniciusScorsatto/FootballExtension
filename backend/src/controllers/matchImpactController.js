@@ -1,5 +1,6 @@
 import {
   assertFixtureId,
+  validateCheckoutPayload,
   parseFixtureId,
   validateBillingIdentity,
   validateEarlyBirdClaimPayload,
@@ -25,6 +26,7 @@ export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
   billingService,
+  stripeService,
   cacheService,
   apiFootballClient,
   env
@@ -71,6 +73,7 @@ export function createMatchImpactController({
           ...apiFootballClient.getStatus(),
           timeoutMs: env.requestTimeoutMs
         },
+        stripe: stripeService.getStatus(),
         cache: {
           ...cacheService.getStatus(),
           ttlSeconds: {
@@ -232,6 +235,75 @@ export function createMatchImpactController({
         const payload = await billingService.claimEarlyBird(bodyPayload);
 
         res.status(payload.alreadyClaimed ? 200 : 201).json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async createCheckoutSession(req, res, next) {
+      try {
+        const payload = validateCheckoutPayload(req.body, req.monetization.userId);
+        const selection = await billingService.createCheckoutSelection(payload);
+        const session = await stripeService.createCheckoutSession({
+          priceId: selection.priceId,
+          userId: selection.userId,
+          email: selection.email,
+          offerId: selection.offerId,
+          planId: selection.planId
+        });
+
+        res.status(201).json({
+          ok: true,
+          sessionId: session.id,
+          checkoutUrl: session.url,
+          planId: selection.planId,
+          offerId: selection.offerId,
+          priceId: selection.priceId
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async handleStripeWebhook(req, res, next) {
+      try {
+        const signature = req.header("stripe-signature");
+
+        if (!signature) {
+          const error = new Error("Missing Stripe signature.");
+          error.statusCode = 400;
+          error.code = "STRIPE_SIGNATURE_MISSING";
+          throw error;
+        }
+
+        const event = stripeService.constructWebhookEvent(req.body, signature);
+        let result = {
+          processed: false
+        };
+
+        switch (event.type) {
+          case "checkout.session.completed":
+            result = await billingService.handleStripeCheckoutCompleted(event.data.object);
+            break;
+          case "customer.subscription.updated":
+            result = await billingService.handleStripeSubscriptionUpdated(event.data.object);
+            break;
+          case "customer.subscription.deleted":
+            result = await billingService.handleStripeSubscriptionDeleted(event.data.object);
+            break;
+          default:
+            result = {
+              processed: false,
+              ignored: true
+            };
+            break;
+        }
+
+        res.json({
+          received: true,
+          type: event.type,
+          ...result
+        });
       } catch (error) {
         next(error);
       }

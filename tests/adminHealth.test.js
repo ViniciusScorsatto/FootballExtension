@@ -66,7 +66,48 @@ function createController(envOverrides = {}) {
       }),
       claimEarlyBird: async () => ({
         claimed: true
+      }),
+      createCheckoutSelection: async () => ({
+        userId: "tester",
+        email: "tester@example.com",
+        planId: "pro",
+        priceId: "price_123",
+        offerId: "early_bird_lifetime"
+      }),
+      handleStripeCheckoutCompleted: async () => ({
+        processed: true
+      }),
+      handleStripeSubscriptionUpdated: async () => ({
+        processed: true
+      }),
+      handleStripeSubscriptionDeleted: async () => ({
+        processed: true
       })
+    },
+    stripeService: {
+      getStatus() {
+        return {
+          enabled: true,
+          pricesConfigured: true,
+          webhookConfigured: true,
+          successUrlConfigured: true,
+          cancelUrlConfigured: true
+        };
+      },
+      async createCheckoutSession() {
+        return {
+          id: "cs_test_123",
+          url: "https://checkout.stripe.test/session"
+        };
+      },
+      constructWebhookEvent() {
+        return {
+          type: "checkout.session.completed",
+          data: {
+            object: {}
+          }
+        };
+      }
     },
     cacheService: {
       getStatus() {
@@ -134,6 +175,7 @@ test("admin health is available without a token when no admin token is configure
   assert.equal(res.body.ok, true);
   assert.equal(res.body.admin.protected, false);
   assert.deepEqual(res.body.leagues.supportedLeagueIds, [39]);
+  assert.equal(res.body.stripe.enabled, true);
 });
 
 test("admin health rejects unauthorized requests when admin token is configured", () => {
@@ -189,4 +231,30 @@ test("billing status returns the current plan snapshot", async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.plan, "free");
   assert.equal(res.body.offers.earlyBirdEligible, true);
+});
+
+test("checkout session creation returns a Stripe checkout URL", async () => {
+  const controller = createController();
+  const res = createResponseMock();
+
+  await controller.createCheckoutSession(
+    {
+      body: {
+        userId: "tester",
+        offerId: "early_bird_lifetime",
+        email: "tester@example.com"
+      },
+      monetization: {
+        userId: "tester"
+      }
+    },
+    res,
+    (error) => {
+      throw error;
+    }
+  );
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.body.ok, true);
+  assert.equal(res.body.checkoutUrl, "https://checkout.stripe.test/session");
 });
