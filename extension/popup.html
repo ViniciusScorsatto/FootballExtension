@@ -111,7 +111,7 @@
       </section>
 
       <button id="refreshMatches" class="lmi-button lmi-button--ghost" type="button">
-        Refresh Match List
+        Refresh matches
       </button>
 
       <label class="lmi-field">
@@ -135,26 +135,42 @@
         </select>
       </label>
 
-      <label class="lmi-field">
-        <span id="manualFixtureLabel" class="lmi-field__label">Manual Fixture ID</span>
-        <input
-          id="fixtureId"
-          class="lmi-field__input"
-          type="number"
-          min="1"
-          placeholder="Optional fallback"
-        />
-      </label>
-      <p id="planHint" class="lmi-popup__hint"></p>
+      <section class="lmi-advanced-card">
+        <button id="advancedToggle" class="lmi-account-card__toggle" type="button" aria-expanded="false">
+          <div>
+            <div id="advancedEyebrow" class="lmi-popup__eyebrow">Advanced options</div>
+            <div id="advancedTitle" class="lmi-billing-card__title">Manual fixture fallback</div>
+            <div id="advancedSummary" class="lmi-account-card__compact-summary">
+              Use a fixture ID only when the match does not show up in the lists.
+            </div>
+          </div>
+          <div class="lmi-account-card__toggle-right">
+            <div id="advancedChevron" class="lmi-account-card__chevron">+</div>
+          </div>
+        </button>
+        <div id="advancedContent" class="lmi-account-card__content" hidden>
+          <label class="lmi-field lmi-field--tight">
+            <span id="manualFixtureLabel" class="lmi-field__label">Manual Fixture ID</span>
+            <input
+              id="fixtureId"
+              class="lmi-field__input"
+              type="number"
+              min="1"
+              placeholder="Optional fallback"
+            />
+          </label>
+          <p id="planHint" class="lmi-popup__hint"></p>
+        </div>
+      </section>
 
       <button id="startTracking" class="lmi-button lmi-button--primary" type="button">
-        Start Tracking
+        Track this match
       </button>
       <button id="stopTracking" class="lmi-button lmi-button--ghost" type="button">
-        Stop Tracking
+        Stop tracking
       </button>
       <button id="openSidePanel" class="lmi-button lmi-button--ghost" type="button">
-        Open Side Panel
+        Open side panel
       </button>
 
       <p id="statusMessage" class="lmi-popup__status" aria-live="polite"></p>

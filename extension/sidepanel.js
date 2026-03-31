@@ -60,6 +60,8 @@
     content: document.getElementById("sidepanelContent"),
     leagueEyebrow: document.getElementById("sidepanelLeagueEyebrow"),
     leagueName: document.getElementById("sidepanelLeagueName"),
+    phasePill: document.getElementById("sidepanelPhasePill"),
+    freshness: document.getElementById("sidepanelFreshness"),
     homeBadge: document.getElementById("sidepanelHomeBadge"),
     awayBadge: document.getElementById("sidepanelAwayBadge"),
     headline: document.getElementById("sidepanelHeadline"),
@@ -91,6 +93,7 @@
     injuriesGrid: document.getElementById("sidepanelInjuriesGrid"),
     leagueContextSection: document.getElementById("sidepanelLeagueContextSection"),
     leagueContextList: document.getElementById("sidepanelLeagueContextList"),
+    statusRow: document.querySelector(".lmi-status-row--sidepanel"),
     connectionStatus: document.getElementById("sidepanelConnectionStatus"),
     lastUpdated: document.getElementById("sidepanelLastUpdated")
   };
@@ -296,8 +299,11 @@
     elements.content.hidden = true;
     elements.refreshButton.disabled = true;
     elements.stopButton.disabled = true;
+    elements.phasePill.textContent = "";
+    elements.freshness.textContent = "";
     elements.connectionStatus.textContent = translate("sidepanel.notTracking");
     elements.lastUpdated.textContent = "";
+    elements.statusRow.classList.remove("is-hidden");
   }
 
   function renderTrackedShell() {
@@ -305,7 +311,11 @@
     elements.content.hidden = false;
     elements.refreshButton.disabled = false;
     elements.stopButton.disabled = false;
+    elements.phasePill.textContent = "";
+    elements.freshness.textContent = "";
     elements.connectionStatus.textContent = translate("panel.connecting");
+    elements.lastUpdated.textContent = "";
+    elements.statusRow.classList.remove("is-hidden");
 
     if (!state.lastPayload) {
       elements.leagueName.textContent = translate("panel.matchTracker");
@@ -455,6 +465,8 @@
     const retrySuffix = retryAfterSeconds ? ` Retry in ~${retryAfterSeconds}s.` : "";
 
     renderTrackedShell();
+    elements.phasePill.textContent = translate("panel.offline");
+    elements.freshness.textContent = "";
 
     if (errorCode === "UPSTREAM_QUOTA_EXCEEDED") {
       elements.connectionStatus.textContent = translate("panel.upstreamLimitRetrying");
@@ -517,6 +529,11 @@
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
     const isLimitedImpact = payload.impact?.mode === "limited";
     const isCupImpact = payload.impact?.mode === "cup";
+    const updatedLabel = translate("panel.updatedAt", {
+      time: new Date(payload.last_updated).toLocaleTimeString(
+        state.language === "pt-BR" ? "pt-BR" : "en-US"
+      )
+    });
 
     elements.leagueName.textContent = payload.league?.name || translate("panel.matchTracker");
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
@@ -543,14 +560,8 @@
       elements.homeRow.textContent = "";
       elements.awayRow.textContent = "";
     } else if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
-      elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
-        state.language,
-        payload.impact.table.home.newPosition
-      )} (${formatMovement(payload.impact.table.home.movement)})`;
-      elements.awayRow.textContent = `${payload.teams.away.name} → ${formatOrdinal(
-        state.language,
-        payload.impact.table.away.newPosition
-      )} (${formatMovement(payload.impact.table.away.movement)})`;
+      renderTableImpactRow(elements.homeRow, payload.teams.home.name, payload.impact.table.home);
+      renderTableImpactRow(elements.awayRow, payload.teams.away.name, payload.impact.table.away);
     } else if (payload.impact?.mode === "limited") {
       const homeGroupPosition = payload.metadata?.teamGroupPositions?.home;
       const awayGroupPosition = payload.metadata?.teamGroupPositions?.away;
@@ -575,17 +586,16 @@
       elements.awayRow.textContent = translate("panel.scoreOnlyAway");
     }
 
-    elements.connectionStatus.textContent =
+    elements.phasePill.textContent =
       payload.status.phase === "finished"
         ? translate("panel.finished")
         : payload.status.phase === "upcoming"
           ? translate("panel.preMatchStatus")
           : translate("panel.live");
-    elements.lastUpdated.textContent = translate("panel.updatedAt", {
-      time: new Date(payload.last_updated).toLocaleTimeString(
-        state.language === "pt-BR" ? "pt-BR" : "en-US"
-      )
-    });
+    elements.freshness.textContent = updatedLabel;
+    elements.connectionStatus.textContent = "";
+    elements.lastUpdated.textContent = "";
+    elements.statusRow.classList.add("is-hidden");
     elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
     elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
 
@@ -650,6 +660,28 @@
     element.src = src;
     element.alt = alt;
     element.classList.remove("is-hidden");
+  }
+
+  function renderTableImpactRow(element, teamName, tableImpact) {
+    if (!element || !tableImpact) {
+      return;
+    }
+
+    const movement = Number(tableImpact.movement || 0);
+    const directionClass =
+      movement > 0 ? "is-up" : movement < 0 ? "is-down" : "is-flat";
+    const directionSymbol = movement > 0 ? "↑" : movement < 0 ? "↓" : "•";
+
+    element.innerHTML = `
+      <span class="lmi-impact-row__team">${escapeHtml(teamName)}</span>
+      <span class="lmi-impact-row__direction ${directionClass}">${directionSymbol}</span>
+      <span class="lmi-impact-row__position">${escapeHtml(
+        formatOrdinal(state.language, tableImpact.newPosition)
+      )}</span>
+      <span class="lmi-impact-row__movement ${directionClass}">${escapeHtml(
+        `(${formatMovement(tableImpact.movement)})`
+      )}</span>
+    `;
   }
 
   function renderCompetitionList(payload, items) {
@@ -786,8 +818,11 @@
 
     if (prediction?.available) {
       elements.predictionsGrid.innerHTML = `
-        <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+        <div class="lmi-mini-card lmi-mini-card--prediction">
+          <div class="lmi-mini-card__title-row">
+            <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+            <div class="lmi-mini-card__chip">${escapeHtml(translate("prematch.predictionChip"))}</div>
+          </div>
           ${renderPredictionLines(payload, prediction).join("")}
         </div>
       `;

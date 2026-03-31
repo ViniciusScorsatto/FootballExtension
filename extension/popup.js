@@ -35,6 +35,12 @@ const accountStatusPill = document.getElementById("accountStatusPill");
 const accountChevron = document.getElementById("accountChevron");
 const accountEmailLabel = document.getElementById("accountEmailLabel");
 const accountSummary = document.getElementById("accountSummary");
+const advancedToggleButton = document.getElementById("advancedToggle");
+const advancedEyebrow = document.getElementById("advancedEyebrow");
+const advancedTitle = document.getElementById("advancedTitle");
+const advancedSummary = document.getElementById("advancedSummary");
+const advancedContent = document.getElementById("advancedContent");
+const advancedChevron = document.getElementById("advancedChevron");
 const topPlanPill = document.getElementById("topPlanPill");
 const planHint = document.getElementById("planHint");
 const leagueFilterSelect = document.getElementById("leagueFilter");
@@ -56,6 +62,7 @@ let currentLeagueFilter = {
 let currentLanguage = DEFAULT_LANGUAGE;
 let accountCardExpanded = true;
 let notificationsCardExpanded = false;
+let advancedOptionsExpanded = false;
 let currentBilling = {
   userId: "",
   plan: "free",
@@ -238,6 +245,9 @@ function applyStaticTranslations() {
   popupTextElements.liveMatchesLabel.textContent = translate("popup.liveMatches");
   popupTextElements.upcomingMatchesLabel.textContent = translate("popup.upcomingMatches");
   popupTextElements.manualFixtureLabel.textContent = translate("popup.manualFixtureId");
+  advancedEyebrow.textContent = translate("popup.advancedOptions");
+  advancedTitle.textContent = translate("popup.manualFixtureTitle");
+  advancedSummary.textContent = translate("popup.manualFixtureSummary");
   billingEyebrow.textContent = translate("popup.billingEyebrow");
   fixtureIdInput.placeholder = translate("popup.manualFixturePlaceholder");
   refreshMatchesButton.textContent = translate("popup.refreshMatches");
@@ -256,6 +266,7 @@ function applyStaticTranslations() {
   languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
     "language.portugueseBrazil"
   );
+  renderAdvancedOptions();
 }
 
 function createBillingUserId() {
@@ -444,12 +455,18 @@ function renderBillingCard() {
 function updatePlanHint() {
   if (isProPlan()) {
     fixtureIdInput.disabled = false;
-    planHint.textContent = translate("popup.statusProActive");
+    planHint.textContent = translate("popup.manualFixtureEnabled");
     return;
   }
 
   fixtureIdInput.disabled = true;
-  planHint.textContent = translate("popup.proUnlocksAllLeagues");
+  planHint.textContent = translate("popup.manualFixtureLocked");
+}
+
+function renderAdvancedOptions() {
+  advancedToggleButton.setAttribute("aria-expanded", String(advancedOptionsExpanded));
+  advancedContent.hidden = !advancedOptionsExpanded;
+  advancedChevron.textContent = advancedOptionsExpanded ? "−" : "+";
 }
 
 function renderAccountCard() {
@@ -1003,6 +1020,8 @@ async function loadSettings() {
 
   setLanguage(storedLanguage);
   fixtureIdInput.value = storedFixtureId ?? "";
+  advancedOptionsExpanded = Boolean(storedFixtureId);
+  renderAdvancedOptions();
   currentBilling = {
     ...currentBilling,
     userId: result.billingUserId || createBillingUserId(),
@@ -1396,7 +1415,16 @@ upcomingMatchesSelect.addEventListener("change", () => {
 fixtureIdInput.addEventListener("input", () => {
   if (fixtureIdInput.value) {
     clearOtherInputs("manual");
+    if (!advancedOptionsExpanded) {
+      advancedOptionsExpanded = true;
+      renderAdvancedOptions();
+    }
   }
+});
+
+advancedToggleButton.addEventListener("click", () => {
+  advancedOptionsExpanded = !advancedOptionsExpanded;
+  renderAdvancedOptions();
 });
 
 refreshMatchesButton.addEventListener("click", async () => {

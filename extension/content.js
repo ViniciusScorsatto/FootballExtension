@@ -151,6 +151,10 @@
               <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
             </div>
             <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
+            <div class="lmi-surface-meta">
+              <span class="lmi-surface-pill lmi-header-phase"></span>
+              <span class="lmi-surface-freshness lmi-header-freshness"></span>
+            </div>
           </div>
           <div class="lmi-expanded__actions">
             <button
@@ -233,7 +237,7 @@
           <div class="lmi-league-context-list"></div>
         </div>
 
-        <div class="lmi-status-row">
+        <div class="lmi-status-row is-hidden">
           <span class="lmi-connection-status">${escapeHtml(translate("panel.connecting"))}</span>
           <span class="lmi-last-updated"></span>
         </div>
@@ -279,6 +283,9 @@
       leagueContextSection: root.querySelector(".lmi-league-context-section"),
       leagueContextLabel: root.querySelector(".lmi-league-context-label"),
       leagueContextList: root.querySelector(".lmi-league-context-list"),
+      headerPhase: root.querySelector(".lmi-header-phase"),
+      headerFreshness: root.querySelector(".lmi-header-freshness"),
+      statusRow: root.querySelector(".lmi-status-row"),
       connectionStatus: root.querySelector(".lmi-connection-status"),
       lastUpdated: root.querySelector(".lmi-last-updated"),
       eyebrow: root.querySelector(".lmi-expanded__eyebrow"),
@@ -356,6 +363,9 @@
     }
 
     elements.root.classList.remove("is-hidden");
+    elements.headerPhase.textContent = "";
+    elements.headerFreshness.textContent = "";
+    elements.statusRow.classList.remove("is-hidden");
     elements.connectionStatus.textContent = translate("panel.connecting");
 
     if (!state.sessionStartedAt) {
@@ -412,6 +422,10 @@
     if (elements.preMatchLabel) elements.preMatchLabel.textContent = translate("panel.preMatch");
     if (elements.leagueContextLabel) {
       elements.leagueContextLabel.textContent = translate("panel.otherMatches");
+    }
+    if (!state.lastPayload) {
+      elements.headerPhase.textContent = "";
+      elements.headerFreshness.textContent = "";
     }
   }
 
@@ -554,12 +568,12 @@
     });
 
     if (signature === state.lastSignature) {
-      elements.connectionStatus.textContent =
+      elements.headerPhase.textContent =
         payload.status.phase === "finished"
-          ? "Match finished"
+          ? translate("panel.finished")
           : payload.status.phase === "upcoming"
-            ? "Pre-match"
-            : "Live";
+            ? translate("panel.preMatchStatus")
+            : translate("panel.live");
       return;
     }
 
@@ -578,6 +592,11 @@
     const errorCode = error?.data?.code ?? "";
     const retryAfterSeconds = error?.data?.retryAfterSeconds ?? null;
     const retrySuffix = retryAfterSeconds ? ` Retry in ~${retryAfterSeconds}s.` : "";
+
+    elements.statusRow.classList.remove("is-hidden");
+    elements.headerPhase.textContent = translate("panel.offline");
+    elements.headerFreshness.textContent = "";
+    elements.lastUpdated.textContent = "";
 
     if (errorCode === "UPSTREAM_QUOTA_EXCEEDED") {
       elements.connectionStatus.textContent = translate("panel.upstreamLimitRetrying");
@@ -644,6 +663,11 @@
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
     const isLimitedImpact = payload.impact?.mode === "limited";
     const isCupImpact = payload.impact?.mode === "cup";
+    const updatedLabel = translate("panel.updatedAt", {
+      time: new Date(payload.last_updated).toLocaleTimeString(
+        state.language === "pt-BR" ? "pt-BR" : "en-US"
+      )
+    });
 
     elements.collapsedScore.textContent = scoreline;
     elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
@@ -668,14 +692,8 @@
       elements.homeRow.textContent = "";
       elements.awayRow.textContent = "";
     } else if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
-      elements.homeRow.textContent = `${payload.teams.home.name} → ${formatOrdinal(
-        state.language,
-        payload.impact.table.home.newPosition
-      )} (${formatMovement(payload.impact.table.home.movement)})`;
-      elements.awayRow.textContent = `${payload.teams.away.name} → ${formatOrdinal(
-        state.language,
-        payload.impact.table.away.newPosition
-      )} (${formatMovement(payload.impact.table.away.movement)})`;
+      renderTableImpactRow(elements.homeRow, payload.teams.home.name, payload.impact.table.home);
+      renderTableImpactRow(elements.awayRow, payload.teams.away.name, payload.impact.table.away);
     } else if (payload.impact?.mode === "limited") {
       const homeGroupPosition = payload.metadata?.teamGroupPositions?.home;
       const awayGroupPosition = payload.metadata?.teamGroupPositions?.away;
@@ -700,17 +718,16 @@
       elements.awayRow.textContent = translate("panel.scoreOnlyAway");
     }
 
-    elements.connectionStatus.textContent =
+    elements.headerPhase.textContent =
       payload.status.phase === "finished"
         ? translate("panel.finished")
         : payload.status.phase === "upcoming"
           ? translate("panel.preMatchStatus")
           : translate("panel.live");
-    elements.lastUpdated.textContent = translate("panel.updatedAt", {
-      time: new Date(payload.last_updated).toLocaleTimeString(
-        state.language === "pt-BR" ? "pt-BR" : "en-US"
-      )
-    });
+    elements.headerFreshness.textContent = updatedLabel;
+    elements.statusRow.classList.add("is-hidden");
+    elements.connectionStatus.textContent = "";
+    elements.lastUpdated.textContent = "";
     elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
     elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
 
@@ -783,6 +800,28 @@
     element.src = src;
     element.alt = alt;
     element.classList.remove("is-hidden");
+  }
+
+  function renderTableImpactRow(element, teamName, tableImpact) {
+    if (!element || !tableImpact) {
+      return;
+    }
+
+    const movement = Number(tableImpact.movement || 0);
+    const directionClass =
+      movement > 0 ? "is-up" : movement < 0 ? "is-down" : "is-flat";
+    const directionSymbol = movement > 0 ? "↑" : movement < 0 ? "↓" : "•";
+
+    element.innerHTML = `
+      <span class="lmi-impact-row__team">${escapeHtml(teamName)}</span>
+      <span class="lmi-impact-row__direction ${directionClass}">${directionSymbol}</span>
+      <span class="lmi-impact-row__position">${escapeHtml(
+        formatOrdinal(state.language, tableImpact.newPosition)
+      )}</span>
+      <span class="lmi-impact-row__movement ${directionClass}">${escapeHtml(
+        `(${formatMovement(tableImpact.movement)})`
+      )}</span>
+    `;
   }
 
   function renderCompetitionList(payload, items) {
@@ -879,8 +918,11 @@
 
     if (prediction?.available) {
       elements.predictionsGrid.innerHTML = `
-        <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+        <div class="lmi-mini-card lmi-mini-card--prediction">
+          <div class="lmi-mini-card__title-row">
+            <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+            <div class="lmi-mini-card__chip">${escapeHtml(translate("prematch.predictionChip"))}</div>
+          </div>
           ${renderPredictionLines(payload, prediction).join("")}
         </div>
       `;

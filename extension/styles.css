@@ -247,6 +247,13 @@
   border-radius: 14px;
 }
 
+.lmi-advanced-card {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
 .lmi-account-card__toggle {
   width: 100%;
   display: flex;
@@ -475,6 +482,38 @@ select.lmi-field__input {
   margin-top: 8px;
   color: var(--lmi-accent);
   font-size: 15px;
+}
+
+.lmi-surface-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.lmi-surface-pill,
+.lmi-surface-freshness {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lmi-surface-pill {
+  color: var(--lmi-text);
+  font-weight: 700;
+}
+
+.lmi-surface-freshness {
+  color: var(--lmi-muted);
 }
 
 .lmi-sidepanel__media-row {
@@ -746,6 +785,46 @@ select.lmi-field__input {
   color: var(--lmi-text);
 }
 
+.lmi-impact-row__team,
+.lmi-impact-row__position,
+.lmi-impact-row__movement,
+.lmi-impact-row__direction {
+  display: inline-block;
+}
+
+.lmi-impact-row__team {
+  margin-right: 6px;
+}
+
+.lmi-impact-row__direction {
+  min-width: 12px;
+  margin-right: 6px;
+  font-weight: 800;
+}
+
+.lmi-impact-row__position {
+  margin-right: 6px;
+}
+
+.lmi-impact-row__movement {
+  font-weight: 700;
+}
+
+.lmi-impact-row__direction.is-up,
+.lmi-impact-row__movement.is-up {
+  color: #6df5c1;
+}
+
+.lmi-impact-row__direction.is-down,
+.lmi-impact-row__movement.is-down {
+  color: var(--lmi-danger);
+}
+
+.lmi-impact-row__direction.is-flat,
+.lmi-impact-row__movement.is-flat {
+  color: var(--lmi-muted);
+}
+
 .lmi-competition-item {
   margin-top: 10px;
   padding-left: 12px;
@@ -928,11 +1007,38 @@ select.lmi-field__input {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.lmi-mini-card--prediction {
+  background:
+    linear-gradient(180deg, rgba(109, 245, 193, 0.08), rgba(255, 255, 255, 0.04) 32%),
+    rgba(255, 255, 255, 0.04);
+  border-color: rgba(109, 245, 193, 0.16);
+  box-shadow: inset 0 1px 0 rgba(109, 245, 193, 0.12);
+}
+
+.lmi-mini-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .lmi-mini-card__title {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--lmi-muted);
+}
+
+.lmi-mini-card__chip {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(109, 245, 193, 0.14);
+  color: var(--lmi-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .lmi-mini-card__title--icon {
