@@ -13,6 +13,7 @@ function createService(overrides = {}) {
     getStandings: async () => null,
     getStatistics: async () => [],
     getInjuries: async () => [],
+    getPredictions: async () => null,
     getLineups: async () => [],
     getEvents: async () => [],
     getFixturesByRound: async () => [],
@@ -36,6 +37,7 @@ function createService(overrides = {}) {
         leagueCoverageCacheTtlSeconds: 3600,
         statisticsCacheTtlSeconds: 60,
         injuriesCacheTtlSeconds: 14400,
+        predictionsCacheTtlSeconds: 86400,
         eventsCacheTtlSeconds: 60,
         leagueContextLiveCacheTtlSeconds: 60,
         leagueContextUpcomingCacheTtlSeconds: 300,
@@ -96,6 +98,7 @@ test("league coverage is cached per league and season", async () => {
           standings: true,
           injuries: true,
           players: true,
+          predictions: true,
           fixtures: {
             events: true,
             lineups: true,
@@ -184,6 +187,7 @@ test("coverage flags skip unsupported resource endpoints", async () => {
   let statisticsCalls = 0;
   let lineupsCalls = 0;
   let injuriesCalls = 0;
+  let predictionsCalls = 0;
 
   const { service } = createService({
     apiFootballClient: {
@@ -191,6 +195,7 @@ test("coverage flags skip unsupported resource endpoints", async () => {
         standings: false,
         injuries: false,
         players: false,
+        predictions: false,
         fixtures: {
           events: false,
           lineups: false,
@@ -217,6 +222,10 @@ test("coverage flags skip unsupported resource endpoints", async () => {
       getInjuries: async () => {
         injuriesCalls += 1;
         return [];
+      },
+      getPredictions: async () => {
+        predictionsCalls += 1;
+        return null;
       }
     }
   });
@@ -248,12 +257,66 @@ test("coverage flags skip unsupported resource endpoints", async () => {
     []
   );
   assert.deepEqual(await service.getInjuriesResource(123, status, { injuriesTtlSeconds: 300 }, coverage), []);
+  assert.equal(await service.getPredictionsResource(123, { phase: "upcoming" }, coverage), null);
 
   assert.equal(standingsCalls, 0);
   assert.equal(eventsCalls, 0);
   assert.equal(statisticsCalls, 0);
   assert.equal(lineupsCalls, 0);
   assert.equal(injuriesCalls, 0);
+  assert.equal(predictionsCalls, 0);
+});
+
+test("predictions are cached per fixture for upcoming matches", async () => {
+  let calls = 0;
+  const { service } = createService({
+    apiFootballClient: {
+      getPredictions: async () => {
+        calls += 1;
+        return {
+          predictions: {
+            winner: { id: 1, name: "Home" },
+            under_over: "-2.5",
+            advice: "Home or draw"
+          }
+        };
+      }
+    }
+  });
+
+  const coverage = {
+    predictions: true
+  };
+
+  await service.getPredictionsResource(1234, { phase: "upcoming" }, coverage);
+  await service.getPredictionsResource(1234, { phase: "upcoming" }, coverage);
+
+  assert.equal(calls, 1);
+});
+
+test("predictions require explicit coverage support", async () => {
+  let calls = 0;
+  const { service } = createService({
+    apiFootballClient: {
+      getPredictions: async () => {
+        calls += 1;
+        return {
+          predictions: {
+            winner: { id: 1, name: "Home" }
+          }
+        };
+      }
+    }
+  });
+
+  assert.equal(await service.getPredictionsResource(999, { phase: "upcoming" }, null), null);
+  assert.equal(await service.getPredictionsResource(999, { phase: "upcoming" }, {}), null);
+  assert.equal(
+    await service.getPredictionsResource(999, { phase: "upcoming" }, { predictions: false }),
+    null
+  );
+
+  assert.equal(calls, 0);
 });
 
 test("upcoming fixtures use slower lineup cadence far from kickoff", async () => {

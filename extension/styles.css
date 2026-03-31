@@ -832,6 +832,7 @@ select.lmi-field__input {
   font-size: 14px;
 }
 
+.lmi-predictions-grid,
 .lmi-lineups-grid,
 .lmi-injuries-grid {
   display: grid;

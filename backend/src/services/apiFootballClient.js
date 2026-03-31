@@ -11,6 +11,7 @@ function normalizeLeagueCoverage(coverage = {}) {
     standings: normalizeCoverageBoolean(coverage?.standings),
     injuries: normalizeCoverageBoolean(coverage?.injuries),
     players: normalizeCoverageBoolean(coverage?.players),
+    predictions: normalizeCoverageBoolean(coverage?.predictions),
     fixtures: {
       events: normalizeCoverageBoolean(coverage?.fixtures?.events),
       lineups: normalizeCoverageBoolean(coverage?.fixtures?.lineups),
@@ -145,6 +146,14 @@ export class ApiFootballClient {
     });
 
     return response.data?.response ?? [];
+  }
+
+  async getPredictions(fixtureId) {
+    const response = await this.request("/predictions", {
+      fixture: fixtureId
+    });
+
+    return response.data?.response?.[0] ?? null;
   }
 
   async getStandings(leagueId, season) {

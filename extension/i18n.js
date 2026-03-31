@@ -249,6 +249,19 @@
         missedPenalty: "Missed penalty"
       },
       prematch: {
+        predictionTitle: "Model outlook",
+        predictionWinner: "Model leans {team}",
+        predictionWinOrDraw: "Model likes {team} or draw",
+        predictionGoals: "Goal line: {value}",
+        predictionAdvice: "Advice: {value}",
+        predictionUnavailable: "No model projection available yet.",
+        predictionCompare: {
+          form: "Form {home}-{away}",
+          att: "Attack {home}-{away}",
+          def: "Defence {home}-{away}",
+          poisson_distribution: "Poisson {home}-{away}",
+          h2h: "H2H {home}-{away}"
+        },
         lineupsExpected: "Lineups expected closer to kickoff",
         lineupsSummary: "{home} {homeFormation} vs {away} {awayFormation}",
         noInjuries: "No injury reports surfaced for this fixture",
@@ -518,6 +531,19 @@
         missedPenalty: "Pênalti perdido"
       },
       prematch: {
+        predictionTitle: "Projeção do modelo",
+        predictionWinner: "Modelo pende para {team}",
+        predictionWinOrDraw: "Modelo gosta de {team} ou empate",
+        predictionGoals: "Linha de gols: {value}",
+        predictionAdvice: "Conselho: {value}",
+        predictionUnavailable: "Ainda não há projeção do modelo.",
+        predictionCompare: {
+          form: "Forma {home}-{away}",
+          att: "Ataque {home}-{away}",
+          def: "Defesa {home}-{away}",
+          poisson_distribution: "Poisson {home}-{away}",
+          h2h: "H2H {home}-{away}"
+        },
         lineupsExpected: "Escalações esperadas mais perto do início",
         lineupsSummary: "{home} {homeFormation} x {away} {awayFormation}",
         noInjuries: "Nenhum reporte de lesão apareceu para este jogo",

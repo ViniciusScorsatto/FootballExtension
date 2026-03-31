@@ -104,6 +104,7 @@
     statsGrid: document.getElementById("sidepanelStatsGrid"),
     prematchSection: document.getElementById("sidepanelPrematchSection"),
     prematchList: document.getElementById("sidepanelPrematchList"),
+    predictionsGrid: document.getElementById("sidepanelPredictionsGrid"),
     lineupsGrid: document.getElementById("sidepanelLineupsGrid"),
     injuriesGrid: document.getElementById("sidepanelInjuriesGrid"),
     leagueContextSection: document.getElementById("sidepanelLeagueContextSection"),
@@ -1022,6 +1023,19 @@
       .map((item) => `<div class="lmi-prematch-item">${escapeHtml(item)}</div>`)
       .join("");
 
+    const prediction = payload.prematch.prediction;
+
+    if (prediction?.available) {
+      elements.predictionsGrid.innerHTML = `
+        <div class="lmi-mini-card">
+          <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+          ${renderPredictionLines(payload, prediction).join("")}
+        </div>
+      `;
+    } else {
+      elements.predictionsGrid.innerHTML = "";
+    }
+
     const lineups = payload.prematch.lineups;
 
     if (lineups?.available) {
@@ -1118,8 +1132,28 @@
 
   function buildPrematchItems(payload) {
     const items = [];
+    const prediction = payload.prematch?.prediction;
     const lineups = payload.prematch?.lineups;
     const injuries = payload.prematch?.injuries;
+
+    if (prediction?.available) {
+      if (prediction.winnerName) {
+        items.push(
+          translate(
+            prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
+            {
+              team: prediction.winnerName
+            }
+          )
+        );
+      } else if (prediction.underOver) {
+        items.push(
+          translate("prematch.predictionGoals", {
+            value: prediction.underOver
+          })
+        );
+      }
+    }
 
     if (lineups?.available && lineups.home?.formation && lineups.away?.formation) {
       items.push(
@@ -1154,6 +1188,64 @@
     const localizedReason = translateInjuryReason(state.language, item.reason);
 
     return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${localizedReason ? ` - ${escapeHtml(localizedReason)}` : ""}</span></div>`;
+  }
+
+  function renderPredictionLines(payload, prediction) {
+    const lines = [];
+
+    if (prediction.winnerName) {
+      lines.push(
+        `<div class="lmi-mini-card__line">${escapeHtml(
+          translate(
+            prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
+            { team: prediction.winnerName }
+          )
+        )}</div>`
+      );
+    }
+
+    if (prediction.underOver) {
+      lines.push(
+        `<div class="lmi-mini-card__line">${escapeHtml(
+          translate("prematch.predictionGoals", {
+            value: prediction.underOver
+          })
+        )}</div>`
+      );
+    }
+
+    if (prediction.advice) {
+      lines.push(
+        `<div class="lmi-mini-card__line">${escapeHtml(
+          translate("prematch.predictionAdvice", {
+            value: prediction.advice
+          })
+        )}</div>`
+      );
+    }
+
+    if (Array.isArray(prediction.comparison) && prediction.comparison.length) {
+      const comparisonLine = prediction.comparison
+        .map((entry) =>
+          translate(`prematch.predictionCompare.${entry.key}`, {
+            home: entry.home,
+            away: entry.away
+          })
+        )
+        .join(" · ");
+
+      lines.push(`<div class="lmi-mini-card__line">${escapeHtml(comparisonLine)}</div>`);
+    }
+
+    if (!lines.length) {
+      lines.push(
+        `<div class="lmi-mini-card__line">${escapeHtml(
+          translate("prematch.predictionUnavailable")
+        )}</div>`
+      );
+    }
+
+    return lines;
   }
 
   function formatStat(value, suffix = "") {

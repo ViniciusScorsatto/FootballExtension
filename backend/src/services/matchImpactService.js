@@ -35,6 +35,10 @@ function buildEventsKey(fixtureId) {
   return `events:${fixtureId}`;
 }
 
+function buildPredictionsKey(fixtureId) {
+  return `predictions:${fixtureId}`;
+}
+
 function buildLineupsKey(fixtureId) {
   return `lineups:${fixtureId}`;
 }
@@ -546,7 +550,57 @@ function buildPrematchSummary(status, teams, lineups, injuries) {
     available: true,
     items,
     lineups,
-    injuries
+    injuries,
+    prediction: null
+  };
+}
+
+function buildPredictionSummary(predictionPayload, teams) {
+  const prediction = predictionPayload?.predictions ?? {};
+  const winner = prediction?.winner ?? {};
+  const goals = prediction?.goals ?? {};
+  const comparison = predictionPayload?.comparison ?? {};
+  const winnerName = winner?.name ?? "";
+  const winnerTeamId = Number(winner?.id ?? 0) || null;
+  const canWinOrDraw = Boolean(prediction?.win_or_draw);
+  const underOver = prediction?.under_over ?? "";
+  const advice = prediction?.advice ?? "";
+
+  const comparisonKeys = ["form", "att", "def", "poisson_distribution", "h2h"];
+  const comparisonSummary = comparisonKeys
+    .map((key) => {
+      const entry = comparison?.[key];
+
+      if (!entry || (entry.home == null && entry.away == null)) {
+        return null;
+      }
+
+      return {
+        key,
+        home: entry.home ?? "",
+        away: entry.away ?? ""
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return {
+    available: Boolean(winnerName || underOver || advice || comparisonSummary.length),
+    winnerTeamId,
+    winnerName,
+    winOrDraw: canWinOrDraw,
+    winnerComment: winner?.comment ?? "",
+    underOver,
+    goals: {
+      home: goals?.home ?? "",
+      away: goals?.away ?? ""
+    },
+    advice,
+    comparison: comparisonSummary,
+    teams: {
+      home: teams.home.name,
+      away: teams.away.name
+    }
   };
 }
 
@@ -894,7 +948,7 @@ export class MatchImpactService {
     const baseEvent = detectScoreEvent(previousState.previousScore, score, teams);
     const prematchCadence = getPrematchCadence(fixture, this.env);
     const leagueCoverage = await this.getLeagueCoverageResource(fixture);
-    const [events, standings, statistics, lineups, injuries, roundFixtures] = await Promise.all([
+    const [events, standings, statistics, lineups, injuries, predictions, roundFixtures] = await Promise.all([
       this.getEventsResource({
         fixtureId,
         status,
@@ -905,6 +959,7 @@ export class MatchImpactService {
       this.getStatisticsResource(fixtureId, status, leagueCoverage),
       this.getLineupsResource(fixtureId, status, prematchCadence, leagueCoverage),
       this.getInjuriesResource(fixtureId, status, prematchCadence, leagueCoverage),
+      this.getPredictionsResource(fixtureId, status, leagueCoverage),
       this.getLeagueRoundFixturesResource(fixture, status).catch(() => [])
     ]);
     const competitionFormat = classifyCompetitionFormat({
@@ -930,6 +985,11 @@ export class MatchImpactService {
     const lineupsSummary = buildLineupsSummary(lineups, teams);
     const injuriesSummary = buildInjuriesSummary(injuries, teams);
     const prematch = buildPrematchSummary(status, teams, lineupsSummary, injuriesSummary);
+    const predictionSummary = buildPredictionSummary(predictions, teams);
+
+    if (prematch) {
+      prematch.prediction = predictionSummary;
+    }
 
     if (!hasTableImpact) {
       const impact = knockoutContext
@@ -1198,6 +1258,18 @@ export class MatchImpactService {
       key: buildInjuriesKey(fixtureId),
       ttlSeconds,
       fetcher: () => this.apiFootballClient.getInjuries(fixtureId).catch(() => [])
+    });
+  }
+
+  async getPredictionsResource(fixtureId, status, leagueCoverage = null) {
+    if (status.phase !== "upcoming" || leagueCoverage?.predictions !== true) {
+      return null;
+    }
+
+    return this.getCachedResource({
+      key: buildPredictionsKey(fixtureId),
+      ttlSeconds: this.env.predictionsCacheTtlSeconds,
+      fetcher: () => this.apiFootballClient.getPredictions(fixtureId).catch(() => null)
     });
   }
 
