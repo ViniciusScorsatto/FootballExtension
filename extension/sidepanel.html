@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Match Impact Side Panel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="lmi-sidepanel-body">
+    <main class="lmi-sidepanel">
+      <div class="lmi-sidepanel__topbar">
+        <div class="lmi-brand lmi-brand--sidepanel">
+          <div class="lmi-brand__mark lmi-brand__mark--sidepanel">
+            <img src="assets/footanalysislogo.png" alt="Foot Analysis logo" class="lmi-brand__logo" />
+          </div>
+          <div class="lmi-brand__copy">
+            <div id="sidepanelEyebrow" class="lmi-popup__eyebrow">Foot Analysis</div>
+            <div id="sidepanelSubhead" class="lmi-brand__subhead">Live Match Impact</div>
+          </div>
+        </div>
+        <div id="sidepanelPlanPill" class="lmi-top-plan-pill" hidden>Pro</div>
+      </div>
+
+      <div class="lmi-sidepanel__actions">
+        <button id="sidepanelRefresh" class="lmi-button lmi-button--ghost lmi-button--compact" type="button">
+          Refresh
+        </button>
+        <button id="sidepanelStop" class="lmi-button lmi-button--ghost lmi-button--compact" type="button">
+          Stop Tracking
+        </button>
+      </div>
+
+      <section id="sidepanelEmpty" class="lmi-sidepanel-empty">
+        <div class="lmi-sidepanel-empty__card">
+          <div id="sidepanelEmptyEyebrow" class="lmi-popup__eyebrow">Side Panel</div>
+          <h1 id="sidepanelEmptyTitle" class="lmi-sidepanel-empty__title">Open a tracked match here</h1>
+          <p id="sidepanelEmptyBody" class="lmi-popup__text">
+            Start tracking a fixture from the popup and this side panel will follow the same live match automatically.
+          </p>
+        </div>
+      </section>
+
+      <section id="sidepanelContent" class="lmi-sidepanel-content" hidden>
+        <div class="lmi-sidepanel-hero">
+          <div id="sidepanelLeagueEyebrow" class="lmi-popup__eyebrow">Live Impact</div>
+          <div id="sidepanelLeagueName" class="lmi-expanded__brand-subhead">Match Tracker</div>
+          <div class="lmi-expanded__media-row lmi-sidepanel__media-row">
+            <img alt="" id="sidepanelHomeBadge" class="lmi-badge" />
+            <div class="lmi-badge-divider">vs</div>
+            <img alt="" id="sidepanelAwayBadge" class="lmi-badge" />
+          </div>
+          <div id="sidepanelHeadline" class="lmi-sidepanel-hero__headline">Waiting for a tracked match</div>
+          <div id="sidepanelSummary" class="lmi-sidepanel-hero__summary">Waiting for live impact</div>
+        </div>
+
+        <div id="sidepanelEventBanner" class="lmi-event-banner is-hidden">
+          <div id="sidepanelEventLabel" class="lmi-event-banner__label">Goal Impact</div>
+          <div id="sidepanelEventText" class="lmi-event-banner__text">A goal changes the table.</div>
+        </div>
+
+        <div class="lmi-section">
+          <div id="sidepanelTableLabel" class="lmi-section__label">Table Impact</div>
+          <div id="sidepanelHomeRow" class="lmi-impact-row"></div>
+          <div id="sidepanelAwayRow" class="lmi-impact-row"></div>
+        </div>
+
+        <div class="lmi-section">
+          <div id="sidepanelCompetitionLabel" class="lmi-section__label">Competition Impact</div>
+          <div id="sidepanelCompetitionList" class="lmi-competition-list"></div>
+        </div>
+
+        <div class="lmi-section">
+          <div id="sidepanelMomentumLabel" class="lmi-section__label">Momentum</div>
+          <div class="lmi-momentum">
+            <div id="sidepanelHomeMomentum" class="lmi-momentum__bar lmi-momentum__bar--home"></div>
+            <div id="sidepanelAwayMomentum" class="lmi-momentum__bar lmi-momentum__bar--away"></div>
+          </div>
+          <div id="sidepanelStatsGrid" class="lmi-stats-grid"></div>
+        </div>
+
+        <div id="sidepanelPrematchSection" class="lmi-section is-hidden">
+          <div id="sidepanelPrematchLabel" class="lmi-section__label">Pre-Match</div>
+          <div id="sidepanelPrematchList" class="lmi-prematch-list"></div>
+          <div id="sidepanelLineupsGrid" class="lmi-lineups-grid"></div>
+          <div id="sidepanelInjuriesGrid" class="lmi-injuries-grid"></div>
+        </div>
+
+        <div id="sidepanelLeagueContextSection" class="lmi-section is-hidden">
+          <div id="sidepanelLeagueContextLabel" class="lmi-section__label">Other Matches This Round</div>
+          <div id="sidepanelLeagueContextList" class="lmi-league-context-list"></div>
+        </div>
+
+        <div class="lmi-status-row lmi-status-row--sidepanel">
+          <span id="sidepanelConnectionStatus" class="lmi-connection-status">Connecting...</span>
+          <span id="sidepanelLastUpdated" class="lmi-last-updated"></span>
+        </div>
+      </section>
+    </main>
+
+    <script src="i18n.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

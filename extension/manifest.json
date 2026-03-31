@@ -3,10 +3,13 @@
   "name": "Live Match Impact",
   "description": "Instant understanding of what a goal means.",
   "version": "1.0.0",
-  "permissions": ["storage", "tabs", "scripting", "notifications"],
+  "permissions": ["storage", "tabs", "scripting", "notifications", "sidePanel"],
   "host_permissions": ["<all_urls>", "http://localhost:3000/*", "https://*/*"],
   "action": {
     "default_popup": "popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "background": {
     "service_worker": "background.js"

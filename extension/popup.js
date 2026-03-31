@@ -22,6 +22,7 @@ const upcomingMatchesSelect = document.getElementById("upcomingMatches");
 const refreshMatchesButton = document.getElementById("refreshMatches");
 const startButton = document.getElementById("startTracking");
 const stopButton = document.getElementById("stopTracking");
+const openSidePanelButton = document.getElementById("openSidePanel");
 const statusMessage = document.getElementById("statusMessage");
 
 let currentLiveMatches = [];
@@ -92,6 +93,7 @@ function applyStaticTranslations() {
   refreshMatchesButton.textContent = translate("popup.refreshMatches");
   startButton.textContent = translate("popup.startTracking");
   stopButton.textContent = translate("popup.stopTracking");
+  openSidePanelButton.textContent = translate("popup.openSidePanel");
   billingRefreshButton.textContent = translate("popup.refreshPlan");
 
   languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
@@ -761,6 +763,35 @@ async function handleBillingAction() {
   }
 }
 
+async function handleOpenSidePanel() {
+  if (!chrome.sidePanel?.open) {
+    setStatus(translate("popup.statusSidePanelFailed"), true);
+    return;
+  }
+
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (activeTab?.id) {
+      await chrome.sidePanel.setOptions({
+        tabId: activeTab.id,
+        path: "sidepanel.html",
+        enabled: true
+      });
+      await chrome.sidePanel.open({ tabId: activeTab.id });
+    } else if (activeTab?.windowId) {
+      await chrome.sidePanel.open({ windowId: activeTab.windowId });
+    } else {
+      throw new Error("No active tab available");
+    }
+
+    setStatus(translate("popup.statusSidePanelOpened"));
+    window.close();
+  } catch {
+    setStatus(translate("popup.statusSidePanelFailed"), true);
+  }
+}
+
 liveMatchesSelect.addEventListener("change", () => {
   if (liveMatchesSelect.value) {
     clearOtherInputs("live");
@@ -812,6 +843,7 @@ leagueFilterSelect.addEventListener("change", async () => {
 
 startButton.addEventListener("click", handleStartTracking);
 stopButton.addEventListener("click", handleStopTracking);
+openSidePanelButton.addEventListener("click", handleOpenSidePanel);
 billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
   try {

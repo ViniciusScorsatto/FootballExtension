@@ -51,6 +51,7 @@
         manualFixturePlaceholder: "Optional fallback",
         startTracking: "Start Tracking",
         stopTracking: "Stop Tracking",
+        openSidePanel: "Open Side Panel",
         livePlaceholder: "Choose a live match",
         liveEmpty: "No live matches found",
         liveLoadError: "Could not load live matches",
@@ -75,7 +76,20 @@
         statusChooseFixture: "Choose a live or upcoming match, or enter a fixture ID.",
         statusTrackingStarted: "Tracking started.",
         statusTrackingStopped: "Tracking stopped.",
+        statusSidePanelOpened: "Side panel opened.",
+        statusSidePanelFailed: "Could not open the side panel in this browser window.",
         statusSettingsFailed: "Could not load saved settings."
+      },
+      sidepanel: {
+        documentTitle: "Live Match Impact Side Panel",
+        eyebrow: "Side Panel",
+        emptyTitle: "Open a tracked match here",
+        emptyBody:
+          "Start tracking a fixture from the popup and this side panel will follow the same live match automatically.",
+        refresh: "Refresh now",
+        refreshing: "Refreshing live match impact...",
+        stopTracking: "Stop Tracking",
+        notTracking: "No tracked match yet"
       },
       panel: {
         eyebrow: "Live Impact",
@@ -229,6 +243,7 @@
         manualFixturePlaceholder: "Fallback opcional",
         startTracking: "Começar a acompanhar",
         stopTracking: "Parar acompanhamento",
+        openSidePanel: "Abrir painel lateral",
         livePlaceholder: "Escolha um jogo ao vivo",
         liveEmpty: "Nenhum jogo ao vivo encontrado",
         liveLoadError: "Não foi possível carregar jogos ao vivo",
@@ -255,7 +270,20 @@
           "Escolha um jogo ao vivo ou futuro, ou informe um fixture ID.",
         statusTrackingStarted: "Acompanhamento iniciado.",
         statusTrackingStopped: "Acompanhamento parado.",
+        statusSidePanelOpened: "Painel lateral aberto.",
+        statusSidePanelFailed: "Não foi possível abrir o painel lateral nesta janela.",
         statusSettingsFailed: "Não foi possível carregar as configurações salvas."
+      },
+      sidepanel: {
+        documentTitle: "Painel lateral do Live Match Impact",
+        eyebrow: "Painel lateral",
+        emptyTitle: "Abra um jogo acompanhado aqui",
+        emptyBody:
+          "Comece a acompanhar um fixture no popup e este painel lateral seguirá automaticamente o mesmo jogo ao vivo.",
+        refresh: "Atualizar agora",
+        refreshing: "Atualizando impacto ao vivo...",
+        stopTracking: "Parar acompanhamento",
+        notTracking: "Nenhum jogo acompanhado ainda"
       },
       panel: {
         eyebrow: "Impacto ao vivo",

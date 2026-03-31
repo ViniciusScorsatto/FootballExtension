@@ -13,20 +13,35 @@
 }
 
 #lmi-root,
-.lmi-popup-body {
+.lmi-popup-body,
+.lmi-sidepanel-body {
   font-family: var(--lmi-font);
 }
 
-.lmi-popup-body {
+.lmi-popup-body,
+.lmi-sidepanel-body {
   margin: 0;
-  min-width: 320px;
   background:
     radial-gradient(circle at top right, rgba(109, 245, 193, 0.25), transparent 35%),
     var(--lmi-bg);
   color: var(--lmi-text);
 }
 
+.lmi-popup-body {
+  min-width: 320px;
+}
+
+.lmi-sidepanel-body {
+  min-width: 100%;
+}
+
 .lmi-popup {
+  padding: 18px;
+}
+
+.lmi-sidepanel {
+  box-sizing: border-box;
+  min-height: 100vh;
   padding: 18px;
 }
 
@@ -34,6 +49,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.lmi-brand--sidepanel {
+  min-width: 0;
 }
 
 .lmi-brand__mark {
@@ -47,6 +66,11 @@
   border: 1px solid var(--lmi-border);
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.lmi-brand__mark--sidepanel {
+  width: 92px;
+  height: 38px;
 }
 
 .lmi-brand__logo {
@@ -238,6 +262,69 @@ select.lmi-field__input {
 
 .lmi-popup__status[data-error="true"] {
   color: var(--lmi-danger);
+}
+
+.lmi-button--compact {
+  width: auto;
+  min-width: 110px;
+  margin-top: 0;
+}
+
+.lmi-sidepanel__topbar,
+.lmi-sidepanel__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lmi-sidepanel__actions {
+  margin-top: 14px;
+}
+
+.lmi-sidepanel-empty__card,
+.lmi-sidepanel-hero {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--lmi-border);
+  background:
+    radial-gradient(circle at top left, rgba(109, 245, 193, 0.14), transparent 34%),
+    rgba(7, 14, 27, 0.82);
+  box-shadow: var(--lmi-shadow);
+}
+
+.lmi-sidepanel-empty__title {
+  margin: 10px 0 8px;
+  font-size: 24px;
+  line-height: 1.12;
+  color: var(--lmi-text);
+}
+
+.lmi-sidepanel-hero__headline {
+  margin-top: 8px;
+  font-size: 24px;
+  line-height: 1.16;
+  color: var(--lmi-text);
+}
+
+.lmi-sidepanel-hero__summary {
+  margin-top: 8px;
+  color: var(--lmi-accent);
+  font-size: 15px;
+}
+
+.lmi-sidepanel__media-row {
+  margin-top: 10px;
+}
+
+.lmi-sidepanel-content .lmi-section,
+.lmi-sidepanel-content .lmi-event-banner {
+  margin-top: 14px;
+}
+
+.lmi-status-row--sidepanel {
+  padding-bottom: 6px;
 }
 
 .lmi-panel {
