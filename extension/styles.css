@@ -213,6 +213,10 @@
   margin: 12px 0;
 }
 
+.lmi-field--tight {
+  margin: 0;
+}
+
 .lmi-field__label {
   display: block;
   margin-bottom: 6px;
@@ -280,6 +284,25 @@ select.lmi-field__input {
 
 .lmi-sidepanel__actions {
   margin-top: 14px;
+}
+
+.lmi-sidepanel-controls {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--lmi-border);
+  background: rgba(4, 9, 18, 0.42);
+}
+
+.lmi-sidepanel-controls__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.lmi-sidepanel-controls__actions .lmi-button--compact {
+  flex: 1 1 180px;
 }
 
 .lmi-sidepanel-empty__card,

@@ -30,6 +30,39 @@
         </button>
       </div>
 
+      <section class="lmi-sidepanel-controls">
+        <label class="lmi-field lmi-field--tight">
+          <span id="sidepanelLeagueLabel" class="lmi-field__label">League Focus</span>
+          <select id="sidepanelLeagueFilter" class="lmi-field__input">
+            <option value="">All supported leagues</option>
+          </select>
+        </label>
+
+        <label class="lmi-field lmi-field--tight">
+          <span id="sidepanelLiveLabel" class="lmi-field__label">Live Matches</span>
+          <select id="sidepanelLiveMatches" class="lmi-field__input">
+            <option value="">Choose a live match</option>
+          </select>
+        </label>
+
+        <label class="lmi-field lmi-field--tight">
+          <span id="sidepanelUpcomingLabel" class="lmi-field__label">Upcoming Matches</span>
+          <select id="sidepanelUpcomingMatches" class="lmi-field__input">
+            <option value="">Choose an upcoming match</option>
+          </select>
+        </label>
+
+        <div class="lmi-sidepanel-controls__actions">
+          <button id="sidepanelApplyMatch" class="lmi-button lmi-button--primary lmi-button--compact" type="button">
+            Track In Side Panel
+          </button>
+          <button id="sidepanelRefreshMatches" class="lmi-button lmi-button--ghost lmi-button--compact" type="button">
+            Refresh Match List
+          </button>
+        </div>
+        <p id="sidepanelPlanHint" class="lmi-popup__hint"></p>
+      </section>
+
       <section id="sidepanelEmpty" class="lmi-sidepanel-empty">
         <div class="lmi-sidepanel-empty__card">
           <div id="sidepanelEmptyEyebrow" class="lmi-popup__eyebrow">Side Panel</div>
@@ -67,6 +100,11 @@
         <div class="lmi-section">
           <div id="sidepanelCompetitionLabel" class="lmi-section__label">Competition Impact</div>
           <div id="sidepanelCompetitionList" class="lmi-competition-list"></div>
+        </div>
+
+        <div id="sidepanelFormatSection" class="lmi-section is-hidden">
+          <div id="sidepanelFormatLabel" class="lmi-section__label">Format Context</div>
+          <div id="sidepanelFormatBody" class="lmi-empty"></div>
         </div>
 
         <div class="lmi-section">

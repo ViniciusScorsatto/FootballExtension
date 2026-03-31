@@ -6,7 +6,8 @@
     "language",
     "billingUserId",
     "billingPlan",
-    "billingStatus"
+    "billingStatus",
+    "leagueFilterId"
   ];
   const DEFAULT_BACKEND_URL = "http://localhost:3000";
   const DEFAULT_LANGUAGE = window.LMI_I18N.detectBrowserLanguage();
@@ -31,6 +32,14 @@
     billingPlan: "free",
     billingStatus: "inactive",
     trackingEnabled: false,
+    currentLiveMatches: [],
+    currentUpcomingMatches: [],
+    currentLeagueFilter: {
+      featuredLeagueIds: [],
+      supportedLeagueIds: [],
+      availableLeagues: []
+    },
+    selectedLeagueId: null,
     pollTimer: null,
     backoffMs: BASE_POLL_INTERVAL_MS,
     lastPayload: null
@@ -42,6 +51,15 @@
     planPill: document.getElementById("sidepanelPlanPill"),
     refreshButton: document.getElementById("sidepanelRefresh"),
     stopButton: document.getElementById("sidepanelStop"),
+    leagueLabel: document.getElementById("sidepanelLeagueLabel"),
+    leagueFilter: document.getElementById("sidepanelLeagueFilter"),
+    liveLabel: document.getElementById("sidepanelLiveLabel"),
+    liveMatches: document.getElementById("sidepanelLiveMatches"),
+    upcomingLabel: document.getElementById("sidepanelUpcomingLabel"),
+    upcomingMatches: document.getElementById("sidepanelUpcomingMatches"),
+    applyMatchButton: document.getElementById("sidepanelApplyMatch"),
+    refreshMatchesButton: document.getElementById("sidepanelRefreshMatches"),
+    planHint: document.getElementById("sidepanelPlanHint"),
     emptyState: document.getElementById("sidepanelEmpty"),
     emptyEyebrow: document.getElementById("sidepanelEmptyEyebrow"),
     emptyTitle: document.getElementById("sidepanelEmptyTitle"),
@@ -58,6 +76,9 @@
     eventText: document.getElementById("sidepanelEventText"),
     tableLabel: document.getElementById("sidepanelTableLabel"),
     competitionLabel: document.getElementById("sidepanelCompetitionLabel"),
+    formatSection: document.getElementById("sidepanelFormatSection"),
+    formatLabel: document.getElementById("sidepanelFormatLabel"),
+    formatBody: document.getElementById("sidepanelFormatBody"),
     momentumLabel: document.getElementById("sidepanelMomentumLabel"),
     prematchLabel: document.getElementById("sidepanelPrematchLabel"),
     leagueContextLabel: document.getElementById("sidepanelLeagueContextLabel"),
@@ -104,6 +125,35 @@
       renderEmptyState();
     });
 
+    elements.liveMatches.addEventListener("change", () => {
+      if (elements.liveMatches.value) {
+        elements.upcomingMatches.value = "";
+      }
+    });
+
+    elements.upcomingMatches.addEventListener("change", () => {
+      if (elements.upcomingMatches.value) {
+        elements.liveMatches.value = "";
+      }
+    });
+
+    elements.leagueFilter.addEventListener("change", async () => {
+      state.selectedLeagueId = getSelectedLeagueId();
+      await chrome.storage.sync.set({
+        leagueFilterId: state.selectedLeagueId
+      });
+      renderMatchLists();
+    });
+
+    elements.applyMatchButton.addEventListener("click", async () => {
+      await handleApplyMatch();
+    });
+
+    elements.refreshMatchesButton.addEventListener("click", async () => {
+      elements.connectionStatus.textContent = translate("popup.statusLoadingMatches");
+      await refreshMatchLists();
+    });
+
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "sync") {
         return;
@@ -143,8 +193,11 @@
       settings.billingPlan === "pro" && settings.billingStatus === "active" ? "pro" : "free";
     state.billingStatus = settings.billingStatus ?? "inactive";
     state.trackingEnabled = Boolean(settings.trackingEnabled);
+    state.selectedLeagueId = settings.leagueFilterId ?? null;
 
     renderStaticCopy();
+    updatePlanHint();
+    await refreshMatchLists();
 
     if (!state.trackingEnabled || !state.fixtureId) {
       clearPollTimer();
@@ -170,6 +223,11 @@
     elements.planPill.hidden = !isProPlan();
     elements.refreshButton.textContent = translate("sidepanel.refresh");
     elements.stopButton.textContent = translate("sidepanel.stopTracking");
+    elements.leagueLabel.textContent = translate("popup.leagueFocus");
+    elements.liveLabel.textContent = translate("popup.liveMatches");
+    elements.upcomingLabel.textContent = translate("popup.upcomingMatches");
+    elements.applyMatchButton.textContent = translate("sidepanel.trackMatch");
+    elements.refreshMatchesButton.textContent = translate("popup.refreshMatches");
     elements.emptyEyebrow.textContent = translate("sidepanel.eyebrow");
     elements.emptyTitle.textContent = translate("sidepanel.emptyTitle");
     elements.emptyBody.textContent = translate("sidepanel.emptyBody");
@@ -177,6 +235,7 @@
     elements.eventLabel.textContent = translate("panel.goalImpact");
     elements.tableLabel.textContent = translate("panel.tableImpact");
     elements.competitionLabel.textContent = translate("panel.competitionImpact");
+    elements.formatLabel.textContent = translate("sidepanel.formatContext");
     elements.momentumLabel.textContent = translate("panel.momentum");
     elements.prematchLabel.textContent = translate("panel.preMatch");
     elements.leagueContextLabel.textContent = translate("panel.otherMatches");
@@ -199,6 +258,12 @@
       elements.headline.textContent = translate("panel.waitingMatch");
       elements.summary.textContent = translate("panel.waitingImpact");
     }
+  }
+
+  function updatePlanHint() {
+    elements.planHint.textContent = isProPlan()
+      ? translate("popup.statusProActive")
+      : translate("popup.proUnlocksAllLeagues");
   }
 
   function clearPollTimer() {
@@ -250,6 +315,215 @@
         }
       );
     });
+  }
+
+  async function fetchJson(url) {
+    return extensionRequest(url, {
+      method: "GET"
+    });
+  }
+
+  function buildLeagueFilterLabel(league) {
+    const featuredPrefix = league.featured ? `${translate("popup.featuredLeaguePrefix")} · ` : "";
+    const countrySuffix = league.country ? ` · ${league.country}` : "";
+    const availabilitySuffix =
+      league.availableNow === false ? ` · ${translate("popup.noMatchesRightNow")}` : "";
+
+    return `${featuredPrefix}${league.name}${countrySuffix}${availabilitySuffix}`;
+  }
+
+  function mergeLeagueFilterPayloads(...payloads) {
+    const featuredLeagueIds = new Set();
+    const supportedLeagueIds = new Set();
+    const availableLeagues = new Map();
+
+    payloads.forEach((payload) => {
+      const leagueFilter = payload?.leagueFilter ?? {};
+
+      (leagueFilter.featuredLeagueIds ?? []).forEach((leagueId) => featuredLeagueIds.add(leagueId));
+      (leagueFilter.supportedLeagueIds ?? []).forEach((leagueId) => supportedLeagueIds.add(leagueId));
+      (leagueFilter.availableLeagues ?? []).forEach((league) => {
+        if (!league?.id) {
+          return;
+        }
+
+        const existingLeague = availableLeagues.get(league.id);
+
+        availableLeagues.set(league.id, {
+          id: league.id,
+          name: league.name,
+          country: league.country,
+          featured: existingLeague?.featured || league.featured === true,
+          availableNow: existingLeague?.availableNow || league.availableNow === true
+        });
+      });
+    });
+
+    return {
+      featuredLeagueIds: [...featuredLeagueIds],
+      supportedLeagueIds: [...supportedLeagueIds],
+      availableLeagues: [...availableLeagues.values()].sort((left, right) => {
+        if (left.featured !== right.featured) {
+          return left.featured ? -1 : 1;
+        }
+
+        return buildLeagueFilterLabel(left).localeCompare(buildLeagueFilterLabel(right));
+      })
+    };
+  }
+
+  function populateLeagueFilterSelect() {
+    elements.leagueFilter.innerHTML = "";
+
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = translate("popup.allSupportedLeagues");
+    elements.leagueFilter.appendChild(allOption);
+
+    state.currentLeagueFilter.availableLeagues.forEach((league) => {
+      const option = document.createElement("option");
+      option.value = String(league.id);
+      option.textContent = buildLeagueFilterLabel(league);
+      option.disabled = league.availableNow === false || (!isProPlan() && !league.featured);
+      option.selected = Number(state.selectedLeagueId) === league.id;
+      elements.leagueFilter.appendChild(option);
+    });
+  }
+
+  function getSelectedLeagueId() {
+    const leagueId = Number(elements.leagueFilter.value);
+    return Number.isInteger(leagueId) && leagueId > 0 ? leagueId : null;
+  }
+
+  function buildLiveLabel(match) {
+    const featuredPrefix = match.league?.featured
+      ? `${translate("popup.featuredLeaguePrefix")} · `
+      : "";
+    const suffix =
+      match.impactMode === "score-only" ? ` · ${translate("popup.scoreOnlySuffix")}` : "";
+
+    return `${featuredPrefix}${match.teams.home.shortName} ${match.score.home}-${match.score.away} ${match.teams.away.shortName} · ${match.status.minute || 0}' · ${match.league.name}${suffix}`;
+  }
+
+  function buildUpcomingLabel(match) {
+    const featuredPrefix = match.league?.featured
+      ? `${translate("popup.featuredLeaguePrefix")} · `
+      : "";
+
+    return `${featuredPrefix}${match.teams.home.shortName} vs ${match.teams.away.shortName} · ${formatKickoff(match.startsAt)} · ${match.league.name}`;
+  }
+
+  function formatKickoff(dateString) {
+    return new Date(dateString).toLocaleString(state.language === "pt-BR" ? "pt-BR" : "en-US", {
+      weekday: "short",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
+  function getFilteredMatches(matches, leagueId) {
+    const planFilteredMatches = isProPlan()
+      ? matches
+      : matches.filter((match) => match.league?.featured);
+
+    if (!leagueId) {
+      return planFilteredMatches;
+    }
+
+    return planFilteredMatches.filter((match) => match.league?.id === leagueId);
+  }
+
+  function populateMatchSelect(selectElement, matches, placeholderLabel, labelBuilder) {
+    selectElement.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = placeholderLabel;
+    selectElement.appendChild(placeholder);
+
+    matches.forEach((match) => {
+      const option = document.createElement("option");
+      option.value = String(match.fixtureId);
+      option.textContent = labelBuilder(match);
+      option.selected = state.fixtureId === match.fixtureId;
+      selectElement.appendChild(option);
+    });
+  }
+
+  function renderMatchLists() {
+    const selectedLeagueId = getSelectedLeagueId();
+    const liveMatches = getFilteredMatches(state.currentLiveMatches, selectedLeagueId);
+    const upcomingMatches = getFilteredMatches(state.currentUpcomingMatches, selectedLeagueId);
+
+    populateMatchSelect(
+      elements.liveMatches,
+      liveMatches,
+      liveMatches.length ? translate("popup.livePlaceholder") : translate("popup.liveEmpty"),
+      buildLiveLabel
+    );
+
+    populateMatchSelect(
+      elements.upcomingMatches,
+      upcomingMatches,
+      upcomingMatches.length ? translate("popup.upcomingPlaceholder") : translate("popup.upcomingEmpty"),
+      buildUpcomingLabel
+    );
+  }
+
+  async function refreshMatchLists() {
+    if (!state.backendUrl) {
+      return;
+    }
+
+    try {
+      const [livePayload, upcomingPayload] = await Promise.all([
+        fetchJson(`${state.backendUrl}/matches/live`),
+        fetchJson(`${state.backendUrl}/matches/upcoming`)
+      ]);
+
+      state.currentLiveMatches = livePayload.matches || [];
+      state.currentUpcomingMatches = upcomingPayload.matches || [];
+      state.currentLeagueFilter = mergeLeagueFilterPayloads(livePayload, upcomingPayload);
+      populateLeagueFilterSelect();
+      renderMatchLists();
+    } catch {
+      state.currentLiveMatches = [];
+      state.currentUpcomingMatches = [];
+      state.currentLeagueFilter = {
+        featuredLeagueIds: [],
+        supportedLeagueIds: [],
+        availableLeagues: []
+      };
+      populateLeagueFilterSelect();
+      renderMatchLists();
+    }
+  }
+
+  async function handleApplyMatch() {
+    const liveFixtureId = Number(elements.liveMatches.value);
+    const upcomingFixtureId = Number(elements.upcomingMatches.value);
+    const fixtureId =
+      (Number.isInteger(liveFixtureId) && liveFixtureId > 0 && liveFixtureId) ||
+      (Number.isInteger(upcomingFixtureId) && upcomingFixtureId > 0 && upcomingFixtureId) ||
+      null;
+
+    if (!fixtureId) {
+      elements.connectionStatus.textContent = translate("popup.statusChooseFixture");
+      return;
+    }
+
+    await chrome.storage.sync.set({
+      fixtureId,
+      trackingEnabled: true,
+      leagueFilterId: getSelectedLeagueId(),
+      billingPlan: state.billingPlan,
+      billingStatus: state.billingStatus
+    });
+
+    state.fixtureId = fixtureId;
+    state.trackingEnabled = true;
+    elements.connectionStatus.textContent = translate("sidepanel.matchApplied");
+    await fetchImpact();
   }
 
   async function fetchImpact() {
@@ -400,6 +674,7 @@
     elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
 
     renderCompetitionList(payload, competitionItems);
+    renderFormatContext(payload);
     renderStatistics(payload.statistics);
     renderPrematch(payload);
     renderLeagueContext(payload);
@@ -482,6 +757,37 @@
           )}</div>`
       )
       .join("");
+  }
+
+  function renderFormatContext(payload) {
+    const format = payload.metadata?.competitionFormat ?? "unknown";
+    const impactMode = payload.metadata?.impactMode ?? payload.impact?.mode ?? "score-only";
+    const groupLabel = payload.metadata?.groupLabel ?? "";
+    const hasGroupPositions =
+      Boolean(payload.metadata?.teamGroupPositions?.home) || Boolean(payload.metadata?.teamGroupPositions?.away);
+
+    let message = "";
+
+    if (format === "grouped_same_group" && groupLabel) {
+      message = translate("sidepanel.groupedSameGroupContext", {
+        group: groupLabel
+      });
+    } else if (format === "grouped_cross_play" && hasGroupPositions) {
+      message = translate("sidepanel.groupedCrossPlayContext");
+    } else if (impactMode === "limited") {
+      message = translate("sidepanel.limitedFormatContext");
+    } else if (impactMode === "score-only") {
+      message = translate("sidepanel.scoreOnlyFormatContext");
+    }
+
+    if (!message) {
+      elements.formatSection.classList.add("is-hidden");
+      elements.formatBody.textContent = "";
+      return;
+    }
+
+    elements.formatSection.classList.remove("is-hidden");
+    elements.formatBody.textContent = message;
   }
 
   function renderStatistics(statistics) {

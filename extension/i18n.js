@@ -89,7 +89,18 @@
         refresh: "Refresh now",
         refreshing: "Refreshing live match impact...",
         stopTracking: "Stop Tracking",
-        notTracking: "No tracked match yet"
+        notTracking: "No tracked match yet",
+        trackMatch: "Track Match",
+        matchApplied: "Tracked fixture updated in the side panel.",
+        formatContext: "Format Context",
+        groupedSameGroupContext:
+          "This competition uses groups. Live movement is being evaluated inside {group}.",
+        groupedCrossPlayContext:
+          "This is a cross-group fixture. We project each team inside its own group instead of claiming one shared table move.",
+        limitedFormatContext:
+          "This competition uses a special format, so we keep the insight focused on score and group context instead of risky qualification claims.",
+        scoreOnlyFormatContext:
+          "This fixture does not have reliable standings coverage, so this view stays focused on live score context."
       },
       panel: {
         eyebrow: "Live Impact",
@@ -283,7 +294,18 @@
         refresh: "Atualizar agora",
         refreshing: "Atualizando impacto ao vivo...",
         stopTracking: "Parar acompanhamento",
-        notTracking: "Nenhum jogo acompanhado ainda"
+        notTracking: "Nenhum jogo acompanhado ainda",
+        trackMatch: "Acompanhar jogo",
+        matchApplied: "Fixture acompanhado atualizado no painel lateral.",
+        formatContext: "Contexto do formato",
+        groupedSameGroupContext:
+          "Esta competição usa grupos. O movimento ao vivo está sendo avaliado dentro do {group}.",
+        groupedCrossPlayContext:
+          "Este é um confronto entre grupos. Projetamos cada time dentro do próprio grupo em vez de afirmar uma única mudança compartilhada na tabela.",
+        limitedFormatContext:
+          "Esta competição usa um formato especial, então mantemos o insight focado em placar e contexto de grupo, sem forçar conclusões arriscadas de classificação.",
+        scoreOnlyFormatContext:
+          "Este fixture não tem cobertura confiável de tabela, então esta visão fica focada no contexto do placar ao vivo."
       },
       panel: {
         eyebrow: "Impacto ao vivo",
