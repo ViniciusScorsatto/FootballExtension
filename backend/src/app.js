@@ -31,12 +31,15 @@ const accountService = new AccountService({
 const billingService = new BillingService({
   cacheService,
   accountService,
+  stripeService: null,
   env
 });
 
 const stripeService = new StripeService({
   env
 });
+
+billingService.stripeService = stripeService;
 
 const apiFootballClient = new ApiFootballClient({
   baseUrl: env.apiFootballBaseUrl,

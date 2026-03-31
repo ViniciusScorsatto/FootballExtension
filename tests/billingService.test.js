@@ -19,6 +19,11 @@ function createBillingService(envOverrides = {}) {
   const billingService = new BillingService({
     cacheService,
     accountService,
+    stripeService: {
+      async findRecoverableSubscriptionByEmail() {
+        return null;
+      }
+    },
     env: {
       betaModeEnabled: true,
       billingCurrency: "USD",
@@ -197,4 +202,51 @@ test("billing status migrates a linked browser entitlement onto the account even
   const migratedEntitlement = await cacheService.getJson(`billing:user:${account.accountId}`);
   assert.equal(migratedEntitlement.stripeSubscriptionId, "sub_linked");
   assert.equal(migratedEntitlement.offerId, "early_bird_lifetime");
+});
+
+test("billing recovery can rebuild an entitlement from Stripe by email", async () => {
+  const { cacheService, accountService } = createBillingService();
+
+  const billingService = new BillingService({
+    cacheService,
+    accountService,
+    stripeService: {
+      async findRecoverableSubscriptionByEmail(email) {
+        return {
+          email,
+          customerId: "cus_recovered",
+          subscriptionId: "sub_recovered",
+          status: "active",
+          priceId: "price_early",
+          metadata: {
+            offerId: "early_bird_lifetime"
+          }
+        };
+      }
+    },
+    env: {
+      betaModeEnabled: true,
+      billingCurrency: "USD",
+      proMonthlyPriceUsd: 5.99,
+      earlyBirdProMonthlyPriceUsd: 3.99,
+      earlyBirdOfferEnabled: true,
+      earlyBirdOfferMaxClaims: 100,
+      supportEmail: "support@example.com",
+      stripeNormalPriceId: "price_normal",
+      stripeEarlyPriceId: "price_early"
+    }
+  });
+
+  const recoveredEntitlement = await billingService.recoverEntitlementByEmail({
+    userId: "restored-browser",
+    email: "tester@example.com"
+  });
+
+  assert.equal(recoveredEntitlement.plan, "pro");
+  assert.equal(recoveredEntitlement.status, "active");
+  assert.equal(recoveredEntitlement.offerId, "early_bird_lifetime");
+
+  const linkedAccount = await cacheService.getJson("account:browser:restored-browser");
+  const storedEntitlement = await cacheService.getJson(`billing:user:${linkedAccount.accountId}`);
+  assert.equal(storedEntitlement.stripeSubscriptionId, "sub_recovered");
 });

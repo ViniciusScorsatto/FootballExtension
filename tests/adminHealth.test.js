@@ -64,6 +64,10 @@ function createController(envOverrides = {}) {
           earlyBirdEligible: true
         }
       }),
+      recoverEntitlementByEmail: async () => ({
+        plan: "pro",
+        status: "active"
+      }),
       claimEarlyBird: async () => ({
         claimed: true
       }),
@@ -260,7 +264,96 @@ test("billing status returns the current plan snapshot", async () => {
 });
 
 test("billing refresh actively relinks the browser and returns the resolved plan", async () => {
-  const controller = createController();
+  let recovered = false;
+  const controller = createMatchImpactController({
+    matchImpactService: {},
+    matchDiscoveryService: {},
+    billingService: {
+      getPricingCatalog: async () => ({}),
+      getBillingStatus: async () => ({
+        userId: "tester-browser",
+        plan: recovered ? "pro" : "free",
+        status: recovered ? "active" : "inactive",
+        offers: {
+          earlyBirdEligible: !recovered
+        }
+      }),
+      recoverEntitlementByEmail: async () => {
+        recovered = true;
+        return {
+          plan: "pro",
+          status: "active"
+        };
+      }
+    },
+    stripeService: {
+      getStatus() {
+        return {
+          enabled: true,
+          pricesConfigured: true,
+          webhookConfigured: true,
+          successUrlConfigured: true,
+          cancelUrlConfigured: true
+        };
+      }
+    },
+    accountService: {
+      findOrCreateAccountByEmail: async (email) => ({
+        email,
+        accountId: "acct_123"
+      }),
+      linkUserToAccount: async () => ({
+        accountId: "acct_123"
+      })
+    },
+    cacheService: {
+      getStatus() {
+        return {
+          mode: "memory",
+          redisConfigured: false,
+          redisEnabled: false
+        };
+      }
+    },
+    apiFootballClient: {
+      getStatus() {
+        return {
+          configured: true,
+          baseUrl: "https://v3.football.api-sports.io",
+          lastRequestStatus: null
+        };
+      }
+    },
+    env: {
+      adminToken: "",
+      nodeEnv: "test",
+      trustProxy: 1,
+      requestTimeoutMs: 5000,
+      authMagicLinkMode: "preview",
+      authMagicLinkTtlMinutes: 20,
+      liveCacheTtlSeconds: 15,
+      upcomingCacheTtlSeconds: 120,
+      finishedCacheTtlSeconds: 3600,
+      standingsCacheTtlSeconds: 3600,
+      statisticsCacheTtlSeconds: 60,
+      injuriesCacheTtlSeconds: 14400,
+      eventsCacheTtlSeconds: 60,
+      betaModeEnabled: true,
+      proMonthlyPriceUsd: 5.99,
+      earlyBirdProMonthlyPriceUsd: 3.99,
+      earlyBirdOfferEnabled: true,
+      earlyBirdOfferMaxClaims: 100,
+      rateLimitEnabled: true,
+      rateLimitWindowSeconds: 60,
+      freeReadLimitPerWindow: 120,
+      proReadLimitPerWindow: 600,
+      freeAnalyticsLimitPerWindow: 60,
+      proAnalyticsLimitPerWindow: 300,
+      adminLimitPerWindow: 30,
+      supportedLeagueIds: [39],
+      featuredLeagueIds: [39]
+    }
+  });
   const res = createResponseMock();
 
   await controller.refreshBillingStatus(
@@ -282,7 +375,8 @@ test("billing refresh actively relinks the browser and returns the resolved plan
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.ok, true);
-  assert.equal(res.body.plan, "free");
+  assert.equal(res.body.plan, "pro");
+  assert.equal(res.body.status, "active");
 });
 
 test("checkout session creation returns a Stripe checkout URL", async () => {

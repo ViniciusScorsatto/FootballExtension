@@ -104,4 +104,40 @@ export class StripeService {
       this.env.stripeWebhookSecret
     );
   }
+
+  async findRecoverableSubscriptionByEmail(email) {
+    if (!this.enabled || !this.client || !email) {
+      return null;
+    }
+
+    const customers = await this.client.customers.list({
+      email,
+      limit: 10
+    });
+
+    for (const customer of customers.data) {
+      const subscriptions = await this.client.subscriptions.list({
+        customer: customer.id,
+        status: "all",
+        limit: 10
+      });
+
+      const recoverableSubscription = subscriptions.data.find((subscription) =>
+        ["active", "trialing", "past_due", "unpaid"].includes(subscription.status)
+      );
+
+      if (recoverableSubscription) {
+        return {
+          email,
+          customerId: customer.id,
+          subscriptionId: recoverableSubscription.id,
+          status: recoverableSubscription.status,
+          priceId: recoverableSubscription.items?.data?.[0]?.price?.id || "",
+          metadata: recoverableSubscription.metadata ?? {}
+        };
+      }
+    }
+
+    return null;
+  }
 }

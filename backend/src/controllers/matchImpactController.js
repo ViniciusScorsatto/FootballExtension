@@ -244,10 +244,22 @@ export function createMatchImpactController({
           await accountService.linkUserToAccount(payload.userId, account.accountId);
         }
 
-        const billingStatus = await billingService.getBillingStatus({
+        let billingStatus = await billingService.getBillingStatus({
           userId: payload.userId,
           planHint: req.monetization.plan
         });
+
+        if (billingStatus.plan !== "pro") {
+          await billingService.recoverEntitlementByEmail({
+            userId: payload.userId,
+            email: payload.email
+          });
+
+          billingStatus = await billingService.getBillingStatus({
+            userId: payload.userId,
+            planHint: req.monetization.plan
+          });
+        }
 
         res.json({
           ok: true,

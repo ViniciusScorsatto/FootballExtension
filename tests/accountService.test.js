@@ -18,6 +18,11 @@ function createServices() {
   const billingService = new BillingService({
     cacheService,
     accountService,
+    stripeService: {
+      async findRecoverableSubscriptionByEmail() {
+        return null;
+      }
+    },
     env: {
       betaModeEnabled: true,
       billingCurrency: "USD",

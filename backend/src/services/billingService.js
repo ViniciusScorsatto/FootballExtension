@@ -70,9 +70,10 @@ function mapPlan(planConfig, priceMonthlyUsd, currency) {
 }
 
 export class BillingService {
-  constructor({ cacheService, accountService, env }) {
+  constructor({ cacheService, accountService, stripeService, env }) {
     this.cacheService = cacheService;
     this.accountService = accountService;
+    this.stripeService = stripeService;
     this.env = env;
   }
 
@@ -585,5 +586,35 @@ export class BillingService {
     }
 
     return migratedEntitlement;
+  }
+
+  async recoverEntitlementByEmail({ userId, email }) {
+    const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+    if (!normalizedEmail || !this.stripeService?.findRecoverableSubscriptionByEmail) {
+      return null;
+    }
+
+    const subscription = await this.stripeService.findRecoverableSubscriptionByEmail(normalizedEmail);
+
+    if (!subscription?.subscriptionId) {
+      return null;
+    }
+
+    const offerId =
+      subscription.metadata?.offerId ||
+      (subscription.priceId === this.env.stripeEarlyPriceId
+        ? BILLING_OFFERS.early_bird_lifetime.id
+        : null);
+
+    return this.activateEntitlement({
+      userId,
+      email: normalizedEmail,
+      customerId: subscription.customerId || "",
+      subscriptionId: subscription.subscriptionId,
+      priceId: subscription.priceId || "",
+      offerId,
+      status: subscription.status || "active"
+    });
   }
 }
