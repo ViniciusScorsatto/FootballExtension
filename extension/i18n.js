@@ -27,9 +27,13 @@
         restoreEmailPlaceholder: "you@example.com",
         restorePill: "Restore",
         restoreLinkedPill: "Linked",
+        restoreLinkedNoProPill: "Email linked",
         restoreSummary: "Restore Pro on this browser.",
         restoreLinked: "This browser is linked to {email}.",
         restoreLinkedCompact: "Linked to {email}.",
+        restoreLinkedNoPro:
+          "This browser is linked to {email}, but no active Pro subscription was found for that email yet.",
+        restoreLinkedNoProCompact: "Linked to {email}, but Pro was not found yet.",
         restoreAction: "Send Restore Link",
         proActiveTitle: "All supported leagues unlocked",
         proActiveSummary:
@@ -41,6 +45,8 @@
         proUnlockedTitle: "Pro unlocked",
         proUnlockedBody:
           "Your payment was confirmed. All supported leagues and manual fixture tracking are now active.",
+        linkedNoProBody:
+          "This browser is linked to the billing email, but we still did not find an active Pro subscription for it.",
         upgradeToPro: "Unlock Pro",
         managePlan: "Refresh Plan",
         refreshPlan: "Refresh status",
@@ -246,9 +252,13 @@
         restoreEmailPlaceholder: "voce@exemplo.com",
         restorePill: "Restaurar",
         restoreLinkedPill: "Vinculado",
+        restoreLinkedNoProPill: "Email vinculado",
         restoreSummary: "Restaure o Pro neste navegador.",
         restoreLinked: "Este navegador está vinculado a {email}.",
         restoreLinkedCompact: "Vinculado a {email}.",
+        restoreLinkedNoPro:
+          "Este navegador está vinculado a {email}, mas ainda não encontramos um Pro ativo nesse email.",
+        restoreLinkedNoProCompact: "Vinculado a {email}, mas o Pro ainda não foi encontrado.",
         restoreAction: "Enviar link de restauração",
         proActiveTitle: "Todas as ligas suportadas desbloqueadas",
         proActiveSummary:
@@ -260,6 +270,8 @@
         proUnlockedTitle: "Pro desbloqueado",
         proUnlockedBody:
           "O pagamento foi confirmado. Todas as ligas suportadas e o acompanhamento manual por fixture já estão ativos.",
+        linkedNoProBody:
+          "Este navegador está vinculado ao email de cobrança, mas ainda não encontramos um Pro ativo para ele.",
         upgradeToPro: "Desbloquear Pro",
         managePlan: "Atualizar plano",
         refreshPlan: "Atualizar status",

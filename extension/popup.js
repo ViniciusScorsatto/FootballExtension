@@ -242,6 +242,10 @@ function isProPlan() {
   return currentBilling.plan === "pro" && currentBilling.status === "active";
 }
 
+function isLinkedWithoutPro() {
+  return currentBilling.accountLinked && !isProPlan();
+}
+
 function isLeagueAvailableForCurrentPlan(leagueId) {
   if (!leagueId || isProPlan()) {
     return true;
@@ -297,7 +301,9 @@ function renderBillingCard() {
 
   billingStateNote.textContent = currentBilling.recentlyUnlocked
     ? translate("popup.proUnlockedBody")
-    : "";
+    : isLinkedWithoutPro()
+      ? translate("popup.linkedNoProBody")
+      : "";
 
   billingActionButton.hidden = proActive;
   billingActionButton.textContent = translate("popup.upgradeToPro");
@@ -322,15 +328,24 @@ function renderAccountCard() {
     accountEmailInput.value = currentBilling.accountEmail;
   }
 
-  accountStatusPill.textContent = currentBilling.accountLinked
+  accountStatusPill.textContent = isProPlan()
     ? translate("popup.restoreLinkedPill")
-    : translate("popup.restorePill");
-  accountStatusPill.dataset.plan = currentBilling.accountLinked ? "pro" : "free";
+    : currentBilling.accountLinked
+      ? translate("popup.restoreLinkedNoProPill")
+      : translate("popup.restorePill");
+  accountStatusPill.dataset.plan = isProPlan() ? "pro" : "free";
   accountToggleButton.setAttribute("aria-expanded", String(accountCardExpanded));
   accountContent.hidden = !accountCardExpanded;
   accountChevron.textContent = accountCardExpanded ? "−" : "+";
 
-  if (currentBilling.accountLinked && linkedEmail) {
+  if (isLinkedWithoutPro() && linkedEmail) {
+    accountSummary.textContent = translate("popup.restoreLinkedNoPro", {
+      email: linkedEmail
+    });
+    accountCompactSummary.textContent = translate("popup.restoreLinkedNoProCompact", {
+      email: linkedEmail
+    });
+  } else if (currentBilling.accountLinked && linkedEmail) {
     accountSummary.textContent = translate("popup.restoreLinked", {
       email: linkedEmail
     });

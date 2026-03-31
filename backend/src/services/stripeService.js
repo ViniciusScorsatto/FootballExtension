@@ -124,6 +124,7 @@ export class StripeService {
       email: normalizedEmail,
       limit: 10
     });
+    const customerCount = customers.data.length;
 
     for (const customer of customers.data) {
       const subscriptions = await this.client.subscriptions.list({
@@ -141,6 +142,8 @@ export class StripeService {
           found: true,
           lookupSource: "customer",
           email: normalizedEmail,
+          customerCount,
+          sessionCount: 0,
           customerId: customer.id,
           subscriptionId: recoverableSubscription.id,
           status: recoverableSubscription.status,
@@ -153,6 +156,7 @@ export class StripeService {
     const sessions = await this.client.checkout.sessions.list({
       limit: 25
     });
+    const sessionCount = sessions.data.length;
 
     for (const session of sessions.data) {
       const sessionEmail = normalizeEmail(
@@ -173,7 +177,48 @@ export class StripeService {
         found: true,
         lookupSource: "checkout_session",
         email: normalizedEmail,
+        customerCount,
+        sessionCount,
+        subscriptionCount: 0,
         customerId: subscription.customer ? String(subscription.customer) : "",
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        priceId: subscription.items?.data?.[0]?.price?.id || "",
+        metadata: subscription.metadata ?? {}
+      };
+    }
+
+    const subscriptions = await this.client.subscriptions.list({
+      status: "all",
+      limit: 100
+    });
+    const subscriptionCount = subscriptions.data.length;
+
+    for (const subscription of subscriptions.data) {
+      const customerId =
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer?.id || "";
+
+      if (!customerId) {
+        continue;
+      }
+
+      const customer = await this.client.customers.retrieve(customerId);
+      const customerEmail = normalizeEmail(customer?.email ?? "");
+
+      if (customerEmail !== normalizedEmail || !isRecoverableSubscriptionStatus(subscription.status)) {
+        continue;
+      }
+
+      return {
+        found: true,
+        lookupSource: "subscription_scan",
+        email: normalizedEmail,
+        customerCount,
+        sessionCount,
+        subscriptionCount,
+        customerId,
         subscriptionId: subscription.id,
         status: subscription.status,
         priceId: subscription.items?.data?.[0]?.price?.id || "",
@@ -184,7 +229,10 @@ export class StripeService {
     return {
       found: false,
       lookupSource: "none",
-      email: normalizedEmail
+      email: normalizedEmail,
+      customerCount,
+      sessionCount,
+      subscriptionCount
     };
   }
 }
