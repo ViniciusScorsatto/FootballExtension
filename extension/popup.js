@@ -7,8 +7,8 @@ const fixtureIdInput = document.getElementById("fixtureId");
 const backendUrlInput = document.getElementById("backendUrl");
 const languageSelect = document.getElementById("language");
 const billingActionButton = document.getElementById("billingAction");
+const billingRefreshButton = document.getElementById("billingRefresh");
 const accountRestoreButton = document.getElementById("accountRestore");
-const accountStatusRefreshButton = document.getElementById("accountStatusRefresh");
 const accountToggleButton = document.getElementById("accountToggle");
 const billingPlanLabel = document.getElementById("billingPlanLabel");
 const billingPlanBadge = document.getElementById("billingPlanBadge");
@@ -111,13 +111,13 @@ function applyStaticTranslations() {
   startButton.textContent = translate("popup.startTracking");
   stopButton.textContent = translate("popup.stopTracking");
   openSidePanelButton.textContent = translate("popup.openSidePanel");
+  billingRefreshButton.textContent = translate("popup.refreshPlan");
   accountEyebrow.textContent = translate("popup.restoreEyebrow");
   accountTitle.textContent = translate("popup.restoreTitle");
   accountCompactSummary.textContent = translate("popup.restoreSummary");
   accountEmailLabel.textContent = translate("popup.restoreEmailLabel");
   accountEmailInput.placeholder = translate("popup.restoreEmailPlaceholder");
   accountRestoreButton.textContent = translate("popup.restoreAction");
-  accountStatusRefreshButton.textContent = translate("popup.refreshPlan");
 
   languageSelect.querySelector('option[value="en"]').textContent = translate("language.english");
   languageSelect.querySelector('option[value="pt-BR"]').textContent = translate(
@@ -553,11 +553,10 @@ async function fetchBillingStatus() {
     earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
   };
 
-  if (!previouslyLinked && currentBilling.accountLinked) {
+  const nowPro = isProPlan();
+  if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
   }
-
-  const nowPro = isProPlan();
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
 
   currentBilling.recentlyUnlocked = justUnlocked;
@@ -634,11 +633,10 @@ async function refreshBillingStatusWithRecovery() {
     earlyBirdActive: Boolean(payload.offers?.earlyBirdActive)
   };
 
-  if (!previouslyLinked && currentBilling.accountLinked) {
+  const nowPro = isProPlan();
+  if (!previouslyLinked && currentBilling.accountLinked && nowPro) {
     accountCardExpanded = false;
   }
-
-  const nowPro = isProPlan();
   const justUnlocked = currentBilling.checkoutPending && nowPro && !previousWasPro;
 
   currentBilling.recentlyUnlocked = justUnlocked;
@@ -771,7 +769,7 @@ async function loadSettings() {
 
   renderBillingCard();
   updatePlanHint();
-  accountCardExpanded = !currentBilling.accountLinked;
+  accountCardExpanded = !currentBilling.accountLinked || !isProPlan();
 
   await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
@@ -1098,12 +1096,7 @@ startButton.addEventListener("click", handleStartTracking);
 stopButton.addEventListener("click", handleStopTracking);
 openSidePanelButton.addEventListener("click", handleOpenSidePanel);
 billingActionButton.addEventListener("click", handleBillingAction);
-accountRestoreButton.addEventListener("click", handleRestoreAccess);
-accountToggleButton.addEventListener("click", () => {
-  accountCardExpanded = !accountCardExpanded;
-  renderAccountCard();
-});
-accountStatusRefreshButton.addEventListener("click", async () => {
+billingRefreshButton.addEventListener("click", async () => {
   try {
     currentBilling.recentlyUnlocked = false;
     await refreshBillingStatusWithRecovery();
@@ -1112,6 +1105,12 @@ accountStatusRefreshButton.addEventListener("click", async () => {
   } catch {
     setStatus(translate("popup.statusPlanLoadFailed"), true);
   }
+});
+
+accountRestoreButton.addEventListener("click", handleRestoreAccess);
+accountToggleButton.addEventListener("click", () => {
+  accountCardExpanded = !accountCardExpanded;
+  renderAccountCard();
 });
 
 window.addEventListener("focus", () => {
