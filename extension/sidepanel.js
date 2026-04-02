@@ -179,6 +179,8 @@
         changes.fixtureId ||
         changes.trackingEnabled ||
         changes.activeViewMode ||
+        changes.scenarioModeEnabled ||
+        changes.scenarioPayloadPath ||
         changes.billingUserId ||
         changes.billingPlan ||
         changes.billingStatus

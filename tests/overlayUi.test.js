@@ -394,3 +394,14 @@ test("open sidepanel follows the tracked fixture even when popup writes overlay 
   );
   assert.doesNotMatch(sidepanelScript, /state\.activeViewMode !== "sidepanel"/);
 });
+
+test("overlay and sidepanel resync immediately when scenario mode settings change", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(contentScript, /changes\.scenarioModeEnabled \|\|/);
+  assert.match(contentScript, /changes\.scenarioPayloadPath \|\|/);
+
+  assert.match(sidepanelScript, /changes\.scenarioModeEnabled \|\|/);
+  assert.match(sidepanelScript, /changes\.scenarioPayloadPath \|\|/);
+});
