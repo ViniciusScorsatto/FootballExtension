@@ -155,26 +155,28 @@
                 <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
               </div>
             </div>
-            <div class="lmi-scoreboard">
-              <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
-                <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
-                <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
+            <div class="lmi-scoreboard-card">
+              <div class="lmi-surface-meta">
+                <span class="lmi-surface-pill lmi-header-phase"></span>
+                <span class="lmi-surface-freshness lmi-header-freshness"></span>
               </div>
-              <div class="lmi-scoreboard__center">
-                <div class="lmi-scoreboard__score">0 - 0</div>
-                <div class="lmi-scoreboard__minute">--</div>
-              </div>
-              <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
-                <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
-                <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
+              <div class="lmi-scoreboard">
+                <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
+                  <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
+                  <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
+                </div>
+                <div class="lmi-scoreboard__center">
+                  <div class="lmi-scoreboard__score">0 - 0</div>
+                  <div class="lmi-scoreboard__minute">--</div>
+                </div>
+                <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
+                  <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
+                  <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
+                </div>
               </div>
             </div>
             <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
             <div class="lmi-goal-timeline is-hidden"></div>
-            <div class="lmi-surface-meta">
-              <span class="lmi-surface-pill lmi-header-phase"></span>
-              <span class="lmi-surface-freshness lmi-header-freshness"></span>
-            </div>
           </div>
           <div class="lmi-expanded__actions">
             <button
@@ -277,6 +279,7 @@
       collapsedHomeBadge: root.querySelector(".lmi-collapsed-card__badge--home"),
       collapsedAwayBadge: root.querySelector(".lmi-collapsed-card__badge--away"),
       collapsedImpact: root.querySelector(".lmi-collapsed-card__impact"),
+      scoreboardCard: root.querySelector(".lmi-scoreboard-card"),
       scoreboard: root.querySelector(".lmi-scoreboard"),
       scoreValue: root.querySelector(".lmi-scoreboard__score"),
       scoreMinute: root.querySelector(".lmi-scoreboard__minute"),
@@ -461,7 +464,7 @@
   }
 
   function showHeroMessage(message) {
-    elements.scoreboard.classList.add("is-hidden");
+    elements.scoreboardCard.classList.add("is-hidden");
     elements.headline.classList.remove("is-hidden");
     elements.headline.textContent = message;
     elements.goalTimeline.classList.add("is-hidden");
@@ -476,7 +479,7 @@
     scoreline,
     minuteLabel
   }) {
-    elements.scoreboard.classList.remove("is-hidden");
+    elements.scoreboardCard.classList.remove("is-hidden");
     elements.headline.classList.add("is-hidden");
     elements.homeTeamName.textContent = homeName;
     elements.awayTeamName.textContent = awayName;

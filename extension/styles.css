@@ -739,8 +739,20 @@ select.lmi-field__input {
   grid-template-columns: minmax(96px, 1fr) auto minmax(96px, 1fr);
   align-items: center;
   gap: 14px;
-  margin-top: 12px;
   width: 100%;
+}
+
+.lmi-scoreboard-card {
+  margin-top: 12px;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lmi-scoreboard-card .lmi-surface-meta {
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .lmi-scoreboard__team {
@@ -790,6 +802,7 @@ select.lmi-field__input {
   font-weight: 800;
   color: var(--lmi-text);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .lmi-scoreboard__minute {

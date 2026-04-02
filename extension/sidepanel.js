@@ -68,6 +68,7 @@
     leagueName: document.getElementById("sidepanelLeagueName"),
     phasePill: document.getElementById("sidepanelPhasePill"),
     freshness: document.getElementById("sidepanelFreshness"),
+    scoreboardCard: document.getElementById("sidepanelScoreboardCard"),
     scoreboard: document.getElementById("sidepanelScoreboard"),
     scoreValue: document.getElementById("sidepanelScoreValue"),
     scoreMinute: document.getElementById("sidepanelScoreMinute"),
@@ -344,7 +345,7 @@
   }
 
   function showHeroMessage(message) {
-    elements.scoreboard.classList.add("is-hidden");
+    elements.scoreboardCard.classList.add("is-hidden");
     elements.headline.classList.remove("is-hidden");
     elements.headline.textContent = message;
     elements.goalTimeline.classList.add("is-hidden");
@@ -359,7 +360,7 @@
     scoreline,
     minuteLabel
   }) {
-    elements.scoreboard.classList.remove("is-hidden");
+    elements.scoreboardCard.classList.remove("is-hidden");
     elements.headline.classList.add("is-hidden");
     elements.homeTeamName.textContent = homeName;
     elements.awayTeamName.textContent = awayName;
