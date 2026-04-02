@@ -1271,6 +1271,8 @@ async function handleStartTracking() {
   const selectedMatch = getSelectedMatch();
   const selectedScenario = scenarioPreviewEnabled ? getSelectedScenarioEntry() : null;
   const fixtureId = selectedScenario?.fixtureId || getSelectedFixtureId();
+  const currentSettings = await chrome.storage.sync.get(["activeViewMode"]);
+  const preferredViewMode = currentSettings.activeViewMode === "sidepanel" ? "sidepanel" : "overlay";
 
   if (scenarioPreviewEnabled && !selectedScenario) {
     setStatus(translate("popup.statusChooseScenario"), true);
@@ -1308,7 +1310,7 @@ async function handleStartTracking() {
     scenarioModeEnabled: Boolean(selectedScenario),
     scenarioPayloadPath: selectedScenario?.path || "",
     language: currentLanguage,
-    activeViewMode: "overlay",
+    activeViewMode: preferredViewMode,
     billingUserId: currentBilling.userId,
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,

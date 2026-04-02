@@ -843,6 +843,12 @@
   }
 
   function renderFormatContext(payload) {
+    if (payload.status?.phase === "upcoming") {
+      elements.formatSection.classList.add("is-hidden");
+      elements.formatBody.textContent = "";
+      return;
+    }
+
     const format = payload.metadata?.competitionFormat ?? "unknown";
     const impactMode = payload.metadata?.impactMode ?? payload.impact?.mode ?? "score-only";
     const groupLabel = payload.metadata?.groupLabel ?? "";

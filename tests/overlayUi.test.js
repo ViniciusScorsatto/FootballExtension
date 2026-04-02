@@ -354,6 +354,15 @@ test("score-only matches hide table and competition sections instead of showing 
   );
 });
 
+test("sidepanel does not show format-context warnings for prematch league fixtures", async () => {
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(
+    sidepanelScript,
+    /if \(payload\.status\?\.phase === "upcoming"\) \{\s*elements\.formatSection\.classList\.add\("is-hidden"\);/
+  );
+});
+
 test("popup hides the advanced manual-fixture card on free and only expands it for pro", async () => {
   const popupHtml = await readProjectFile("extension/popup.html");
   const popupScript = await readProjectFile("extension/popup.js");
@@ -384,11 +393,20 @@ test("popup pings existing overlay before reinjecting and relies on storage chan
   assert.match(contentScript, /sendResponse\(\{\s*ok:\s*true\s*\}\);/);
 });
 
-test("open sidepanel follows the tracked fixture even when popup writes overlay as active view", async () => {
+test("starting tracking preserves sidepanel mode when sidepanel is already active", async () => {
   const popupScript = await readProjectFile("extension/popup.js");
+
+  assert.match(popupScript, /const currentSettings = await chrome\.storage\.sync\.get\(\["activeViewMode"\]\);/);
+  assert.match(
+    popupScript,
+    /const preferredViewMode = currentSettings\.activeViewMode === "sidepanel" \? "sidepanel" : "overlay";/
+  );
+  assert.match(popupScript, /activeViewMode:\s*preferredViewMode,/);
+});
+
+test("open sidepanel follows the tracked fixture even when popup writes overlay as active view", async () => {
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
 
-  assert.match(popupScript, /activeViewMode:\s*"overlay",/);
   assert.match(
     sidepanelScript,
     /if \(\s*!state\.trackingEnabled \|\|\s*\(!state\.fixtureId && !state\.scenarioModeEnabled\)\s*\) \{/
