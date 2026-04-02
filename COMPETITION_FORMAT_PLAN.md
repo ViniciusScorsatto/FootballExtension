@@ -1,8 +1,10 @@
 # Competition Format Plan
 
-Last updated: April 2, 2026
+Last updated: April 3, 2026
 
 This document defines how `Live Match Impact` should reason about league and cup structures, and how it should behave when official standings lag behind real match results.
+
+It also records adjacent product decisions that affect trust in live interpretation, especially around billing activation and which surfaces should expose deeper analysis.
 
 ## Goal
 
@@ -16,6 +18,7 @@ When a competition format is unclear or the standings feed is stale, the product
 - Use deterministic runtime logic, not AI-in-the-loop live decisions.
 - Keep the UI quiet about complexity unless it materially helps the user.
 - Treat standings as a baseline that may need temporary correction during and just after matchdays.
+- Do not unlock paid product states before the payment source of truth confirms success.
 
 ## Competition Classes
 
@@ -178,6 +181,59 @@ If no standings row update timestamp exists:
 
 - keep the provisional finished impact
 - do not guess catch-up based on time alone
+
+## Billing Trust Principle
+
+### Decision
+
+Stripe checkout completion alone is **not** enough to mark Pro active.
+
+We now treat billing state like standings state:
+
+- `checkout.session.completed` can link a user to the Stripe customer / subscription
+- real Pro activation should wait for a successful paid invoice signal
+
+### Why
+
+Stripe can complete a hosted checkout session before the invoice/customer spend summaries fully reflect a paid amount.
+
+If we unlock Pro too early:
+
+- the product can say the user is Pro while Stripe still appears unpaid
+- support/debugging becomes confusing
+- the dashboard and the extension feel out of sync
+
+### Implementation Rule
+
+- `checkout.session.completed`
+  - reserve/link the entitlement unless Stripe already marks payment as paid
+- `invoice.paid`
+  - activate the entitlement
+
+This keeps the app closer to Stripe’s true financial source of truth.
+
+## Surface Gating Principle
+
+### Decision
+
+Free users should keep the core live match answer, while Pro users get the deeper reading layer.
+
+Implemented live-surface split today:
+
+- Free keeps:
+  - score card
+  - live state / freshness
+  - scorer timeline
+  - core table impact
+  - core competition impact
+  - final stats
+- Pro adds:
+  - pre-match model
+  - lineup pitch / lineup cards
+  - injuries
+  - side-panel format-context explainer
+
+This should stay consistent as we add richer round-context interpretation later.
 
 ### UI Behavior
 

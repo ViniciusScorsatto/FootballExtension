@@ -2,7 +2,7 @@
 
 Product validation brief for `Foot Analysis / Live Match Impact`
 
-Last updated: April 2, 2026
+Last updated: April 3, 2026
 
 ## What This Product Is
 
@@ -59,6 +59,8 @@ The product is a working beta with Railway staging deployed.
 - Finished-match table impact that stays provisional until official standings catch up
 - English + Portuguese-BR localization
 - Stripe billing + entitlement refresh / restore flow
+- Stripe-priced plan catalog shared by the site and extension
+- Stripe activation gated on successful invoice payment
 - Goal and table-impact notifications
 - PostHog analytics + internal support/admin tooling
 
@@ -70,7 +72,7 @@ Popup:
 - league focus selector
 - live and upcoming match pickers
 - notification settings
-- start / stop tracking
+- single toggle tracking button
 - open side panel
 - Pro-only manual fixture fallback
 - Pro / restore / refresh membership card
@@ -105,6 +107,7 @@ Side panel:
 - shows cup/tie impact where table logic does not apply
 - stops showing live momentum once a match is finished
 - prevents overlay and side panel from actively polling at the same time
+- preserves side-panel mode only while the side panel is actually open
 
 ### Table Impact Logic
 
@@ -170,20 +173,22 @@ Free:
 - competition impact when meaningful
 - goal timeline
 - round-context strip
+- popup pricing pulled from the shared billing catalog
 - English + Portuguese-BR
 
 Pro:
 
 - all configured supported leagues
 - manual fixture fallback in the popup
-- richer pre-match context
-- broader competition-format coverage
+- pre-match model / prediction card
+- lineup pitch + lineup cards
+- injuries context
+- side-panel format-context explainer
 - deeper grouped / knockout / penalty interpretation
-- the current product still exposes most viewing depth in overlay / side panel once a match is opened
 
 ### Product Evaluation
 
-The current billing split is directionally right, but still not sharp enough in the viewing experience.
+The current billing split is now much clearer, but still leaves room to sharpen richer round-context value later.
 
 What feels correct:
 
@@ -191,11 +196,12 @@ What feels correct:
 - League access is a strong, simple premium lever.
 - Manual fixture fallback belongs in Pro.
 - Pro should feel deeper, not just less restricted.
+- Prematch and format-analysis depth now being Pro-only makes the live reading layer clearer.
 
 What still feels too loose:
 
-- many advanced insight layers are still visible once a free user is already inside a tracked match
-- Pro value is stronger in the popup/access layer than in the live reading layer
+- richer round-context interpretation is still fairly similar between Free and Pro
+- Pro value is clearer than before, but still strongest in the popup/prematch layer rather than the broader round-context layer
 
 ### Recommended Product Split
 
