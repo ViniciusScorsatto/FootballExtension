@@ -927,11 +927,6 @@ export function renderMarketingPage({ pricing, language = "en" }) {
             <a class="language-pill${activeEnClass}" href="/?lang=en">${copy.languageEnglish}</a>
             <a class="language-pill${activePtClass}" href="/?lang=pt-BR">${copy.languagePortuguese}</a>
           </div>
-          <a class="button button--soft" href="/billing/plans">${copy.navPricing}</a>
-          <a class="button button--ghost" href="mailto:${pricing.supportEmail}?subject=Live%20Match%20Impact%20Beta">
-            ${copy.navJoinBeta}
-          </a>
-          <a class="button button--primary" href="/billing/plans">${copy.navSeePlans}</a>
         </div>
       </header>
 
@@ -1124,16 +1119,6 @@ export function renderMarketingPage({ pricing, language = "en" }) {
               </div>
             </article>
 
-            <article class="pricing-card pricing-card--pro">
-              <span class="mini-label">${copy.pricingProLabel}</span>
-              <h3>${proPlanName}</h3>
-              <div class="price">${regularPrice}<small>${copy.pricePerMonth}</small></div>
-              <div class="pricing-card__copy">${localizedPlans.pro.tagline}</div>
-              <div class="bullet-list">
-                ${localizedPlans.pro.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
-              </div>
-            </article>
-
             <article class="pricing-card pricing-card--early">
               ${earlyBird.active ? `<div class="pricing-badge">${earlyBird.badge}</div>` : ""}
               <span class="mini-label">${copy.pricingEarlyLabel}</span>
@@ -1146,6 +1131,16 @@ export function renderMarketingPage({ pricing, language = "en" }) {
               </div>
               <div class="hero__actions" style="margin-top:16px;">
                 <a class="button button--primary" href="/billing/plans">${copy.claimEarlyBird}</a>
+              </div>
+            </article>
+
+            <article class="pricing-card pricing-card--pro">
+              <span class="mini-label">${copy.pricingProLabel}</span>
+              <h3>${proPlanName}</h3>
+              <div class="price">${regularPrice}<small>${copy.pricePerMonth}</small></div>
+              <div class="pricing-card__copy">${localizedPlans.pro.tagline}</div>
+              <div class="bullet-list">
+                ${localizedPlans.pro.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
               </div>
             </article>
           </div>

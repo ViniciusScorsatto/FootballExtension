@@ -37,7 +37,7 @@ test("marketing page renders English by default with language switcher", () => {
   assert.match(html, /href="\/\?lang=en"/);
   assert.match(html, /href="\/\?lang=pt-BR"/);
   assert.match(html, /Instant understanding of what a goal changes\./);
-  assert.match(html, /Pricing API/);
+  assert.doesNotMatch(html, /Pricing API/);
 });
 
 test("marketing page renders pt-BR copy when requested", () => {
@@ -45,7 +45,18 @@ test("marketing page renders pt-BR copy when requested", () => {
 
   assert.match(html, /<html lang="pt-BR">/);
   assert.match(html, /Entenda na hora o que um gol muda\./);
-  assert.match(html, /Preços da API/);
+  assert.doesNotMatch(html, /Preços da API/);
   assert.match(html, /Acompanhe uma partida de liga em destaque/);
   assert.match(html, /Garantir Early Bird/);
+});
+
+test("marketing page features Early Bird between Free and Pro", () => {
+  const html = renderMarketingPage({ pricing, language: "pt-BR" });
+  const freeIndex = html.indexOf("<h3>Free</h3>");
+  const earlyBirdIndex = html.indexOf("<h3>Early Bird Pro</h3>");
+  const proIndex = html.lastIndexOf("<h3>Pro</h3>");
+
+  assert.ok(freeIndex >= 0, "expected Free card");
+  assert.ok(earlyBirdIndex > freeIndex, "expected Early Bird after Free");
+  assert.ok(proIndex > earlyBirdIndex, "expected Pro after Early Bird");
 });
