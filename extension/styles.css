@@ -709,7 +709,6 @@ select.lmi-field__input {
   min-width: 0;
   flex: 1;
   text-align: center;
-  width: 100%;
 }
 
 .lmi-expanded__headline {

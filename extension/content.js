@@ -155,28 +155,7 @@
                 <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
               </div>
             </div>
-            <div class="lmi-scoreboard-card">
-              <div class="lmi-surface-meta">
-                <span class="lmi-surface-pill lmi-header-phase"></span>
-                <span class="lmi-surface-freshness lmi-header-freshness"></span>
-              </div>
-              <div class="lmi-scoreboard">
-                <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
-                  <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
-                  <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
-                </div>
-                <div class="lmi-scoreboard__center">
-                  <div class="lmi-scoreboard__score">0 - 0</div>
-                  <div class="lmi-scoreboard__minute">--</div>
-                </div>
-                <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
-                  <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
-                  <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
-                </div>
-              </div>
-            </div>
             <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
-            <div class="lmi-goal-timeline is-hidden"></div>
           </div>
           <div class="lmi-expanded__actions">
             <button
@@ -199,6 +178,27 @@
             </button>
           </div>
         </div>
+        <div class="lmi-scoreboard-card">
+          <div class="lmi-surface-meta">
+            <span class="lmi-surface-pill lmi-header-phase"></span>
+            <span class="lmi-surface-freshness lmi-header-freshness"></span>
+          </div>
+          <div class="lmi-scoreboard">
+            <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
+              <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
+              <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
+            </div>
+            <div class="lmi-scoreboard__center">
+              <div class="lmi-scoreboard__score">0 - 0</div>
+              <div class="lmi-scoreboard__minute">--</div>
+            </div>
+            <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
+              <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
+              <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
+            </div>
+          </div>
+        </div>
+        <div class="lmi-goal-timeline is-hidden"></div>
 
         <div class="lmi-scroll-controls" aria-label="${escapeHtml(translate("panel.scrollControls"))}">
           <button
