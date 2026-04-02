@@ -135,7 +135,11 @@
       <button class="lmi-card lmi-collapsed-card" type="button">
         <div class="lmi-collapsed-card__brand">
           <div class="lmi-collapsed-card__brand-copy">
-            <div class="lmi-collapsed-card__score">--</div>
+            <div class="lmi-collapsed-card__score">
+              <img alt="" class="lmi-collapsed-card__badge lmi-collapsed-card__badge--home is-hidden" />
+              <span class="lmi-collapsed-card__scoreline">--</span>
+              <img alt="" class="lmi-collapsed-card__badge lmi-collapsed-card__badge--away is-hidden" />
+            </div>
           </div>
         </div>
         <div class="lmi-collapsed-card__impact">${escapeHtml(translate("panel.waitingImpact"))}</div>
@@ -257,7 +261,9 @@
       root,
       collapsedCard: root.querySelector(".lmi-collapsed-card"),
       expandedPanel: root.querySelector(".lmi-expanded"),
-      collapsedScore: root.querySelector(".lmi-collapsed-card__score"),
+      collapsedScore: root.querySelector(".lmi-collapsed-card__scoreline"),
+      collapsedHomeBadge: root.querySelector(".lmi-collapsed-card__badge--home"),
+      collapsedAwayBadge: root.querySelector(".lmi-collapsed-card__badge--away"),
       collapsedImpact: root.querySelector(".lmi-collapsed-card__impact"),
       headline: root.querySelector(".lmi-expanded__headline"),
       eventBanner: root.querySelector(".lmi-event-banner"),
@@ -686,6 +692,8 @@
     });
 
     elements.collapsedScore.textContent = scoreline;
+    setBadge(elements.collapsedHomeBadge, payload.teams.home.logo, payload.teams.home.name);
+    setBadge(elements.collapsedAwayBadge, payload.teams.away.logo, payload.teams.away.name);
     elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
     elements.leagueName.textContent = payload.league?.name || translate("panel.matchTracker");
     elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;

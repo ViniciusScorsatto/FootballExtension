@@ -614,9 +614,23 @@ select.lmi-field__input {
 
 .lmi-collapsed-card__score {
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 700;
   color: var(--lmi-text);
+}
+
+.lmi-collapsed-card__scoreline {
+  min-width: 0;
+}
+
+.lmi-collapsed-card__badge {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .lmi-collapsed-card__impact {
