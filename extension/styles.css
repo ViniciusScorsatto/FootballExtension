@@ -528,7 +528,7 @@ select.lmi-field__input {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 10px;
 }
 
@@ -536,14 +536,15 @@ select.lmi-field__input {
 .lmi-surface-freshness {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 4px 10px;
+  min-height: 22px;
+  padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background: rgba(255, 255, 255, 0.05);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .lmi-surface-pill {
@@ -700,6 +701,7 @@ select.lmi-field__input {
 }
 
 .lmi-expanded__header {
+  position: relative;
   flex-direction: row;
 }
 
@@ -707,6 +709,7 @@ select.lmi-field__input {
   min-width: 0;
   flex: 1;
   text-align: center;
+  width: 100%;
 }
 
 .lmi-expanded__headline {
@@ -724,6 +727,9 @@ select.lmi-field__input {
 }
 
 .lmi-expanded__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
   gap: 6px;
   flex-shrink: 0;
   width: auto;
@@ -744,7 +750,9 @@ select.lmi-field__input {
 
 .lmi-scoreboard-card {
   margin-top: 12px;
-  padding: 12px 14px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px 14px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
@@ -752,7 +760,7 @@ select.lmi-field__input {
 
 .lmi-scoreboard-card .lmi-surface-meta {
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .lmi-scoreboard__team {
