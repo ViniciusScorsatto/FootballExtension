@@ -484,6 +484,45 @@ select.lmi-field__input {
   font-size: 15px;
 }
 
+.lmi-goal-timeline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lmi-goal-timeline__column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lmi-goal-timeline__column--home {
+  text-align: left;
+}
+
+.lmi-goal-timeline__column--away {
+  text-align: right;
+}
+
+.lmi-goal-timeline__divider {
+  color: var(--lmi-muted);
+  font-size: 14px;
+  line-height: 1.2;
+  padding-top: 2px;
+}
+
+.lmi-goal-timeline__item {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--lmi-text);
+  word-break: break-word;
+}
+
 .lmi-surface-meta {
   display: flex;
   align-items: center;
@@ -514,10 +553,6 @@ select.lmi-field__input {
 
 .lmi-surface-freshness {
   color: var(--lmi-muted);
-}
-
-.lmi-sidepanel__media-row {
-  margin-top: 10px;
 }
 
 .lmi-sidepanel-content .lmi-section,
@@ -587,13 +622,6 @@ select.lmi-field__input {
   height: 32px;
   object-fit: contain;
   flex-shrink: 0;
-}
-
-.lmi-expanded__media-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
 }
 
 .lmi-badge {
@@ -682,7 +710,7 @@ select.lmi-field__input {
 }
 
 .lmi-expanded__headline {
-  margin-top: 6px;
+  margin-top: 10px;
   font-size: 18px;
   line-height: 1.25;
   color: var(--lmi-text);
@@ -706,8 +734,50 @@ select.lmi-field__input {
   justify-content: center;
 }
 
-.lmi-expanded__summary .lmi-expanded__media-row {
-  justify-content: center;
+.lmi-scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.lmi-scoreboard__team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lmi-scoreboard__team-name {
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--lmi-text);
+  text-align: center;
+  word-break: break-word;
+}
+
+.lmi-scoreboard__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lmi-scoreboard__score {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--lmi-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.lmi-scoreboard__minute {
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--lmi-accent);
 }
 
 .lmi-overlay-action {
@@ -1179,6 +1249,11 @@ select.lmi-field__input {
   margin-bottom: 10px;
 }
 
+.lmi-lineup-card__injuries {
+  margin-top: 14px;
+  padding-top: 2px;
+}
+
 .lmi-lineup-pitch {
   position: relative;
   margin-top: 10px;
@@ -1262,6 +1337,7 @@ select.lmi-field__input {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .lmi-injury-line__icon {

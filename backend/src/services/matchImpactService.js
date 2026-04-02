@@ -123,6 +123,29 @@ function buildRecentEvents(events) {
   }));
 }
 
+function buildGoalTimeline(events, teams) {
+  return events
+    .filter((event) => event?.type === "Goal" && !isPenaltyShootoutEvent(event))
+    .map((event) => {
+      const detail = String(event?.detail ?? "");
+      return {
+        minute: event.time?.elapsed ?? 0,
+        minuteLabel: formatEventMinute(event.time),
+        teamId: event.team?.id ?? null,
+        teamName: event.team?.name ?? "",
+        playerName: event.player?.name ?? event.team?.name ?? "",
+        isPenalty: detail === "Penalty",
+        isOwnGoal: detail === "Own Goal",
+        side:
+          event.team?.id === teams.home.id
+            ? "home"
+            : event.team?.id === teams.away.id
+              ? "away"
+              : null
+      };
+    });
+}
+
 function isPenaltyShootoutEvent(event) {
   return String(event?.comments ?? "").trim().toLowerCase() === "penalty shootout";
 }
@@ -1434,6 +1457,7 @@ export class MatchImpactService {
         statistics: statisticsSummary,
         prematch,
         league_context: leagueContext,
+        goal_timeline: buildGoalTimeline(events, teams),
         standings_snapshot: {
           before: [],
           after: []
@@ -1517,6 +1541,7 @@ export class MatchImpactService {
       statistics: statisticsSummary,
       prematch,
       league_context: leagueContext,
+      goal_timeline: buildGoalTimeline(events, teams),
       standings_snapshot: {
         before: serializeTable(baselineStandings),
         after: serializeTable(simulatedTable)

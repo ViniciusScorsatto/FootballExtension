@@ -68,9 +68,15 @@
     leagueName: document.getElementById("sidepanelLeagueName"),
     phasePill: document.getElementById("sidepanelPhasePill"),
     freshness: document.getElementById("sidepanelFreshness"),
+    scoreboard: document.getElementById("sidepanelScoreboard"),
+    scoreValue: document.getElementById("sidepanelScoreValue"),
+    scoreMinute: document.getElementById("sidepanelScoreMinute"),
     homeBadge: document.getElementById("sidepanelHomeBadge"),
     awayBadge: document.getElementById("sidepanelAwayBadge"),
+    homeTeamName: document.getElementById("sidepanelHomeTeamName"),
+    awayTeamName: document.getElementById("sidepanelAwayTeamName"),
     headline: document.getElementById("sidepanelHeadline"),
+    goalTimeline: document.getElementById("sidepanelGoalTimeline"),
     summary: document.getElementById("sidepanelSummary"),
     eventBanner: document.getElementById("sidepanelEventBanner"),
     eventLabel: document.getElementById("sidepanelEventLabel"),
@@ -332,9 +338,35 @@
 
     if (!state.lastPayload) {
       elements.leagueName.textContent = translate("panel.matchTracker");
-      elements.headline.textContent = translate("panel.waitingMatch");
+      showHeroMessage(translate("panel.waitingMatch"));
       elements.summary.textContent = translate("panel.waitingImpact");
     }
+  }
+
+  function showHeroMessage(message) {
+    elements.scoreboard.classList.add("is-hidden");
+    elements.headline.classList.remove("is-hidden");
+    elements.headline.textContent = message;
+    elements.goalTimeline.classList.add("is-hidden");
+    elements.goalTimeline.innerHTML = "";
+  }
+
+  function showHeroScoreboard({
+    homeName,
+    awayName,
+    homeLogo,
+    awayLogo,
+    scoreline,
+    minuteLabel
+  }) {
+    elements.scoreboard.classList.remove("is-hidden");
+    elements.headline.classList.add("is-hidden");
+    elements.homeTeamName.textContent = homeName;
+    elements.awayTeamName.textContent = awayName;
+    elements.scoreValue.textContent = scoreline;
+    elements.scoreMinute.textContent = minuteLabel;
+    setBadge(elements.homeBadge, homeLogo, homeName);
+    setBadge(elements.awayBadge, awayLogo, awayName);
   }
 
   function updatePlanHint() {
@@ -504,7 +536,7 @@
     if (errorCode === "UPSTREAM_QUOTA_EXCEEDED") {
       elements.connectionStatus.textContent = translate("panel.upstreamLimitRetrying");
       elements.summary.textContent = translate("panel.liveDataLimited");
-      elements.headline.textContent = translate("panel.liveDataLimited");
+      showHeroMessage(translate("panel.liveDataLimited"));
       elements.homeRow.textContent = translate("panel.footballApiQuotaExplanation");
       elements.awayRow.textContent = translate("panel.trackingResume", {
         suffix: retryAfterSeconds
@@ -519,7 +551,7 @@
     if (errorCode === "UPSTREAM_TIMEOUT" || errorCode === "UPSTREAM_UNAVAILABLE") {
       elements.connectionStatus.textContent = translate("panel.footballApiSlowRetrying");
       elements.summary.textContent = translate("panel.liveFeedDelayed");
-      elements.headline.textContent = translate("panel.liveFeedDelayed");
+      showHeroMessage(translate("panel.liveFeedDelayed"));
       elements.homeRow.textContent = translate("panel.footballApiSlowExplanation");
       elements.awayRow.textContent = translate("panel.retrySoon", {
         suffix: retryAfterSeconds
@@ -534,7 +566,7 @@
     if (errorCode === "UPSTREAM_AUTH_FAILED") {
       elements.connectionStatus.textContent = translate("panel.providerAuthIssue");
       elements.summary.textContent = translate("panel.backendCredentialsFailed");
-      elements.headline.textContent = translate("panel.providerRejectedCredentials");
+      showHeroMessage(translate("panel.providerRejectedCredentials"));
       elements.homeRow.textContent = translate("panel.backendApiKeyCheck");
       elements.awayRow.textContent = state.backendUrl;
       elements.competitionList.innerHTML =
@@ -544,7 +576,7 @@
 
     elements.connectionStatus.textContent = translate("panel.backendConnectionFailed");
     elements.summary.textContent = translate("panel.backendConnectionFailed");
-    elements.headline.textContent = translate("panel.backendConnectionFailed");
+    showHeroMessage(translate("panel.backendConnectionFailed"));
     elements.homeRow.textContent = translate("panel.backendOnlineCheck");
     elements.awayRow.textContent = state.backendUrl;
     elements.competitionList.innerHTML =
@@ -577,10 +609,21 @@
     const localizedAwayName = translateDisplayName(state.language, payload.teams.away.name);
 
     elements.leagueName.textContent = localizedLeagueName || translate("panel.matchTracker");
-    elements.headline.textContent = `${localizedHomeName} ${payload.score.home}-${payload.score.away} ${localizedAwayName} · ${clockLabel}`;
-    elements.summary.textContent = eventLabel || localizedImpactSummary;
-    setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
-    setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
+    showHeroScoreboard({
+      homeName: localizedHomeName,
+      awayName: localizedAwayName,
+      homeLogo: payload.teams.home.logo,
+      awayLogo: payload.teams.away.logo,
+      scoreline: `${payload.score.home} - ${payload.score.away}`,
+      minuteLabel:
+        payload.status.phase === "live"
+          ? clockLabel
+          : payload.status.phase === "finished"
+            ? translate("panel.finishedShort")
+            : clockLabel
+    });
+    renderGoalTimeline(elements.goalTimeline, payload.goal_timeline);
+    elements.summary.textContent = localizedImpactSummary;
     elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
     elements.competitionSection.classList.toggle("is-hidden", isPrematch);
     elements.momentumSection.classList.toggle("is-hidden", isPrematch || (isFinished && !hasStatistics));
@@ -758,6 +801,41 @@
           )}</div>`
       )
       .join("");
+  }
+
+  function renderGoalTimeline(element, goals) {
+    if (!element) {
+      return;
+    }
+
+    const timeline = Array.isArray(goals) ? goals.filter((goal) => goal?.playerName && goal?.minuteLabel) : [];
+
+    if (!timeline.length) {
+      element.innerHTML = "";
+      element.classList.add("is-hidden");
+      return;
+    }
+
+    const homeGoals = timeline.filter((goal) => goal.side === "home");
+    const awayGoals = timeline.filter((goal) => goal.side === "away");
+
+    const renderGoalItem = (goal) => {
+      const suffix = goal.isPenalty ? " (P)" : goal.isOwnGoal ? " (OG)" : "";
+      return `<div class="lmi-goal-timeline__item">${escapeHtml(
+        `${goal.playerName} ${goal.minuteLabel}${suffix}`
+      )}</div>`;
+    };
+
+    element.innerHTML = `
+      <div class="lmi-goal-timeline__column lmi-goal-timeline__column--home">
+        ${homeGoals.map(renderGoalItem).join("")}
+      </div>
+      <div class="lmi-goal-timeline__divider" aria-hidden="true">⚽</div>
+      <div class="lmi-goal-timeline__column lmi-goal-timeline__column--away">
+        ${awayGoals.map(renderGoalItem).join("")}
+      </div>
+    `;
+    element.classList.remove("is-hidden");
   }
 
   function renderFormatContext(payload) {

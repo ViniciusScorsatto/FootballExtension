@@ -233,3 +233,49 @@ test("goal banners fall back to backend event messages when scorer fragments are
   assert.match(sidepanelScript, /const label = pieces\.filter\(Boolean\)\.join\(" · "\);/);
   assert.match(sidepanelScript, /return event\.message \|\| "";/);
 });
+
+test("goal timeline renders scorer history while the sidepanel summary stays focused on impact", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const sidepanelHtml = await readProjectFile("extension/sidepanel.html");
+  const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(contentScript, /<div class="lmi-goal-timeline is-hidden"><\/div>/);
+  assert.match(contentScript, /renderGoalTimeline\(elements\.goalTimeline, payload\.goal_timeline\);/);
+  assert.match(contentScript, /elements\.collapsedImpact\.textContent = localizedImpactSummary;/);
+
+  assert.match(sidepanelHtml, /id="sidepanelGoalTimeline" class="lmi-goal-timeline is-hidden"/);
+  assert.match(sidepanelScript, /goalTimeline: document\.getElementById\("sidepanelGoalTimeline"\)/);
+  assert.match(sidepanelScript, /renderGoalTimeline\(elements\.goalTimeline, payload\.goal_timeline\);/);
+  assert.match(sidepanelScript, /elements\.summary\.textContent = localizedImpactSummary;/);
+
+  assert.match(stylesheet, /\.lmi-goal-timeline\s*\{/);
+  assert.match(stylesheet, /\.lmi-goal-timeline__column--away\s*\{/);
+  assert.match(stylesheet, /\.lmi-goal-timeline__item\s*\{/);
+});
+
+test("overlay and sidepanel hero use a centered scoreboard with full team names and separate minute line", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const sidepanelHtml = await readProjectFile("extension/sidepanel.html");
+  const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(contentScript, /<div class="lmi-scoreboard">/);
+  assert.match(contentScript, /lmi-scoreboard__team-name lmi-scoreboard__team-name--home/);
+  assert.match(contentScript, /lmi-scoreboard__score/);
+  assert.match(contentScript, /lmi-scoreboard__minute/);
+  assert.match(contentScript, /showHeroScoreboard\(\{/);
+  assert.match(contentScript, /scoreline: `\$\{payload\.score\.home\} - \$\{payload\.score\.away\}`/);
+
+  assert.match(sidepanelHtml, /id="sidepanelScoreboard" class="lmi-scoreboard"/);
+  assert.match(sidepanelHtml, /id="sidepanelHomeTeamName" class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home"/);
+  assert.match(sidepanelHtml, /id="sidepanelScoreValue" class="lmi-scoreboard__score"/);
+  assert.match(sidepanelHtml, /id="sidepanelScoreMinute" class="lmi-scoreboard__minute"/);
+  assert.match(sidepanelScript, /showHeroScoreboard\(\{/);
+  assert.match(sidepanelScript, /scoreline: `\$\{payload\.score\.home\} - \$\{payload\.score\.away\}`/);
+
+  assert.match(stylesheet, /\.lmi-scoreboard\s*\{/);
+  assert.match(stylesheet, /\.lmi-scoreboard__score\s*\{/);
+  assert.match(stylesheet, /font-variant-numeric:\s*tabular-nums;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__minute\s*\{/);
+});

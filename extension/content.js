@@ -155,12 +155,22 @@
                 <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
               </div>
             </div>
-            <div class="lmi-expanded__media-row">
-              <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
-              <div class="lmi-badge-divider">vs</div>
-              <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
+            <div class="lmi-scoreboard">
+              <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
+                <img alt="" class="lmi-badge lmi-badge--team lmi-badge--home" />
+                <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
+              </div>
+              <div class="lmi-scoreboard__center">
+                <div class="lmi-scoreboard__score">0 - 0</div>
+                <div class="lmi-scoreboard__minute">--</div>
+              </div>
+              <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
+                <img alt="" class="lmi-badge lmi-badge--team lmi-badge--away" />
+                <div class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
+              </div>
             </div>
             <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
+            <div class="lmi-goal-timeline is-hidden"></div>
             <div class="lmi-surface-meta">
               <span class="lmi-surface-pill lmi-header-phase"></span>
               <span class="lmi-surface-freshness lmi-header-freshness"></span>
@@ -267,7 +277,13 @@
       collapsedHomeBadge: root.querySelector(".lmi-collapsed-card__badge--home"),
       collapsedAwayBadge: root.querySelector(".lmi-collapsed-card__badge--away"),
       collapsedImpact: root.querySelector(".lmi-collapsed-card__impact"),
+      scoreboard: root.querySelector(".lmi-scoreboard"),
+      scoreValue: root.querySelector(".lmi-scoreboard__score"),
+      scoreMinute: root.querySelector(".lmi-scoreboard__minute"),
+      homeTeamName: root.querySelector(".lmi-scoreboard__team-name--home"),
+      awayTeamName: root.querySelector(".lmi-scoreboard__team-name--away"),
       headline: root.querySelector(".lmi-expanded__headline"),
+      goalTimeline: root.querySelector(".lmi-goal-timeline"),
       eventBanner: root.querySelector(".lmi-event-banner"),
       eventBannerLabel: root.querySelector(".lmi-event-banner__label"),
       eventText: root.querySelector(".lmi-event-banner__text"),
@@ -416,9 +432,9 @@
       ? elements.collapsedImpact.textContent
       : translate("panel.waitingImpact");
     elements.eyebrow.textContent = translate("panel.eyebrow");
-    elements.headline.textContent = state.lastPayload
-      ? elements.headline.textContent
-      : translate("panel.waitingMatch");
+    if (!state.lastPayload) {
+      showHeroMessage(translate("panel.waitingMatch"));
+    }
     elements.eventBannerLabel.textContent = translate("panel.goalImpact");
     elements.collapseButton.setAttribute("aria-label", translate("panel.collapse"));
     elements.collapseButton.setAttribute("title", translate("panel.collapse"));
@@ -442,6 +458,32 @@
       elements.headerPhase.textContent = "";
       elements.headerFreshness.textContent = "";
     }
+  }
+
+  function showHeroMessage(message) {
+    elements.scoreboard.classList.add("is-hidden");
+    elements.headline.classList.remove("is-hidden");
+    elements.headline.textContent = message;
+    elements.goalTimeline.classList.add("is-hidden");
+    elements.goalTimeline.innerHTML = "";
+  }
+
+  function showHeroScoreboard({
+    homeName,
+    awayName,
+    homeLogo,
+    awayLogo,
+    scoreline,
+    minuteLabel
+  }) {
+    elements.scoreboard.classList.remove("is-hidden");
+    elements.headline.classList.add("is-hidden");
+    elements.homeTeamName.textContent = homeName;
+    elements.awayTeamName.textContent = awayName;
+    elements.scoreValue.textContent = scoreline;
+    elements.scoreMinute.textContent = minuteLabel;
+    setBadge(elements.homeBadge, homeLogo, homeName);
+    setBadge(elements.awayBadge, awayLogo, awayName);
   }
 
   function clearPollTimer() {
@@ -627,7 +669,7 @@
       elements.connectionStatus.textContent = translate("panel.upstreamLimitRetrying");
       elements.collapsedScore.textContent = translate("panel.limited");
       elements.collapsedImpact.textContent = translate("panel.liveDataLimited");
-      elements.headline.textContent = translate("panel.liveDataLimited");
+      showHeroMessage(translate("panel.liveDataLimited"));
       elements.homeRow.textContent = translate("panel.footballApiQuotaExplanation");
       elements.awayRow.textContent = translate("panel.trackingResume", {
         suffix: retryAfterSeconds
@@ -643,7 +685,7 @@
       elements.connectionStatus.textContent = translate("panel.footballApiSlowRetrying");
       elements.collapsedScore.textContent = translate("panel.live");
       elements.collapsedImpact.textContent = translate("panel.liveFeedDelayed");
-      elements.headline.textContent = translate("panel.liveFeedDelayed");
+      showHeroMessage(translate("panel.liveFeedDelayed"));
       elements.homeRow.textContent = translate("panel.footballApiSlowExplanation");
       elements.awayRow.textContent = translate("panel.retrySoon", {
         suffix: retryAfterSeconds
@@ -659,7 +701,7 @@
       elements.connectionStatus.textContent = translate("panel.providerAuthIssue");
       elements.collapsedScore.textContent = translate("panel.config");
       elements.collapsedImpact.textContent = translate("panel.backendCredentialsFailed");
-      elements.headline.textContent = translate("panel.providerRejectedCredentials");
+      showHeroMessage(translate("panel.providerRejectedCredentials"));
       elements.homeRow.textContent = translate("panel.backendApiKeyCheck");
       elements.awayRow.textContent = state.backendUrl;
       elements.competitionList.innerHTML =
@@ -670,7 +712,7 @@
     elements.connectionStatus.textContent = translate("panel.backendConnectionFailed");
     elements.collapsedScore.textContent = translate("panel.offline");
     elements.collapsedImpact.textContent = translate("panel.backendConnectionFailed");
-    elements.headline.textContent = translate("panel.backendConnectionFailed");
+    showHeroMessage(translate("panel.backendConnectionFailed"));
     elements.homeRow.textContent = translate("panel.backendOnlineCheck");
     elements.awayRow.textContent = state.backendUrl;
     elements.competitionList.innerHTML =
@@ -701,14 +743,25 @@
     elements.collapsedScore.textContent = scoreline;
     setBadge(elements.collapsedHomeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.collapsedAwayBadge, payload.teams.away.logo, payload.teams.away.name);
-    elements.collapsedImpact.textContent = eventLabel || localizedImpactSummary;
+    elements.collapsedImpact.textContent = localizedImpactSummary;
     const localizedLeagueName = translateLeagueName(state.language, payload.league?.name);
     const localizedHomeName = translateDisplayName(state.language, payload.teams.home.name);
     const localizedAwayName = translateDisplayName(state.language, payload.teams.away.name);
     elements.leagueName.textContent = localizedLeagueName || translate("panel.matchTracker");
-    elements.headline.textContent = `${localizedHomeName} ${payload.score.home}-${payload.score.away} ${localizedAwayName} · ${clockLabel}`;
-    setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
-    setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
+    showHeroScoreboard({
+      homeName: localizedHomeName,
+      awayName: localizedAwayName,
+      homeLogo: payload.teams.home.logo,
+      awayLogo: payload.teams.away.logo,
+      scoreline: `${payload.score.home} - ${payload.score.away}`,
+      minuteLabel:
+        payload.status.phase === "live"
+          ? clockLabel
+          : payload.status.phase === "finished"
+            ? translate("panel.finishedShort")
+            : clockLabel
+    });
+    renderGoalTimeline(elements.goalTimeline, payload.goal_timeline);
     elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
     elements.competitionSection.classList.toggle("is-hidden", isPrematch);
     elements.momentumSection.classList.toggle("is-hidden", isPrematch || (isFinished && !hasStatistics));
@@ -891,6 +944,41 @@
           )}</div>`
       )
       .join("");
+  }
+
+  function renderGoalTimeline(element, goals) {
+    if (!element) {
+      return;
+    }
+
+    const timeline = Array.isArray(goals) ? goals.filter((goal) => goal?.playerName && goal?.minuteLabel) : [];
+
+    if (!timeline.length) {
+      element.innerHTML = "";
+      element.classList.add("is-hidden");
+      return;
+    }
+
+    const homeGoals = timeline.filter((goal) => goal.side === "home");
+    const awayGoals = timeline.filter((goal) => goal.side === "away");
+
+    const renderGoalItem = (goal) => {
+      const suffix = goal.isPenalty ? " (P)" : goal.isOwnGoal ? " (OG)" : "";
+      return `<div class="lmi-goal-timeline__item">${escapeHtml(
+        `${goal.playerName} ${goal.minuteLabel}${suffix}`
+      )}</div>`;
+    };
+
+    element.innerHTML = `
+      <div class="lmi-goal-timeline__column lmi-goal-timeline__column--home">
+        ${homeGoals.map(renderGoalItem).join("")}
+      </div>
+      <div class="lmi-goal-timeline__divider" aria-hidden="true">⚽</div>
+      <div class="lmi-goal-timeline__column lmi-goal-timeline__column--away">
+        ${awayGoals.map(renderGoalItem).join("")}
+      </div>
+    `;
+    element.classList.remove("is-hidden");
   }
 
   function renderStatistics(statistics, { isFinished = false } = {}) {

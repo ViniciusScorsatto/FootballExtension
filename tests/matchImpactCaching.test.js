@@ -181,6 +181,111 @@ test("events are refreshed immediately after a score change", async () => {
   assert.equal(calls, 2);
 });
 
+test("payload includes a persistent goal timeline with scorers and minute labels", async () => {
+  const fixtureId = 456;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775620800,
+          date: "2026-04-09T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 90
+          }
+        },
+        league: {
+          id: 10,
+          name: "Friendlies",
+          country: "World",
+          season: 2026,
+          standings: false,
+          round: "Regular Season"
+        },
+        teams: {
+          home: { id: 1, name: "Brazil", logo: "" },
+          away: { id: 2, name: "Croatia", logo: "" }
+        },
+        goals: {
+          home: 3,
+          away: 1
+        },
+        score: {
+          penalty: { home: null, away: null },
+          fulltime: { home: 3, away: 1 },
+          extratime: { home: null, away: null }
+        }
+      }),
+      getEvents: async () => [
+        {
+          time: { elapsed: 45, extra: 2 },
+          team: { id: 1, name: "Brazil" },
+          player: { name: "Danilo" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Normal Goal",
+          comments: null
+        },
+        {
+          time: { elapsed: 84, extra: null },
+          team: { id: 2, name: "Croatia" },
+          player: { name: "Lovro Majer" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Normal Goal",
+          comments: null
+        },
+        {
+          time: { elapsed: 88, extra: null },
+          team: { id: 1, name: "Brazil" },
+          player: { name: "Igor Thiago" },
+          assist: { name: null },
+          type: "Goal",
+          detail: "Penalty",
+          comments: null
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.deepEqual(payload.goal_timeline, [
+    {
+      minute: 45,
+      minuteLabel: "45+2'",
+      teamId: 1,
+      teamName: "Brazil",
+      playerName: "Danilo",
+      isPenalty: false,
+      isOwnGoal: false,
+      side: "home"
+    },
+    {
+      minute: 84,
+      minuteLabel: "84'",
+      teamId: 2,
+      teamName: "Croatia",
+      playerName: "Lovro Majer",
+      isPenalty: false,
+      isOwnGoal: false,
+      side: "away"
+    },
+    {
+      minute: 88,
+      minuteLabel: "88'",
+      teamId: 1,
+      teamName: "Brazil",
+      playerName: "Igor Thiago",
+      isPenalty: true,
+      isOwnGoal: false,
+      side: "home"
+    }
+  ]);
+});
+
 test("coverage flags skip unsupported resource endpoints", async () => {
   let standingsCalls = 0;
   let eventsCalls = 0;

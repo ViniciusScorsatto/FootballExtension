@@ -48,12 +48,22 @@
             <span id="sidepanelPhasePill" class="lmi-surface-pill"></span>
             <span id="sidepanelFreshness" class="lmi-surface-freshness"></span>
           </div>
-          <div class="lmi-expanded__media-row lmi-sidepanel__media-row">
-            <img alt="" id="sidepanelHomeBadge" class="lmi-badge" />
-            <div class="lmi-badge-divider">vs</div>
-            <img alt="" id="sidepanelAwayBadge" class="lmi-badge" />
+          <div id="sidepanelScoreboard" class="lmi-scoreboard">
+            <div class="lmi-scoreboard__team lmi-scoreboard__team--home">
+              <img alt="" id="sidepanelHomeBadge" class="lmi-badge" />
+              <div id="sidepanelHomeTeamName" class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home">Home</div>
+            </div>
+            <div class="lmi-scoreboard__center">
+              <div id="sidepanelScoreValue" class="lmi-scoreboard__score">0 - 0</div>
+              <div id="sidepanelScoreMinute" class="lmi-scoreboard__minute">--</div>
+            </div>
+            <div class="lmi-scoreboard__team lmi-scoreboard__team--away">
+              <img alt="" id="sidepanelAwayBadge" class="lmi-badge" />
+              <div id="sidepanelAwayTeamName" class="lmi-scoreboard__team-name lmi-scoreboard__team-name--away">Away</div>
+            </div>
           </div>
           <div id="sidepanelHeadline" class="lmi-sidepanel-hero__headline">Waiting for a tracked match</div>
+          <div id="sidepanelGoalTimeline" class="lmi-goal-timeline is-hidden"></div>
           <div id="sidepanelSummary" class="lmi-sidepanel-hero__summary">Waiting for live impact</div>
         </div>
 
