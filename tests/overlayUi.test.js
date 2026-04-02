@@ -164,3 +164,20 @@ test("lineup cards render a formation pitch when the XI and shape are available"
   assert.match(i18n, /lineupPitchAria:\s*"Formation layout \{value\}"/);
   assert.match(i18n, /lineupPitchAria:\s*"Esquema da formação \{value\}"/);
 });
+
+test("lineup cards include explicit coach labels and own the injuries content", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const i18n = await readProjectFile("extension/i18n.js");
+
+  assert.match(contentScript, /translate\("prematch\.coachLabel"/);
+  assert.match(contentScript, /function renderLineupCardInjuries\(teamName, injuries\)/);
+  assert.match(contentScript, /elements\.injuriesGrid\.innerHTML = "";/);
+
+  assert.match(sidepanelScript, /translate\("prematch\.coachLabel"/);
+  assert.match(sidepanelScript, /function renderLineupCardInjuries\(teamName, injuries\)/);
+  assert.match(sidepanelScript, /elements\.injuriesGrid\.innerHTML = "";/);
+
+  assert.match(i18n, /coachLabel:\s*"Coach \{name\}"/);
+  assert.match(i18n, /coachLabel:\s*"Técnico \{name\}"/);
+});

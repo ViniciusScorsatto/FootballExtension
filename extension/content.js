@@ -960,6 +960,7 @@
     }
 
     const lineups = payload.prematch.lineups;
+    const injuries = payload.prematch.injuries;
 
     if (lineups?.available) {
       elements.lineupsGrid.innerHTML = [lineups.home, lineups.away]
@@ -968,7 +969,12 @@
           (entry, index) =>
             renderLineupCard(
               index === 0 ? payload.teams.home.name : payload.teams.away.name,
-              entry
+              entry,
+              injuries?.available
+                ? index === 0
+                  ? injuries.home || []
+                  : injuries.away || []
+                : null
             )
         )
         .join("");
@@ -977,30 +983,7 @@
         `<div class="lmi-empty">${escapeHtml(translate("prematch.startingXiUnavailable"))}</div>`;
     }
 
-    const injuries = payload.prematch.injuries;
-
-    if (injuries?.available) {
-      const homeItems = (injuries.home || []).map((item) => renderInjuryItem(item));
-      const awayItems = (injuries.away || []).map((item) => renderInjuryItem(item));
-
-      elements.injuriesGrid.innerHTML = `
-        <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
-            translate("prematch.injuriesTitle", { team: payload.teams.home.name })
-          )}</span></div>
-          ${homeItems.length ? homeItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
-        </div>
-        <div class="lmi-mini-card">
-          <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
-            translate("prematch.injuriesTitle", { team: payload.teams.away.name })
-          )}</span></div>
-          ${awayItems.length ? awayItems.join("") : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`}
-        </div>
-      `;
-    } else {
-      elements.injuriesGrid.innerHTML =
-        `<div class="lmi-empty">${escapeHtml(translate("prematch.noInjuries"))}</div>`;
-    }
+    elements.injuriesGrid.innerHTML = "";
   }
 
   function renderLeagueContext(payload) {
@@ -1146,16 +1129,19 @@
     return `${Math.round(value)}%`;
   }
 
-  function renderLineupCard(teamName, entry) {
+  function renderLineupCard(teamName, entry, injuries) {
     const formationLabel = translate("prematch.formation", {
       value: entry.formation || translate("prematch.formationTbc")
     });
-    const coachLabel = entry.coach || translate("prematch.coachTbd");
+    const coachLabel = translate("prematch.coachLabel", {
+      name: entry.coach || translate("prematch.coachTbd")
+    });
     const pitchMarkup = buildFormationPitch(entry);
     const fallbackList = escapeHtml(
       (entry.startXI || []).map(getLineupPlayerName).filter(Boolean).join(", ") ||
         translate("prematch.xiNotReleased")
     );
+    const injuriesMarkup = renderLineupCardInjuries(teamName, injuries);
 
     return `
       <div class="lmi-mini-card lmi-lineup-card">
@@ -1163,6 +1149,24 @@
         <div class="lmi-mini-card__line">${escapeHtml(formationLabel)}</div>
         <div class="lmi-mini-card__line">${escapeHtml(coachLabel)}</div>
         ${pitchMarkup || `<div class="lmi-mini-card__line">${fallbackList}</div>`}
+        ${injuriesMarkup}
+      </div>
+    `;
+  }
+
+  function renderLineupCardInjuries(teamName, injuries) {
+    const items = Array.isArray(injuries) ? injuries : [];
+
+    return `
+      <div class="lmi-lineup-card__injuries">
+        <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
+          translate("prematch.injuriesTitle", { team: teamName })
+        )}</span></div>
+        ${
+          items.length
+            ? items.map((item) => renderInjuryItem(item)).join("")
+            : `<div class="lmi-mini-card__line">${escapeHtml(translate("prematch.noneReported"))}</div>`
+        }
       </div>
     `;
   }
