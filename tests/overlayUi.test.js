@@ -294,3 +294,37 @@ test("overlay and sidepanel hero use a centered scoreboard with full team names 
   assert.match(stylesheet, /\.lmi-surface-pill,[\s\S]*\.lmi-surface-freshness\s*\{[\s\S]*font-size:\s*10px;[\s\S]*white-space:\s*nowrap;/);
   assert.match(stylesheet, /\.lmi-expanded__actions\s*\{[\s\S]*position:\s*absolute;[\s\S]*right:\s*0;/);
 });
+
+test("table impact rows render movement as a badge instead of inline parenthetical text", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(contentScript, /lmi-impact-row__movement-badge/);
+  assert.match(contentScript, /formatMovement\(tableImpact\.movement\)/);
+  assert.doesNotMatch(contentScript, /`\(\\?\$\{formatMovement\(tableImpact\.movement\)\}\\?\)`/);
+
+  assert.match(sidepanelScript, /lmi-impact-row__movement-badge/);
+  assert.match(sidepanelScript, /formatMovement\(tableImpact\.movement\)/);
+  assert.doesNotMatch(sidepanelScript, /`\(\\?\$\{formatMovement\(tableImpact\.movement\)\}\\?\)`/);
+
+  assert.match(stylesheet, /\.lmi-impact-row\s*\{[\s\S]*display:\s*flex;[\s\S]*flex-wrap:\s*wrap;/);
+  assert.match(stylesheet, /\.lmi-impact-row__team\s*\{[\s\S]*margin-right:\s*auto;/);
+  assert.match(stylesheet, /\.lmi-impact-row__movement-badge\s*\{[\s\S]*border-radius:\s*999px;[\s\S]*font-size:\s*12px;/);
+  assert.match(stylesheet, /\.lmi-impact-row__movement-badge\.is-up\s*\{/);
+  assert.match(stylesheet, /\.lmi-impact-row__movement-badge\.is-down\s*\{/);
+  assert.match(stylesheet, /\.lmi-impact-row__movement-badge\.is-flat\s*\{/);
+});
+
+test("competition and momentum insights use semantic accent rows instead of muted structural borders", async () => {
+  const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(
+    stylesheet,
+    /\.lmi-competition-item\s*\{[\s\S]*border-left:\s*3px solid rgba\(31,\s*230,\s*194,\s*0\.95\);[\s\S]*background:\s*rgba\(18,\s*116,\s*104,\s*0\.22\);/
+  );
+  assert.match(
+    stylesheet,
+    /\.lmi-stat-insight\s*\{[\s\S]*border-left:\s*3px solid rgba\(61,\s*219,\s*137,\s*0\.95\);[\s\S]*background:\s*rgba\(43,\s*122,\s*88,\s*0\.22\);/
+  );
+});

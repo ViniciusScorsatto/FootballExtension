@@ -775,8 +775,8 @@
       <span class="lmi-impact-row__position">${escapeHtml(
         formatOrdinal(state.language, tableImpact.newPosition)
       )}</span>
-      <span class="lmi-impact-row__movement ${directionClass}">${escapeHtml(
-        `(${formatMovement(tableImpact.movement)})`
+      <span class="lmi-impact-row__movement-badge ${directionClass}">${escapeHtml(
+        formatMovement(tableImpact.movement)
       )}</span>
     `;
   }
