@@ -278,12 +278,15 @@ test("overlay and sidepanel hero use a centered scoreboard with full team names 
 
   assert.match(stylesheet, /\.lmi-scoreboard\s*\{/);
   assert.match(stylesheet, /\.lmi-scoreboard-card\s*\{/);
-  assert.match(stylesheet, /grid-template-columns:\s*minmax\(96px,\s*1fr\)\s*auto\s*minmax\(96px,\s*1fr\);/);
+  assert.match(stylesheet, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(74px,\s*auto\)\s*minmax\(0,\s*1fr\);/);
   assert.match(stylesheet, /width:\s*100%;/);
   assert.match(stylesheet, /\.lmi-scoreboard-card\s*\{[\s\S]*box-sizing:\s*border-box;/);
-  assert.match(stylesheet, /\.lmi-scoreboard__team--home\s*\{[\s\S]*align-items:\s*flex-start;[\s\S]*justify-self:\s*start;/);
-  assert.match(stylesheet, /\.lmi-scoreboard__team--away\s*\{[\s\S]*align-items:\s*flex-end;[\s\S]*justify-self:\s*end;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team\s*\{[\s\S]*gap:\s*6px;[\s\S]*width:\s*100%;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team--home\s*\{[\s\S]*align-items:\s*flex-start;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team--away\s*\{[\s\S]*align-items:\s*flex-end;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team-name\s*\{[\s\S]*font-size:\s*13px;[\s\S]*overflow-wrap:\s*anywhere;/);
   assert.match(stylesheet, /\.lmi-scoreboard__score\s*\{/);
+  assert.match(stylesheet, /font-size:\s*28px;/);
   assert.match(stylesheet, /font-variant-numeric:\s*tabular-nums;/);
   assert.match(stylesheet, /white-space:\s*nowrap;/);
   assert.match(stylesheet, /\.lmi-scoreboard__minute\s*\{/);
