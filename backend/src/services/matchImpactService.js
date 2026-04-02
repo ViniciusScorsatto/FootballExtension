@@ -1061,7 +1061,66 @@ function buildCupMomentumFromScore(score) {
   };
 }
 
-function buildAggregatePressureLines(aggregateHome, aggregateAway, teams) {
+function normalizeCompetitionName(name) {
+  return String(name ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function isFinalRound(round) {
+  const normalizedRound = normalizeCompetitionName(round);
+
+  if (!normalizedRound) {
+    return false;
+  }
+
+  if (/(semi|quarter|round of|1\/8|1\/4|1\/2|play-?off|oitavas|quartas|semi-final|semifinal)/i.test(normalizedRound)) {
+    return false;
+  }
+
+  return /(^|[^a-z])final([^a-z]|$)/i.test(normalizedRound);
+}
+
+function resolveKnockoutLevelResolution(fixture, knockoutContext, competitionFormat) {
+  const configuredResolutions = competitionFormat?.registry?.knockoutResolutions ?? {};
+  const round = knockoutContext?.round ?? fixture?.league?.round ?? "";
+  const finalRound = isFinalRound(round);
+  const competitionName = normalizeCompetitionName(
+    competitionFormat?.registry?.leagueName || fixture?.league?.name
+  );
+  const competitionCountry = normalizeCompetitionName(fixture?.league?.country);
+  const knockoutType = knockoutContext?.type ?? "single_leg_knockout";
+
+  if (finalRound && knockoutType === "single_leg_knockout" && configuredResolutions.finalSingleLeg) {
+    return configuredResolutions.finalSingleLeg;
+  }
+
+  if (
+    (knockoutType === "two_leg_aggregate" || knockoutType === "two_leg_first_leg") &&
+    configuredResolutions.twoLeg
+  ) {
+    return configuredResolutions.twoLeg;
+  }
+
+  if (knockoutType === "single_leg_knockout" && configuredResolutions.singleLeg) {
+    return configuredResolutions.singleLeg;
+  }
+
+  if (
+    competitionName === "conmebol libertadores" ||
+    competitionName === "conmebol sudamericana"
+  ) {
+    return finalRound ? "extra_time_then_penalties" : "direct_penalties";
+  }
+
+  if (competitionCountry === "brazil") {
+    return "direct_penalties";
+  }
+
+  return "extra_time_then_penalties";
+}
+
+function buildAggregatePressureLines(aggregateHome, aggregateAway, teams, levelResolution) {
   const goalGap = Math.abs(aggregateHome - aggregateAway);
 
   if (goalGap === 0) {
@@ -1071,10 +1130,18 @@ function buildAggregatePressureLines(aggregateHome, aggregateAway, teams) {
   const trailingTeam = aggregateHome > aggregateAway ? teams.away.name : teams.home.name;
 
   if (goalGap === 1) {
-    return [`${trailingTeam} is one goal from forcing extra time`];
+    return [
+      levelResolution === "direct_penalties"
+        ? `${trailingTeam} is one goal from taking the tie to penalties`
+        : `${trailingTeam} is one goal from forcing extra time`
+    ];
   }
 
-  return [`${trailingTeam} still needs ${goalGap} more goals to force extra time`];
+  return [
+    levelResolution === "direct_penalties"
+      ? `${trailingTeam} still needs ${goalGap} more goals to take the tie to penalties`
+      : `${trailingTeam} still needs ${goalGap} more goals to force extra time`
+  ];
 }
 
 function buildKnockoutContext(fixture, roundFixtures, competitionFormat) {
@@ -1113,7 +1180,14 @@ function buildKnockoutContext(fixture, roundFixtures, competitionFormat) {
   };
 }
 
-function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext = null) {
+function buildCupImpact(
+  status,
+  fixture,
+  teams,
+  knockoutContext,
+  penaltyContext = null,
+  competitionFormat = null
+) {
   const score = {
     home: Number(fixture?.goals?.home ?? 0),
     away: Number(fixture?.goals?.away ?? 0)
@@ -1169,16 +1243,30 @@ function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext 
     };
   }
 
+  const levelResolution = resolveKnockoutLevelResolution(
+    fixture,
+    knockoutContext,
+    competitionFormat
+  );
+
   if (!knockoutContext || knockoutContext.type === "single_leg_knockout") {
     const isLevel = score.home === score.away;
     const leadingTeam = score.home > score.away ? teams.home.name : teams.away.name;
     const trailingTeam = score.home > score.away ? teams.away.name : teams.home.name;
+    const levelSummary =
+      levelResolution === "direct_penalties"
+        ? "This tie is currently heading to penalties"
+        : "This tie is currently heading to extra time";
+    const levelLine =
+      levelResolution === "direct_penalties"
+        ? "Level score would send this tie to penalties."
+        : "Level score would send this tie to extra time.";
 
     return {
       ...baseImpact,
-      summary: isLevel ? "This tie is currently heading to penalties" : `${leadingTeam} is currently going through`,
+      summary: isLevel ? levelSummary : `${leadingTeam} is currently going through`,
       competition: isLevel
-        ? ["Winner advances from this tie.", "Level score would send this tie to penalties."]
+        ? ["Winner advances from this tie.", levelLine]
         : ["Winner advances from this tie.", `${trailingTeam} needs one goal to level the tie.`]
     };
   }
@@ -1203,7 +1291,12 @@ function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext 
     score.away + getGoalsForTeamInFixture(pairedLeg, fixture?.teams?.away?.id);
   const isAggregateLevel = aggregateHome === aggregateAway;
   const leadingTeam = aggregateHome > aggregateAway ? teams.home.name : teams.away.name;
-  const pressureLines = buildAggregatePressureLines(aggregateHome, aggregateAway, teams);
+  const pressureLines = buildAggregatePressureLines(
+    aggregateHome,
+    aggregateAway,
+    teams,
+    levelResolution
+  );
 
   return {
     ...baseImpact,
@@ -1303,7 +1396,7 @@ export class MatchImpactService {
 
     if (!hasTableImpact) {
       const impact = knockoutContext
-        ? buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext)
+        ? buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext, competitionFormat)
         : competitionFormat.impactMode === "limited"
           ? buildLimitedCompetitionImpact(status, fixture, teams, competitionFormat)
           : buildScoreOnlyImpact(status, fixture, teams);

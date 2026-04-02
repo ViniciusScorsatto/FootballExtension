@@ -29,7 +29,8 @@ function buildRegistryInfo(override, fixture) {
     leagueId: override.leagueId ?? fixture?.league?.id ?? null,
     leagueName: override.leagueName ?? fixture?.league?.name ?? "",
     routing: override.routing ?? "dynamic",
-    zoneProfile: override.zoneProfile ?? ""
+    zoneProfile: override.zoneProfile ?? "",
+    knockoutResolutions: override.knockoutResolutions ?? null
   };
 }
 

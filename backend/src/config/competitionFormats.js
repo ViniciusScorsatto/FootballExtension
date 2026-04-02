@@ -51,17 +51,29 @@ export const competitionFormatOverrides = [
   {
     leagueId: 11,
     leagueName: "CONMEBOL Sudamericana",
-    routing: "hybrid_group_knockout"
+    routing: "hybrid_group_knockout",
+    knockoutResolutions: {
+      twoLeg: "direct_penalties",
+      finalSingleLeg: "extra_time_then_penalties"
+    }
   },
   {
     leagueId: 13,
     leagueName: "CONMEBOL Libertadores",
-    routing: "hybrid_group_knockout"
+    routing: "hybrid_group_knockout",
+    knockoutResolutions: {
+      twoLeg: "direct_penalties",
+      finalSingleLeg: "extra_time_then_penalties"
+    }
   },
   {
     leagueId: 73,
     leagueName: "Copa do Brasil",
-    routing: "knockout_cup"
+    routing: "knockout_cup",
+    knockoutResolutions: {
+      singleLeg: "direct_penalties",
+      twoLeg: "direct_penalties"
+    }
   },
   {
     leagueId: 75,

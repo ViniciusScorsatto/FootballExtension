@@ -821,7 +821,7 @@ test("second leg of a two-leg tie computes aggregate impact", async () => {
   assert.deepEqual(payload.impact.competition, [
     "Cruzeiro 2-1 Vitoria on aggregate",
     "Cruzeiro is currently going through",
-    "Vitoria is one goal from forcing extra time"
+    "Vitoria is one goal from taking the tie to penalties"
   ]);
 });
 
@@ -967,7 +967,144 @@ test("larger aggregate deficits explain how many goals are still needed", async 
   assert.deepEqual(payload.impact.competition, [
     "Cruzeiro 3-1 Vitoria on aggregate",
     "Cruzeiro is currently going through",
-    "Vitoria still needs 2 more goals to force extra time"
+    "Vitoria still needs 2 more goals to take the tie to penalties"
+  ]);
+});
+
+test("single-leg international knockout defaults to extra time before penalties", async () => {
+  const fixtureId = 9110;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: Math.floor(Date.now() / 1000),
+          date: "2026-07-01T19:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 88
+          }
+        },
+        league: {
+          id: 1,
+          name: "World Cup",
+          country: "World",
+          season: 2026,
+          standings: false,
+          round: "Final"
+        },
+        teams: {
+          home: { id: 1, name: "Brazil", logo: "" },
+          away: { id: 2, name: "France", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 1
+        }
+      }),
+      getFixturesByRound: async () => []
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.knockoutContext.type, "single_leg_knockout");
+  assert.equal(payload.impact.summary, "This tie is currently heading to extra time");
+  assert.deepEqual(payload.impact.competition, [
+    "Winner advances from this tie.",
+    "Level score would send this tie to extra time."
+  ]);
+});
+
+test("libertadores knockout rounds use direct penalties outside the final", async () => {
+  const fixtureId = 9111;
+  const kickoff = 1775620800;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: kickoff,
+          date: "2026-08-19T00:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 76
+          }
+        },
+        league: {
+          id: 13,
+          name: "CONMEBOL Libertadores",
+          country: "South America",
+          season: 2026,
+          standings: true,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 10, name: "Sao Paulo", logo: "" },
+          away: { id: 11, name: "River Plate", logo: "" }
+        },
+        goals: {
+          home: 2,
+          away: 0
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 1,
+                    points: 10,
+                    goalsDiff: 4,
+                    all: { played: 4, goals: { for: 8, against: 4 } },
+                    team: { id: 10, name: "Sao Paulo", code: "SAO" }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9112,
+            timestamp: kickoff - 604800,
+            status: { short: "FT", long: "Match Finished", elapsed: 90 }
+          },
+          teams: {
+            home: { id: 11, name: "River Plate", logo: "" },
+            away: { id: 10, name: "Sao Paulo", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: kickoff,
+            status: { short: "2H", long: "Second Half", elapsed: 76 }
+          },
+          teams: {
+            home: { id: 10, name: "Sao Paulo", logo: "" },
+            away: { id: 11, name: "River Plate", logo: "" }
+          },
+          goals: { home: 2, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.knockoutContext.type, "two_leg_aggregate");
+  assert.deepEqual(payload.impact.competition, [
+    "Sao Paulo 2-1 River Plate on aggregate",
+    "Sao Paulo is currently going through",
+    "River Plate is one goal from taking the tie to penalties"
   ]);
 });
 

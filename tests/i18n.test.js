@@ -45,6 +45,14 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Vitoria está a um gol de forçar a prorrogação"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Vitoria is one goal from taking the tie to penalties"),
+    "Vitoria está a um gol de levar o confronto para os pênaltis"
+  );
+  assert.equal(
+    translateCompetitionMessage("pt-BR", "Level score would send this tie to extra time."),
+    "Empate leva a decisão para a prorrogação."
+  );
+  assert.equal(
     translateCompetitionMessage("pt-BR", "Live score only - no table impact for this competition."),
     "Somente placar ao vivo - sem impacto na tabela para esta competição."
   );
