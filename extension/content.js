@@ -1042,8 +1042,12 @@
       : translate("prematch.predictionUnavailable");
     const comparisonRows = renderPredictionComparisonRows(prediction.comparison || []);
     const metaChips = [];
+    const adviceIncludesGoals =
+      prediction.advice &&
+      prediction.underOver &&
+      String(prediction.advice).toLowerCase().includes(String(prediction.underOver).toLowerCase());
 
-    if (prediction.underOver) {
+    if (prediction.underOver && !adviceIncludesGoals) {
       metaChips.push(
         `<span class="lmi-prediction-chip">${escapeHtml(
           translate("prematch.predictionGoalsChip", {

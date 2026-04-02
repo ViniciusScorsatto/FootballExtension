@@ -112,6 +112,17 @@ test("pre-match prediction cards use graphical comparison bars instead of text-o
   assert.match(i18n, /predictionGoalsChip:\s*"Gols \{value\}"/);
 });
 
+test("prediction chips avoid duplicating the goal line when advice already includes it", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(contentScript, /const adviceIncludesGoals =/);
+  assert.match(contentScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
+
+  assert.match(sidepanelScript, /const adviceIncludesGoals =/);
+  assert.match(sidepanelScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
+});
+
 test("pre-match sections no longer duplicate summary text above the cards", async () => {
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
