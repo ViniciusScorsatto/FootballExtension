@@ -155,17 +155,21 @@ test("lineup cards render a formation pitch when the XI and shape are available"
   assert.match(contentScript, /buildGridPitchLayout\(players\) \|\| buildFormationPitchLayout\(entry\.formation, players\)/);
   assert.match(contentScript, /parseGridCoordinates\(player\.grid\)/);
   assert.match(contentScript, /getLineupPlayerDotColor\(player, entry\)/);
+  assert.match(contentScript, /outfieldRows:\s*rows/);
   assert.match(contentScript, /lmi-lineup-pitch/);
   assert.match(contentScript, /translate\("prematch\.lineupPitchAria"/);
   assert.match(contentScript, /normalizeHexColor\(rawColor\)/);
+  assert.match(contentScript, /\$\{layout\.goalkeeperRows[\s\S]*\$\{layout\.outfieldRows/);
 
   assert.match(sidepanelScript, /function buildFormationPitch\(entry\)/);
   assert.match(sidepanelScript, /buildGridPitchLayout\(players\) \|\| buildFormationPitchLayout\(entry\.formation, players\)/);
   assert.match(sidepanelScript, /parseGridCoordinates\(player\.grid\)/);
   assert.match(sidepanelScript, /getLineupPlayerDotColor\(player, entry\)/);
+  assert.match(sidepanelScript, /outfieldRows:\s*rows/);
   assert.match(sidepanelScript, /lmi-lineup-pitch/);
   assert.match(sidepanelScript, /translate\("prematch\.lineupPitchAria"/);
   assert.match(sidepanelScript, /normalizeHexColor\(rawColor\)/);
+  assert.match(sidepanelScript, /\$\{layout\.goalkeeperRows[\s\S]*\$\{layout\.outfieldRows/);
 
   assert.match(stylesheet, /\.lmi-lineup-pitch\s*\{/);
   assert.match(stylesheet, /\.lmi-lineup-pitch__marking--midline\s*\{/);
@@ -179,15 +183,20 @@ test("lineup cards render a formation pitch when the XI and shape are available"
 test("lineup cards include explicit coach labels and own the injuries content", async () => {
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const stylesheet = await readProjectFile("extension/styles.css");
   const i18n = await readProjectFile("extension/i18n.js");
 
   assert.match(contentScript, /translate\("prematch\.coachLabel"/);
   assert.match(contentScript, /function renderLineupCardInjuries\(teamName, injuries\)/);
   assert.match(contentScript, /elements\.injuriesGrid\.innerHTML = "";/);
+  assert.doesNotMatch(contentScript, /lmi-mini-card__title lmi-mini-card__title--icon/);
 
   assert.match(sidepanelScript, /translate\("prematch\.coachLabel"/);
   assert.match(sidepanelScript, /function renderLineupCardInjuries\(teamName, injuries\)/);
   assert.match(sidepanelScript, /elements\.injuriesGrid\.innerHTML = "";/);
+  assert.doesNotMatch(sidepanelScript, /lmi-mini-card__title lmi-mini-card__title--icon/);
+
+  assert.match(stylesheet, /\.lmi-lineup-card__injuries\s*\{/);
 
   assert.match(i18n, /coachLabel:\s*"Coach \{name\}"/);
   assert.match(i18n, /coachLabel:\s*"Técnico \{name\}"/);

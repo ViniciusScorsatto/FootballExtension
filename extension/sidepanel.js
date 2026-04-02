@@ -1069,9 +1069,9 @@
 
     return `
       <div class="lmi-lineup-card__injuries">
-        <div class="lmi-mini-card__title lmi-mini-card__title--icon"><span class="lmi-mini-card__title-icon" aria-hidden="true">✚</span><span>${escapeHtml(
+        <div class="lmi-mini-card__title">${escapeHtml(
           translate("prematch.injuriesTitle", { team: teamName })
-        )}</span></div>
+        )}</div>
         ${
           items.length
             ? items.map((item) => renderInjuryItem(item)).join("")
@@ -1210,7 +1210,7 @@
     }
 
     return {
-      outfieldRows: [...rows].reverse(),
+      outfieldRows: rows,
       goalkeeperRows: [[goalkeeper]]
     };
   }
@@ -1220,19 +1220,19 @@
       <div class="lmi-lineup-pitch" aria-label="${escapeHtml(formationLabelForAria(entry.formation))}">
         <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--midline" aria-hidden="true"></div>
         <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--center-circle" aria-hidden="true"></div>
-        ${layout.outfieldRows
+        ${layout.goalkeeperRows
           .map(
             (row) => `
-              <div class="lmi-lineup-pitch__row">
+              <div class="lmi-lineup-pitch__row lmi-lineup-pitch__row--goalkeeper">
                 ${row.map((player) => renderPitchPlayer(player, entry)).join("")}
               </div>
             `
           )
           .join("")}
-        ${layout.goalkeeperRows
+        ${layout.outfieldRows
           .map(
             (row) => `
-              <div class="lmi-lineup-pitch__row lmi-lineup-pitch__row--goalkeeper">
+              <div class="lmi-lineup-pitch__row">
                 ${row.map((player) => renderPitchPlayer(player, entry)).join("")}
               </div>
             `
