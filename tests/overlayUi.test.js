@@ -127,10 +127,10 @@ test("lineup cards render the full starting XI instead of a short preview", asyn
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
 
-  assert.match(contentScript, /\(entry\.startXI \|\| \[\]\)\.join\(", "\)/);
+  assert.match(contentScript, /\(entry\.startXI \|\| \[\]\)\.map\(getLineupPlayerName\)\.filter\(Boolean\)\.join\(", "\)/);
   assert.doesNotMatch(contentScript, /slice\(0,\s*4\)\.join\(", "\)/);
 
-  assert.match(sidepanelScript, /\(entry\.startXI \|\| \[\]\)\.join\(", "\)/);
+  assert.match(sidepanelScript, /\(entry\.startXI \|\| \[\]\)\.map\(getLineupPlayerName\)\.filter\(Boolean\)\.join\(", "\)/);
   assert.doesNotMatch(sidepanelScript, /slice\(0,\s*4\)\.join\(", "\)/);
 });
 
@@ -141,16 +141,20 @@ test("lineup cards render a formation pitch when the XI and shape are available"
   const i18n = await readProjectFile("extension/i18n.js");
 
   assert.match(contentScript, /function buildFormationPitch\(entry\)/);
-  assert.match(contentScript, /parseFormationRows\(entry\.formation\)/);
-  assert.match(contentScript, /players\.length < 11/);
+  assert.match(contentScript, /buildGridPitchLayout\(players\) \|\| buildFormationPitchLayout\(entry\.formation, players\)/);
+  assert.match(contentScript, /parseGridCoordinates\(player\.grid\)/);
+  assert.match(contentScript, /getLineupPlayerDotColor\(player, entry\)/);
   assert.match(contentScript, /lmi-lineup-pitch/);
   assert.match(contentScript, /translate\("prematch\.lineupPitchAria"/);
+  assert.match(contentScript, /normalizeHexColor\(rawColor\)/);
 
   assert.match(sidepanelScript, /function buildFormationPitch\(entry\)/);
-  assert.match(sidepanelScript, /parseFormationRows\(entry\.formation\)/);
-  assert.match(sidepanelScript, /players\.length < 11/);
+  assert.match(sidepanelScript, /buildGridPitchLayout\(players\) \|\| buildFormationPitchLayout\(entry\.formation, players\)/);
+  assert.match(sidepanelScript, /parseGridCoordinates\(player\.grid\)/);
+  assert.match(sidepanelScript, /getLineupPlayerDotColor\(player, entry\)/);
   assert.match(sidepanelScript, /lmi-lineup-pitch/);
   assert.match(sidepanelScript, /translate\("prematch\.lineupPitchAria"/);
+  assert.match(sidepanelScript, /normalizeHexColor\(rawColor\)/);
 
   assert.match(stylesheet, /\.lmi-lineup-pitch\s*\{/);
   assert.match(stylesheet, /\.lmi-lineup-pitch__marking--midline\s*\{/);

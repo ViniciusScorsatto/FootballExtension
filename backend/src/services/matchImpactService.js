@@ -550,7 +550,15 @@ function buildLineupsSummary(lineups, teams) {
       ? {
           formation: homeLineup.formation ?? "",
           coach: homeLineup.coach?.name ?? "",
-          startXI: (homeLineup.startXI ?? []).slice(0, 11).map((entry) => entry.player?.name ?? ""),
+          colors: {
+            playerPrimary: homeLineup.team?.colors?.player?.primary ?? "",
+            goalkeeperPrimary: homeLineup.team?.colors?.goalkeeper?.primary ?? ""
+          },
+          startXI: (homeLineup.startXI ?? []).slice(0, 11).map((entry) => ({
+            name: entry.player?.name ?? "",
+            position: entry.player?.pos ?? "",
+            grid: entry.player?.grid ?? ""
+          })),
           substitutes: (homeLineup.substitutes ?? []).slice(0, 7).map((entry) => entry.player?.name ?? "")
         }
       : null,
@@ -558,7 +566,15 @@ function buildLineupsSummary(lineups, teams) {
       ? {
           formation: awayLineup.formation ?? "",
           coach: awayLineup.coach?.name ?? "",
-          startXI: (awayLineup.startXI ?? []).slice(0, 11).map((entry) => entry.player?.name ?? ""),
+          colors: {
+            playerPrimary: awayLineup.team?.colors?.player?.primary ?? "",
+            goalkeeperPrimary: awayLineup.team?.colors?.goalkeeper?.primary ?? ""
+          },
+          startXI: (awayLineup.startXI ?? []).slice(0, 11).map((entry) => ({
+            name: entry.player?.name ?? "",
+            position: entry.player?.pos ?? "",
+            grid: entry.player?.grid ?? ""
+          })),
           substitutes: (awayLineup.substitutes ?? []).slice(0, 7).map((entry) => entry.player?.name ?? "")
         }
       : null

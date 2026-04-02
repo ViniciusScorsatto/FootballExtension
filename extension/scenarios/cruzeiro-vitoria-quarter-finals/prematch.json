@@ -55,35 +55,43 @@
       "home": {
         "formation": "4-2-3-1",
         "coach": "Fernando Seabra",
+        "colors": {
+          "playerPrimary": "0038a8",
+          "goalkeeperPrimary": "ffd34d"
+        },
         "startXI": [
-          "Anderson",
-          "William",
-          "Joao Marcelo",
-          "Lucas Villalba",
-          "Marlon",
-          "Lucas Romero",
-          "Ramiro",
-          "Matheus Pereira",
-          "Arthur Gomes",
-          "Rafael Elias",
-          "Juan Dinenno"
+          { "name": "Anderson", "position": "G", "grid": "1:1" },
+          { "name": "William", "position": "D", "grid": "2:4" },
+          { "name": "Joao Marcelo", "position": "D", "grid": "2:3" },
+          { "name": "Lucas Villalba", "position": "D", "grid": "2:2" },
+          { "name": "Marlon", "position": "D", "grid": "2:1" },
+          { "name": "Lucas Romero", "position": "M", "grid": "3:2" },
+          { "name": "Ramiro", "position": "M", "grid": "3:1" },
+          { "name": "Matheus Pereira", "position": "M", "grid": "4:3" },
+          { "name": "Arthur Gomes", "position": "M", "grid": "4:2" },
+          { "name": "Rafael Elias", "position": "M", "grid": "4:1" },
+          { "name": "Juan Dinenno", "position": "F", "grid": "5:1" }
         ]
       },
       "away": {
         "formation": "4-3-3",
         "coach": "Thiago Carpini",
+        "colors": {
+          "playerPrimary": "d6001c",
+          "goalkeeperPrimary": "111111"
+        },
         "startXI": [
-          "Lucas Arcanjo",
-          "Raul Caceres",
-          "Wagner Leonardo",
-          "Camutanga",
-          "Lucas Esteves",
-          "Willian Oliveira",
-          "Luan",
-          "Matheusinho",
-          "Osvaldo",
-          "Alerrandro",
-          "Iury Castilho"
+          { "name": "Lucas Arcanjo", "position": "G", "grid": "1:1" },
+          { "name": "Raul Caceres", "position": "D", "grid": "2:4" },
+          { "name": "Wagner Leonardo", "position": "D", "grid": "2:3" },
+          { "name": "Camutanga", "position": "D", "grid": "2:2" },
+          { "name": "Lucas Esteves", "position": "D", "grid": "2:1" },
+          { "name": "Willian Oliveira", "position": "M", "grid": "3:3" },
+          { "name": "Luan", "position": "M", "grid": "3:2" },
+          { "name": "Matheusinho", "position": "M", "grid": "3:1" },
+          { "name": "Osvaldo", "position": "F", "grid": "4:3" },
+          { "name": "Alerrandro", "position": "F", "grid": "4:2" },
+          { "name": "Iury Castilho", "position": "F", "grid": "4:1" }
         ]
       }
     },

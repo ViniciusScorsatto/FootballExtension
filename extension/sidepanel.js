@@ -1058,7 +1058,10 @@
     });
     const coachLabel = entry.coach || translate("prematch.coachTbd");
     const pitchMarkup = buildFormationPitch(entry);
-    const fallbackList = escapeHtml((entry.startXI || []).join(", ") || translate("prematch.xiNotReleased"));
+    const fallbackList = escapeHtml(
+      (entry.startXI || []).map(getLineupPlayerName).filter(Boolean).join(", ") ||
+        translate("prematch.xiNotReleased")
+    );
 
     return `
       <div class="lmi-mini-card lmi-lineup-card">
@@ -1071,48 +1074,14 @@
   }
 
   function buildFormationPitch(entry) {
-    const formationRows = parseFormationRows(entry.formation);
-    const players = Array.isArray(entry.startXI) ? entry.startXI : [];
+    const players = normalizeLineupPlayers(entry.startXI);
+    const layout = buildGridPitchLayout(players) || buildFormationPitchLayout(entry.formation, players);
 
-    if (!formationRows || players.length < 11) {
+    if (!layout) {
       return "";
     }
 
-    const goalkeeper = players[0];
-    const outfield = players.slice(1, 11);
-    const totalOutfieldSlots = formationRows.reduce((sum, count) => sum + count, 0);
-
-    if (totalOutfieldSlots !== 10 || outfield.length < 10) {
-      return "";
-    }
-
-    const rows = [];
-    let cursor = 0;
-    for (const count of formationRows) {
-      rows.push(outfield.slice(cursor, cursor + count));
-      cursor += count;
-    }
-
-    const attackToDefence = [...rows].reverse();
-
-    return `
-      <div class="lmi-lineup-pitch" aria-label="${escapeHtml(formationLabelForAria(entry.formation))}">
-        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--midline" aria-hidden="true"></div>
-        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--center-circle" aria-hidden="true"></div>
-        ${attackToDefence
-          .map(
-            (row) => `
-              <div class="lmi-lineup-pitch__row">
-                ${row.map((player) => renderPitchPlayer(player)).join("")}
-              </div>
-            `
-          )
-          .join("")}
-        <div class="lmi-lineup-pitch__row lmi-lineup-pitch__row--goalkeeper">
-          ${renderPitchPlayer(goalkeeper)}
-        </div>
-      </div>
-    `;
+    return renderPitch(layout, entry);
   }
 
   function parseFormationRows(formation) {
@@ -1124,11 +1093,14 @@
     return parts.length ? parts : null;
   }
 
-  function renderPitchPlayer(playerName) {
+  function renderPitchPlayer(player, entry) {
+    const dotColor = getLineupPlayerDotColor(player, entry);
+    const dotStyle = dotColor ? ` style="background:${escapeHtml(dotColor)}"` : "";
+
     return `
       <div class="lmi-lineup-pitch__player">
-        <span class="lmi-lineup-pitch__dot" aria-hidden="true"></span>
-        <span class="lmi-lineup-pitch__name">${escapeHtml(compactPlayerName(playerName))}</span>
+        <span class="lmi-lineup-pitch__dot" aria-hidden="true"${dotStyle}></span>
+        <span class="lmi-lineup-pitch__name">${escapeHtml(compactPlayerName(getLineupPlayerName(player)))}</span>
       </div>
     `;
   }
@@ -1150,6 +1122,145 @@
     return translate("prematch.lineupPitchAria", {
       value: formation || translate("prematch.formationTbc")
     });
+  }
+
+  function normalizeLineupPlayers(players) {
+    return (Array.isArray(players) ? players : [])
+      .slice(0, 11)
+      .map((player) =>
+        typeof player === "string"
+          ? { name: player, position: "", grid: "" }
+          : {
+              name: player?.name ?? "",
+              position: player?.position ?? "",
+              grid: player?.grid ?? ""
+            }
+      )
+      .filter((player) => player.name);
+  }
+
+  function buildGridPitchLayout(players) {
+    const gridPlayers = players
+      .map((player) => ({
+        ...player,
+        parsedGrid: parseGridCoordinates(player.grid)
+      }))
+      .filter((player) => player.parsedGrid);
+
+    if (gridPlayers.length < 11) {
+      return null;
+    }
+
+    const rowsMap = new Map();
+    for (const player of gridPlayers) {
+      const [row, col] = player.parsedGrid;
+      if (!rowsMap.has(row)) {
+        rowsMap.set(row, []);
+      }
+      rowsMap.get(row).push({ ...player, gridColumn: col });
+    }
+
+    const orderedRows = [...rowsMap.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([, rowPlayers]) =>
+        rowPlayers.sort((a, b) => a.gridColumn - b.gridColumn).map(({ parsedGrid, gridColumn, ...player }) => player)
+      );
+
+    const goalkeeperRows = orderedRows.filter((row) => row.some((player) => player.position === "G"));
+    const outfieldRows = orderedRows.filter((row) => row.every((player) => player.position !== "G"));
+
+    if (!goalkeeperRows.length || !outfieldRows.length) {
+      return null;
+    }
+
+    return {
+      outfieldRows,
+      goalkeeperRows
+    };
+  }
+
+  function buildFormationPitchLayout(formation, players) {
+    const formationRows = parseFormationRows(formation);
+
+    if (!formationRows || players.length < 11) {
+      return null;
+    }
+
+    const goalkeeper = players[0];
+    const outfield = players.slice(1, 11);
+    const totalOutfieldSlots = formationRows.reduce((sum, count) => sum + count, 0);
+
+    if (totalOutfieldSlots !== 10 || outfield.length < 10) {
+      return null;
+    }
+
+    const rows = [];
+    let cursor = 0;
+    for (const count of formationRows) {
+      rows.push(outfield.slice(cursor, cursor + count));
+      cursor += count;
+    }
+
+    return {
+      outfieldRows: [...rows].reverse(),
+      goalkeeperRows: [[goalkeeper]]
+    };
+  }
+
+  function renderPitch(layout, entry) {
+    return `
+      <div class="lmi-lineup-pitch" aria-label="${escapeHtml(formationLabelForAria(entry.formation))}">
+        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--midline" aria-hidden="true"></div>
+        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--center-circle" aria-hidden="true"></div>
+        ${layout.outfieldRows
+          .map(
+            (row) => `
+              <div class="lmi-lineup-pitch__row">
+                ${row.map((player) => renderPitchPlayer(player, entry)).join("")}
+              </div>
+            `
+          )
+          .join("")}
+        ${layout.goalkeeperRows
+          .map(
+            (row) => `
+              <div class="lmi-lineup-pitch__row lmi-lineup-pitch__row--goalkeeper">
+                ${row.map((player) => renderPitchPlayer(player, entry)).join("")}
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function parseGridCoordinates(grid) {
+    const match = String(grid || "").match(/^(\d+):(\d+)$/);
+    if (!match) {
+      return null;
+    }
+
+    return [Number.parseInt(match[1], 10), Number.parseInt(match[2], 10)];
+  }
+
+  function getLineupPlayerName(player) {
+    return typeof player === "string" ? player : player?.name ?? "";
+  }
+
+  function getLineupPlayerDotColor(player, entry) {
+    const rawColor =
+      player.position === "G" ? entry?.colors?.goalkeeperPrimary : entry?.colors?.playerPrimary;
+
+    return normalizeHexColor(rawColor);
+  }
+
+  function normalizeHexColor(value) {
+    const normalized = String(value || "").trim().replace(/^#/, "");
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+      return "";
+    }
+
+    return `#${normalized}`;
   }
 
   function formatStat(value, suffix = "") {

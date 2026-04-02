@@ -1368,3 +1368,90 @@ test("live statistics add pressure insights and competition-specific zone messag
   assert.ok(payload.statistics.insights.includes("Leeds is creating the better chances"));
   assert.ok(payload.statistics.insights.includes("Leeds is pinning the other side back"));
 });
+
+test("prematch payload carries lineup grid positions and jersey colors", async () => {
+  const fixtureId = 9301;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: Math.floor(Date.now() / 1000) + 3600,
+          date: "2026-04-10T08:00:00+00:00",
+          status: {
+            short: "NS",
+            long: "Not Started",
+            elapsed: null
+          }
+        },
+        league: {
+          id: 73,
+          name: "Copa do Brasil",
+          country: "Brazil",
+          season: 2026,
+          standings: false,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 1, name: "Cruzeiro", logo: "" },
+          away: { id: 2, name: "Vitoria", logo: "" }
+        },
+        goals: { home: 0, away: 0 }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: false,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: true,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => null,
+      getEvents: async () => [],
+      getStatistics: async () => [],
+      getInjuries: async () => [],
+      getPredictions: async () => null,
+      getFixturesByRound: async () => [],
+      getLineups: async () => [
+        {
+          team: {
+            id: 1,
+            colors: {
+              player: { primary: "0038a8" },
+              goalkeeper: { primary: "ffd34d" }
+            }
+          },
+          formation: "4-2-3-1",
+          coach: { name: "Fernando Seabra" },
+          startXI: [
+            { player: { name: "Anderson", pos: "G", grid: "1:1" } },
+            { player: { name: "William", pos: "D", grid: "2:4" } },
+            { player: { name: "Joao Marcelo", pos: "D", grid: "2:3" } },
+            { player: { name: "Lucas Villalba", pos: "D", grid: "2:2" } },
+            { player: { name: "Marlon", pos: "D", grid: "2:1" } },
+            { player: { name: "Lucas Romero", pos: "M", grid: "3:2" } },
+            { player: { name: "Ramiro", pos: "M", grid: "3:1" } },
+            { player: { name: "Matheus Pereira", pos: "M", grid: "4:3" } },
+            { player: { name: "Arthur Gomes", pos: "M", grid: "4:2" } },
+            { player: { name: "Rafael Elias", pos: "M", grid: "4:1" } },
+            { player: { name: "Juan Dinenno", pos: "F", grid: "5:1" } }
+          ],
+          substitutes: []
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.status.phase, "upcoming");
+  assert.equal(payload.prematch.lineups.home.colors.playerPrimary, "0038a8");
+  assert.equal(payload.prematch.lineups.home.colors.goalkeeperPrimary, "ffd34d");
+  assert.equal(payload.prematch.lineups.home.startXI[0].name, "Anderson");
+  assert.equal(payload.prematch.lineups.home.startXI[0].position, "G");
+  assert.equal(payload.prematch.lineups.home.startXI[0].grid, "1:1");
+});

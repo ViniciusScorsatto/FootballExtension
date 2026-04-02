@@ -43,3 +43,16 @@ test("prematch scenarios with available lineups include full starting elevens", 
   assert.ok(lineups.home.startXI.length >= 11);
   assert.ok(lineups.away.startXI.length >= 11);
 });
+
+test("prematch scenarios can exercise grid positions and lineup colors", async () => {
+  const payload = await readJson("extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json");
+  const lineups = payload.prematch?.lineups;
+
+  assert.equal(lineups.home.colors.playerPrimary, "0038a8");
+  assert.equal(lineups.home.colors.goalkeeperPrimary, "ffd34d");
+  assert.equal(lineups.away.colors.playerPrimary, "d6001c");
+  assert.equal(lineups.away.colors.goalkeeperPrimary, "111111");
+  assert.equal(typeof lineups.home.startXI[0].name, "string");
+  assert.equal(typeof lineups.home.startXI[0].grid, "string");
+  assert.equal(typeof lineups.home.startXI[0].position, "string");
+});
