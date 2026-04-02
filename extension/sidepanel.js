@@ -229,8 +229,7 @@
 
     if (
       !state.trackingEnabled ||
-      (!state.fixtureId && !state.scenarioModeEnabled) ||
-      state.activeViewMode !== "sidepanel"
+      (!state.fixtureId && !state.scenarioModeEnabled)
     ) {
       clearPollTimer();
       renderEmptyState();

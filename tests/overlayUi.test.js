@@ -382,3 +382,15 @@ test("popup pings existing overlay before reinjecting and relies on storage chan
   assert.match(contentScript, /if \(message\?\.type === "LMI_PING"\) \{/);
   assert.match(contentScript, /sendResponse\(\{\s*ok:\s*true\s*\}\);/);
 });
+
+test("open sidepanel follows the tracked fixture even when popup writes overlay as active view", async () => {
+  const popupScript = await readProjectFile("extension/popup.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(popupScript, /activeViewMode:\s*"overlay",/);
+  assert.match(
+    sidepanelScript,
+    /if \(\s*!state\.trackingEnabled \|\|\s*\(!state\.fixtureId && !state\.scenarioModeEnabled\)\s*\) \{/
+  );
+  assert.doesNotMatch(sidepanelScript, /state\.activeViewMode !== "sidepanel"/);
+});
