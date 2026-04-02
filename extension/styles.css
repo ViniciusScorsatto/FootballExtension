@@ -1074,6 +1074,107 @@ select.lmi-field__input {
   line-height: 1.4;
 }
 
+.lmi-prediction-card__summary {
+  margin-top: 10px;
+  color: var(--lmi-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.lmi-prediction-card__legend {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--lmi-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lmi-prediction-card__comparisons {
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
+}
+
+.lmi-prediction-compare {
+  display: grid;
+  gap: 5px;
+}
+
+.lmi-prediction-compare__meta {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+  color: var(--lmi-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lmi-prediction-compare__meta span:first-child {
+  color: #8cf0c8;
+  text-align: left;
+}
+
+.lmi-prediction-compare__meta span:nth-child(2) {
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lmi-prediction-compare__meta span:last-child {
+  color: #ffb08b;
+  text-align: right;
+}
+
+.lmi-prediction-compare__track {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lmi-prediction-compare__segment {
+  height: 100%;
+}
+
+.lmi-prediction-compare__segment--home {
+  background: linear-gradient(135deg, #6df5c1 0%, #3bd38a 100%);
+}
+
+.lmi-prediction-compare__segment--away {
+  background: linear-gradient(135deg, #ffb37c 0%, #ff8e7b 100%);
+}
+
+.lmi-prediction-card__chips {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lmi-prediction-chip {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: var(--lmi-text);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.lmi-prediction-chip--wide {
+  white-space: normal;
+}
+
 .lmi-injury-line {
   display: flex;
   align-items: flex-start;

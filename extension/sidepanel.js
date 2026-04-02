@@ -82,6 +82,7 @@
     formatBody: document.getElementById("sidepanelFormatBody"),
     momentumLabel: document.getElementById("sidepanelMomentumLabel"),
     momentumSection: document.getElementById("sidepanelMomentumLabel")?.closest(".lmi-section"),
+    momentumMeter: document.getElementById("sidepanelHomeMomentum")?.closest(".lmi-momentum"),
     prematchLabel: document.getElementById("sidepanelPrematchLabel"),
     leagueContextLabel: document.getElementById("sidepanelLeagueContextLabel"),
     homeRow: document.getElementById("sidepanelHomeRow"),
@@ -552,6 +553,10 @@
     renderTrackedShell();
     const hasTableImpact = payload.metadata?.tableImpactAvailable !== false;
     const isPrematch = payload.status.phase === "upcoming";
+    const isFinished = payload.status.phase === "finished";
+    const hasStatistics = Boolean(
+      payload.statistics?.available && payload.statistics.home && payload.statistics.away
+    );
     const clockLabel =
       payload.status.phase === "upcoming" ? formatKickoff(payload) : `${payload.status.minute || 0}'`;
     const eventLabel = buildEventLabel(payload.event);
@@ -572,7 +577,8 @@
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
     elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
     elements.competitionSection.classList.toggle("is-hidden", isPrematch);
-    elements.momentumSection.classList.toggle("is-hidden", isPrematch);
+    elements.momentumSection.classList.toggle("is-hidden", isPrematch || (isFinished && !hasStatistics));
+    elements.momentumMeter.classList.toggle("is-hidden", isFinished);
     if (isPrematch) {
       elements.formatSection.classList.add("is-hidden");
     }
@@ -585,6 +591,9 @@
       : isLimitedImpact
       ? translate("panel.limitedCompetition")
       : translate("panel.competitionImpact");
+    elements.momentumLabel.textContent = isFinished
+      ? translate("panel.matchStats")
+      : translate("panel.momentum");
 
     if (isCupImpact) {
       elements.homeRow.textContent = "";
@@ -626,12 +635,14 @@
     elements.connectionStatus.textContent = "";
     elements.lastUpdated.textContent = "";
     elements.statusRow.classList.add("is-hidden");
-    elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
-    elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
+    if (!isFinished) {
+      elements.homeMomentum.style.width = `${payload.impact.momentum.home}%`;
+      elements.awayMomentum.style.width = `${payload.impact.momentum.away}%`;
+    }
 
     renderCompetitionList(payload, competitionItems);
     renderFormatContext(payload);
-    renderStatistics(payload.statistics);
+    renderStatistics(payload.statistics, { isFinished });
     renderPrematch(payload);
     renderLeagueContext(payload);
 
@@ -777,10 +788,11 @@
     elements.formatBody.textContent = message;
   }
 
-  function renderStatistics(statistics) {
+  function renderStatistics(statistics, { isFinished = false } = {}) {
     if (!statistics?.available || !statistics.home || !statistics.away) {
-      elements.statsGrid.innerHTML =
-        `<div class="lmi-empty">${escapeHtml(translate("panel.momentumFallback"))}</div>`;
+      elements.statsGrid.innerHTML = isFinished
+        ? ""
+        : `<div class="lmi-empty">${escapeHtml(translate("panel.momentumFallback"))}</div>`;
       return;
     }
 
@@ -807,7 +819,9 @@
       }
     ];
 
-    const insightRows = (statistics.insights || [])
+    const insightRows = isFinished
+      ? ""
+      : (statistics.insights || [])
       .map(
         (insight) => `
           <div class="lmi-stat-insight">${escapeHtml(
@@ -848,13 +862,7 @@
 
     if (prediction?.available) {
       elements.predictionsGrid.innerHTML = `
-        <div class="lmi-mini-card lmi-mini-card--prediction">
-          <div class="lmi-mini-card__title-row">
-            <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
-            <div class="lmi-mini-card__chip">${escapeHtml(translate("prematch.predictionChip"))}</div>
-          </div>
-          ${renderPredictionLines(payload, prediction).join("")}
-        </div>
+        ${renderPredictionCard(payload, prediction)}
       `;
     } else {
       elements.predictionsGrid.innerHTML = "";
@@ -1014,62 +1022,100 @@
     return `<div class="lmi-mini-card__line lmi-injury-line"><span class="lmi-injury-line__icon" aria-hidden="true">✚</span><span class="lmi-injury-line__text">${escapeHtml(item.player)}${localizedReason ? ` - ${escapeHtml(localizedReason)}` : ""}</span></div>`;
   }
 
-  function renderPredictionLines(payload, prediction) {
-    const lines = [];
-
-    if (prediction.winnerName) {
-      lines.push(
-        `<div class="lmi-mini-card__line">${escapeHtml(
-          translate(
-            prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
-            { team: prediction.winnerName }
-          )
-        )}</div>`
-      );
-    }
+  function renderPredictionCard(payload, prediction) {
+    const summary = prediction.winnerName
+      ? translate(
+          prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
+          { team: prediction.winnerName }
+        )
+      : translate("prematch.predictionUnavailable");
+    const comparisonRows = renderPredictionComparisonRows(prediction.comparison || []);
+    const metaChips = [];
 
     if (prediction.underOver) {
-      lines.push(
-        `<div class="lmi-mini-card__line">${escapeHtml(
-          translate("prematch.predictionGoals", {
+      metaChips.push(
+        `<span class="lmi-prediction-chip">${escapeHtml(
+          translate("prematch.predictionGoalsChip", {
             value: prediction.underOver
           })
-        )}</div>`
+        )}</span>`
       );
     }
 
     if (prediction.advice) {
-      lines.push(
-        `<div class="lmi-mini-card__line">${escapeHtml(
-          translate("prematch.predictionAdvice", {
+      metaChips.push(
+        `<span class="lmi-prediction-chip lmi-prediction-chip--wide">${escapeHtml(
+          translate("prematch.predictionAdviceChip", {
             value: prediction.advice
           })
-        )}</div>`
+        )}</span>`
       );
     }
 
-    if (Array.isArray(prediction.comparison) && prediction.comparison.length) {
-      const comparisonLine = prediction.comparison
-        .map((entry) =>
-          translate(`prematch.predictionCompare.${entry.key}`, {
-            home: entry.home,
-            away: entry.away
-          })
-        )
-        .join(" · ");
+    return `
+      <div class="lmi-mini-card lmi-mini-card--prediction">
+        <div class="lmi-mini-card__title-row">
+          <div class="lmi-mini-card__title">${escapeHtml(translate("prematch.predictionTitle"))}</div>
+          <div class="lmi-mini-card__chip">${escapeHtml(translate("prematch.predictionChip"))}</div>
+        </div>
+        <div class="lmi-prediction-card__summary">${escapeHtml(summary)}</div>
+        ${comparisonRows
+          ? `
+            <div class="lmi-prediction-card__legend">
+              <span>${escapeHtml(payload.teams.home.shortName || payload.teams.home.name)}</span>
+              <span>${escapeHtml(payload.teams.away.shortName || payload.teams.away.name)}</span>
+            </div>
+            <div class="lmi-prediction-card__comparisons">${comparisonRows}</div>
+          `
+          : ""}
+        ${metaChips.length ? `<div class="lmi-prediction-card__chips">${metaChips.join("")}</div>` : ""}
+      </div>
+    `;
+  }
 
-      lines.push(`<div class="lmi-mini-card__line">${escapeHtml(comparisonLine)}</div>`);
+  function renderPredictionComparisonRows(entries) {
+    return entries
+      .map((entry) => {
+        const homeValue = normalizePredictionMetric(entry.home);
+        const awayValue = normalizePredictionMetric(entry.away);
+
+        if (homeValue === null || awayValue === null) {
+          return "";
+        }
+
+        const total = homeValue + awayValue;
+        const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
+        const awayWidth = total > 0 ? (awayValue / total) * 100 : 50;
+
+        return `
+          <div class="lmi-prediction-compare">
+            <div class="lmi-prediction-compare__meta">
+              <span>${escapeHtml(formatPredictionMetric(homeValue))}</span>
+              <span>${escapeHtml(translate(`prematch.predictionMetric.${entry.key}`))}</span>
+              <span>${escapeHtml(formatPredictionMetric(awayValue))}</span>
+            </div>
+            <div class="lmi-prediction-compare__track">
+              <span class="lmi-prediction-compare__segment lmi-prediction-compare__segment--home" style="width:${homeWidth.toFixed(1)}%"></span>
+              <span class="lmi-prediction-compare__segment lmi-prediction-compare__segment--away" style="width:${awayWidth.toFixed(1)}%"></span>
+            </div>
+          </div>
+        `;
+      })
+      .filter(Boolean)
+      .join("");
+  }
+
+  function normalizePredictionMetric(value) {
+    if (value === null || value === undefined) {
+      return null;
     }
 
-    if (!lines.length) {
-      lines.push(
-        `<div class="lmi-mini-card__line">${escapeHtml(
-          translate("prematch.predictionUnavailable")
-        )}</div>`
-      );
-    }
+    const numeric = Number.parseFloat(String(value).replace("%", "").trim());
+    return Number.isFinite(numeric) ? numeric : null;
+  }
 
-    return lines;
+  function formatPredictionMetric(value) {
+    return `${Math.round(value)}%`;
   }
 
   function formatStat(value, suffix = "") {

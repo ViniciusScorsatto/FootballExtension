@@ -181,6 +181,7 @@
         groupPositions: "Group Positions",
         limitedCompetition: "Why impact is limited",
         momentum: "Momentum",
+        matchStats: "Match Stats",
         preMatch: "Pre-Match",
         otherMatches: "Other Matches This Round",
         connecting: "Connecting...",
@@ -299,13 +300,15 @@
         predictionWinOrDraw: "Model likes {team} or draw",
         predictionGoals: "Goal line: {value}",
         predictionAdvice: "Advice: {value}",
+        predictionGoalsChip: "Goals {value}",
+        predictionAdviceChip: "{value}",
         predictionUnavailable: "No model projection available yet.",
-        predictionCompare: {
-          form: "Form {home}-{away}",
-          att: "Attack {home}-{away}",
-          def: "Defence {home}-{away}",
-          poisson_distribution: "Poisson {home}-{away}",
-          h2h: "H2H {home}-{away}"
+        predictionMetric: {
+          form: "Form",
+          att: "Attack",
+          def: "Defence",
+          poisson_distribution: "Poisson",
+          h2h: "H2H"
         },
         lineupsExpected: "Lineups expected closer to kickoff",
         lineupsSummary: "{home} {homeFormation} vs {away} {awayFormation}",
@@ -507,6 +510,7 @@
         groupPositions: "Posições nos grupos",
         limitedCompetition: "Por que o impacto é limitado",
         momentum: "Momento",
+        matchStats: "Estatísticas da partida",
         preMatch: "Pré-jogo",
         otherMatches: "Outros jogos da rodada",
         connecting: "Conectando...",
@@ -626,13 +630,15 @@
         predictionWinOrDraw: "Modelo gosta de {team} ou empate",
         predictionGoals: "Linha de gols: {value}",
         predictionAdvice: "Conselho: {value}",
+        predictionGoalsChip: "Gols {value}",
+        predictionAdviceChip: "{value}",
         predictionUnavailable: "Ainda não há projeção do modelo.",
-        predictionCompare: {
-          form: "Forma {home}-{away}",
-          att: "Ataque {home}-{away}",
-          def: "Defesa {home}-{away}",
-          poisson_distribution: "Poisson {home}-{away}",
-          h2h: "H2H {home}-{away}"
+        predictionMetric: {
+          form: "Forma",
+          att: "Ataque",
+          def: "Defesa",
+          poisson_distribution: "Poisson",
+          h2h: "H2H"
         },
         lineupsExpected: "Escalações esperadas mais perto do início",
         lineupsSummary: "{home} {homeFormation} x {away} {awayFormation}",
