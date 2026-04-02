@@ -55,12 +55,36 @@
       "home": {
         "formation": "4-2-3-1",
         "coach": "Fernando Seabra",
-        "startXI": ["Anderson", "William", "Joao Marcelo", "Lucas Villalba", "Marlon"]
+        "startXI": [
+          "Anderson",
+          "William",
+          "Joao Marcelo",
+          "Lucas Villalba",
+          "Marlon",
+          "Lucas Romero",
+          "Ramiro",
+          "Matheus Pereira",
+          "Arthur Gomes",
+          "Rafael Elias",
+          "Juan Dinenno"
+        ]
       },
       "away": {
         "formation": "4-3-3",
         "coach": "Thiago Carpini",
-        "startXI": ["Lucas Arcanjo", "Raul Caceres", "Wagner Leonardo", "Camutanga", "Lucas Esteves"]
+        "startXI": [
+          "Lucas Arcanjo",
+          "Raul Caceres",
+          "Wagner Leonardo",
+          "Camutanga",
+          "Lucas Esteves",
+          "Willian Oliveira",
+          "Luan",
+          "Matheusinho",
+          "Osvaldo",
+          "Alerrandro",
+          "Iury Castilho"
+        ]
       }
     },
     "injuries": {

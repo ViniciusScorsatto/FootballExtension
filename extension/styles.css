@@ -1175,6 +1175,89 @@ select.lmi-field__input {
   white-space: normal;
 }
 
+.lmi-lineup-card .lmi-mini-card__line:last-of-type {
+  margin-bottom: 10px;
+}
+
+.lmi-lineup-pitch {
+  position: relative;
+  margin-top: 10px;
+  padding: 12px 10px;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, rgba(109, 245, 193, 0.08), rgba(38, 160, 106, 0.08));
+  border: 1px solid rgba(109, 245, 193, 0.12);
+  display: grid;
+  gap: 10px;
+}
+
+.lmi-lineup-pitch__marking {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.32;
+}
+
+.lmi-lineup-pitch__marking--midline {
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-50%);
+}
+
+.lmi-lineup-pitch__marking--center-circle {
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.lmi-lineup-pitch__row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lmi-lineup-pitch__row--goalkeeper {
+  margin-top: 4px;
+}
+
+.lmi-lineup-pitch__player {
+  min-width: 0;
+  flex: 1 1 0;
+  max-width: 64px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.lmi-lineup-pitch__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6df5c1 0%, #3bd38a 100%);
+  box-shadow: 0 0 0 2px rgba(11, 20, 38, 0.6);
+}
+
+.lmi-lineup-pitch__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lmi-text);
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .lmi-injury-line {
   display: flex;
   align-items: flex-start;

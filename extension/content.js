@@ -947,10 +947,7 @@
     }
 
     elements.prematchSection.classList.remove("is-hidden");
-    const prematchItems = buildPrematchItems(payload);
-    elements.prematchList.innerHTML = prematchItems
-      .map((item) => `<div class="lmi-prematch-item">${escapeHtml(item)}</div>`)
-      .join("");
+    elements.prematchList.innerHTML = "";
 
     const prediction = payload.prematch.prediction;
 
@@ -968,20 +965,11 @@
       elements.lineupsGrid.innerHTML = [lineups.home, lineups.away]
         .filter(Boolean)
         .map(
-          (entry, index) => `
-            <div class="lmi-mini-card">
-              <div class="lmi-mini-card__title">${escapeHtml(index === 0 ? payload.teams.home.name : payload.teams.away.name)}</div>
-              <div class="lmi-mini-card__line">${escapeHtml(
-                translate("prematch.formation", {
-                  value: entry.formation || translate("prematch.formationTbc")
-                })
-              )}</div>
-              <div class="lmi-mini-card__line">${escapeHtml(entry.coach || translate("prematch.coachTbd"))}</div>
-              <div class="lmi-mini-card__line">${escapeHtml(
-                (entry.startXI || []).slice(0, 4).join(", ") || translate("prematch.xiNotReleased")
-              )}</div>
-            </div>
-          `
+          (entry, index) =>
+            renderLineupCard(
+              index === 0 ? payload.teams.home.name : payload.teams.away.name,
+              entry
+            )
         )
         .join("");
     } else {
@@ -1054,60 +1042,6 @@
         `
       )
       .join("");
-  }
-
-  function buildPrematchItems(payload) {
-    const items = [];
-    const prediction = payload.prematch?.prediction;
-    const lineups = payload.prematch?.lineups;
-    const injuries = payload.prematch?.injuries;
-
-    if (prediction?.available) {
-      if (prediction.winnerName) {
-        items.push(
-          translate(
-            prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
-            {
-              team: prediction.winnerName
-            }
-          )
-        );
-      } else if (prediction.underOver) {
-        items.push(
-          translate("prematch.predictionGoals", {
-            value: prediction.underOver
-          })
-        );
-      }
-    }
-
-    if (lineups?.available && lineups.home?.formation && lineups.away?.formation) {
-      items.push(
-        translate("prematch.lineupsSummary", {
-          home: payload.teams.home.name,
-          homeFormation: lineups.home.formation,
-          away: payload.teams.away.name,
-          awayFormation: lineups.away.formation
-        })
-      );
-    } else {
-      items.push(translate("prematch.lineupsExpected"));
-    }
-
-    if (injuries?.available) {
-      items.push(
-        translate("prematch.injuriesCount", {
-          homeShort: payload.teams.home.shortName,
-          homeCount: injuries.home?.length ?? 0,
-          awayShort: payload.teams.away.shortName,
-          awayCount: injuries.away?.length ?? 0
-        })
-      );
-    } else {
-      items.push(translate("prematch.noInjuries"));
-    }
-
-    return items;
   }
 
   function renderInjuryItem(item) {
@@ -1210,6 +1144,106 @@
 
   function formatPredictionMetric(value) {
     return `${Math.round(value)}%`;
+  }
+
+  function renderLineupCard(teamName, entry) {
+    const formationLabel = translate("prematch.formation", {
+      value: entry.formation || translate("prematch.formationTbc")
+    });
+    const coachLabel = entry.coach || translate("prematch.coachTbd");
+    const pitchMarkup = buildFormationPitch(entry);
+    const fallbackList = escapeHtml((entry.startXI || []).join(", ") || translate("prematch.xiNotReleased"));
+
+    return `
+      <div class="lmi-mini-card lmi-lineup-card">
+        <div class="lmi-mini-card__title">${escapeHtml(teamName)}</div>
+        <div class="lmi-mini-card__line">${escapeHtml(formationLabel)}</div>
+        <div class="lmi-mini-card__line">${escapeHtml(coachLabel)}</div>
+        ${pitchMarkup || `<div class="lmi-mini-card__line">${fallbackList}</div>`}
+      </div>
+    `;
+  }
+
+  function buildFormationPitch(entry) {
+    const formationRows = parseFormationRows(entry.formation);
+    const players = Array.isArray(entry.startXI) ? entry.startXI : [];
+
+    if (!formationRows || players.length < 11) {
+      return "";
+    }
+
+    const goalkeeper = players[0];
+    const outfield = players.slice(1, 11);
+    const totalOutfieldSlots = formationRows.reduce((sum, count) => sum + count, 0);
+
+    if (totalOutfieldSlots !== 10 || outfield.length < 10) {
+      return "";
+    }
+
+    const rows = [];
+    let cursor = 0;
+    for (const count of formationRows) {
+      rows.push(outfield.slice(cursor, cursor + count));
+      cursor += count;
+    }
+
+    const attackToDefence = [...rows].reverse();
+
+    return `
+      <div class="lmi-lineup-pitch" aria-label="${escapeHtml(formationLabelForAria(entry.formation))}">
+        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--midline" aria-hidden="true"></div>
+        <div class="lmi-lineup-pitch__marking lmi-lineup-pitch__marking--center-circle" aria-hidden="true"></div>
+        ${attackToDefence
+          .map(
+            (row) => `
+              <div class="lmi-lineup-pitch__row">
+                ${row.map((player) => renderPitchPlayer(player)).join("")}
+              </div>
+            `
+          )
+          .join("")}
+        <div class="lmi-lineup-pitch__row lmi-lineup-pitch__row--goalkeeper">
+          ${renderPitchPlayer(goalkeeper)}
+        </div>
+      </div>
+    `;
+  }
+
+  function parseFormationRows(formation) {
+    const parts = String(formation || "")
+      .split("-")
+      .map((part) => Number.parseInt(part.trim(), 10))
+      .filter((part) => Number.isInteger(part) && part > 0);
+
+    return parts.length ? parts : null;
+  }
+
+  function renderPitchPlayer(playerName) {
+    return `
+      <div class="lmi-lineup-pitch__player">
+        <span class="lmi-lineup-pitch__dot" aria-hidden="true"></span>
+        <span class="lmi-lineup-pitch__name">${escapeHtml(compactPlayerName(playerName))}</span>
+      </div>
+    `;
+  }
+
+  function compactPlayerName(playerName) {
+    const parts = String(playerName || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (!parts.length) {
+      return "";
+    }
+
+    return parts[parts.length - 1];
+  }
+
+  function formationLabelForAria(formation) {
+    return translate("prematch.lineupPitchAria", {
+      value: formation || translate("prematch.formationTbc")
+    });
   }
 
   async function notifyGoal(payload, eventLabel) {
