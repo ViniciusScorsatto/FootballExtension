@@ -116,10 +116,12 @@ test("prediction chips avoid duplicating the goal line when advice already inclu
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
 
-  assert.match(contentScript, /const adviceIncludesGoals =/);
+  assert.match(contentScript, /predictionAdviceMentionsGoals\(prediction\.advice, prediction\.underOver\)/);
+  assert.match(contentScript, /const normalizedPhrase = direction === "-" \? `under \$\{value\}` : `over \$\{value\}`;/);
   assert.match(contentScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
 
-  assert.match(sidepanelScript, /const adviceIncludesGoals =/);
+  assert.match(sidepanelScript, /predictionAdviceMentionsGoals\(prediction\.advice, prediction\.underOver\)/);
+  assert.match(sidepanelScript, /const normalizedPhrase = direction === "-" \? `under \$\{value\}` : `over \$\{value\}`;/);
   assert.match(sidepanelScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
 });
 

@@ -1045,7 +1045,7 @@
     const adviceIncludesGoals =
       prediction.advice &&
       prediction.underOver &&
-      String(prediction.advice).toLowerCase().includes(String(prediction.underOver).toLowerCase());
+      predictionAdviceMentionsGoals(prediction.advice, prediction.underOver);
 
     if (prediction.underOver && !adviceIncludesGoals) {
       metaChips.push(
@@ -1131,6 +1131,28 @@
 
   function formatPredictionMetric(value) {
     return `${Math.round(value)}%`;
+  }
+
+  function predictionAdviceMentionsGoals(advice, underOver) {
+    const adviceText = String(advice || "").toLowerCase();
+    const goalToken = String(underOver || "").trim().toLowerCase();
+
+    if (!adviceText || !goalToken) {
+      return false;
+    }
+
+    if (adviceText.includes(goalToken)) {
+      return true;
+    }
+
+    const match = goalToken.match(/^([+-])\s*(\d+(?:\.\d+)?)$/);
+    if (!match) {
+      return false;
+    }
+
+    const [, direction, value] = match;
+    const normalizedPhrase = direction === "-" ? `under ${value}` : `over ${value}`;
+    return adviceText.includes(normalizedPhrase);
   }
 
   function renderLineupCard(teamName, entry, injuries) {
