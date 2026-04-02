@@ -436,6 +436,38 @@ export class BillingService {
       subscriptionId: session.subscription ? String(session.subscription) : "",
       priceId: session.metadata?.priceId ?? "",
       offerId: session.metadata?.offerId || null,
+      status:
+        session.payment_status === "paid" || session.payment_status === "no_payment_required"
+          ? "active"
+          : "reserved"
+    });
+
+    return {
+      processed: true,
+      userId,
+      entitlement
+    };
+  }
+
+  async handleStripeInvoicePaid(invoice) {
+    const userId =
+      (invoice.subscription ? await this.lookupUserIdBySubscription(String(invoice.subscription)) : "") ||
+      (invoice.customer ? await this.lookupUserIdByCustomer(String(invoice.customer)) : "");
+
+    if (!userId) {
+      return {
+        processed: false,
+        reason: "missing_user_id"
+      };
+    }
+
+    const entitlement = await this.activateEntitlement({
+      userId,
+      email: invoice.customer_email ?? "",
+      customerId: invoice.customer ? String(invoice.customer) : "",
+      subscriptionId: invoice.subscription ? String(invoice.subscription) : "",
+      priceId: invoice.lines?.data?.[0]?.price?.id || "",
+      offerId: null,
       status: "active"
     });
 

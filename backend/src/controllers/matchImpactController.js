@@ -546,6 +546,9 @@ export function createMatchImpactController({
           case "checkout.session.completed":
             result = await billingService.handleStripeCheckoutCompleted(event.data.object);
             break;
+          case "invoice.paid":
+            result = await billingService.handleStripeInvoicePaid(event.data.object);
+            break;
           case "customer.subscription.updated":
             result = await billingService.handleStripeSubscriptionUpdated(event.data.object);
             break;

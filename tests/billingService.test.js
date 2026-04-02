@@ -162,7 +162,7 @@ test("checkout selection chooses the Early Bird Stripe price when reserved", asy
   assert.equal(selection.offerId, "early_bird_lifetime");
 });
 
-test("stripe checkout completion activates the user's Pro entitlement", async () => {
+test("stripe checkout completion reserves the user's Pro entitlement until payment succeeds", async () => {
   const { billingService, cacheService } = createBillingService();
 
   const result = await billingService.handleStripeCheckoutCompleted({
@@ -175,16 +175,58 @@ test("stripe checkout completion activates the user's Pro entitlement", async ()
       email: "tester@example.com"
     },
     customer: "cus_123",
-    subscription: "sub_123"
+    subscription: "sub_123",
+    payment_status: "unpaid"
   });
 
   assert.equal(result.processed, true);
 
   const linkedAccount = await cacheService.getJson("account:browser:tester-4");
   const storedEntitlement = await cacheService.getJson(`billing:user:${linkedAccount.accountId}`);
-  assert.equal(storedEntitlement.status, "active");
+  assert.equal(storedEntitlement.status, "reserved");
   assert.equal(storedEntitlement.offerId, "early_bird_lifetime");
   assert.equal(storedEntitlement.stripeSubscriptionId, "sub_123");
+});
+
+test("invoice paid activates a reserved Pro entitlement", async () => {
+  const { billingService, cacheService } = createBillingService();
+
+  await billingService.handleStripeCheckoutCompleted({
+    metadata: {
+      userId: "tester-4b",
+      offerId: "early_bird_lifetime",
+      priceId: "price_early"
+    },
+    customer_details: {
+      email: "tester@example.com"
+    },
+    customer: "cus_456",
+    subscription: "sub_456",
+    payment_status: "unpaid"
+  });
+
+  const result = await billingService.handleStripeInvoicePaid({
+    customer_email: "tester@example.com",
+    customer: "cus_456",
+    subscription: "sub_456",
+    lines: {
+      data: [
+        {
+          price: {
+            id: "price_early"
+          }
+        }
+      ]
+    }
+  });
+
+  assert.equal(result.processed, true);
+
+  const linkedAccount = await cacheService.getJson("account:browser:tester-4b");
+  const storedEntitlement = await cacheService.getJson(`billing:user:${linkedAccount.accountId}`);
+  assert.equal(storedEntitlement.status, "active");
+  assert.equal(storedEntitlement.offerId, "early_bird_lifetime");
+  assert.equal(storedEntitlement.stripeSubscriptionId, "sub_456");
 });
 
 test("billing status migrates a legacy email-matched entitlement onto the linked account", async () => {
