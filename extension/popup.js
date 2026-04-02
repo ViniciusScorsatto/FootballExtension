@@ -70,6 +70,21 @@ let notificationsCardExpanded = false;
 let advancedOptionsExpanded = false;
 let scenarioPreviewEnabled = false;
 let currentScenarioCatalog = [];
+let currentPricingCatalog = {
+  plans: {
+    free: {
+      priceMonthlyUsd: 0
+    },
+    pro: {
+      priceMonthlyUsd: null
+    }
+  },
+  offers: {
+    early_bird_lifetime: {
+      priceMonthlyUsd: 3.99
+    }
+  }
+};
 let currentBilling = {
   userId: "",
   plan: "free",
@@ -416,6 +431,10 @@ function formatPrice(price) {
   }).format(numericPrice);
 }
 
+function getEarlyBirdDisplayPrice() {
+  return currentPricingCatalog?.offers?.early_bird_lifetime?.priceMonthlyUsd ?? 3.99;
+}
+
 function isProPlan() {
   return currentBilling.plan === "pro" && currentBilling.status === "active";
 }
@@ -468,7 +487,7 @@ function renderBillingCard() {
     currentBilling.earlyBirdRemaining > 0
   ) {
     billingOffer.textContent = translate("popup.earlyBirdOffer", {
-      price: formatPrice(3.99),
+      price: formatPrice(getEarlyBirdDisplayPrice()),
       remaining: currentBilling.earlyBirdRemaining
     });
   } else if (!proActive) {
@@ -964,6 +983,22 @@ async function fetchBillingStatus() {
   }
 }
 
+async function fetchPricingCatalog() {
+  const backendUrl = normalizeBackendUrl();
+
+  if (!validateBackendUrl(backendUrl)) {
+    return;
+  }
+
+  try {
+    const payload = await fetchJson(`${backendUrl}/billing/plans`);
+    currentPricingCatalog = payload || currentPricingCatalog;
+    renderBillingCard();
+  } catch {
+    // Keep the last known or default catalog if pricing fetch fails.
+  }
+}
+
 async function refreshBillingStatusWithRecovery() {
   const backendUrl = normalizeBackendUrl();
 
@@ -1207,6 +1242,7 @@ async function loadSettings() {
   }
   renderScenarioPreviewState();
   await loadRuntimePublicConfig();
+  await fetchPricingCatalog();
   await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
 
@@ -1650,6 +1686,7 @@ billingRefreshButton.addEventListener("click", async () => {
     trackAnalytics("billing_refresh_clicked", {
       hasAccountEmail: Boolean(validateEmailInput() || currentBilling.accountEmail)
     });
+    await fetchPricingCatalog();
     await refreshBillingStatusWithRecovery();
     if (isProPlan()) {
       setStatus(translate("popup.statusPlanUpdated"));

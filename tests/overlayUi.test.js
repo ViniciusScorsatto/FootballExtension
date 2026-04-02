@@ -374,7 +374,28 @@ test("sidepanel does not show format-context warnings for prematch league fixtur
 
   assert.match(
     sidepanelScript,
-    /if \(payload\.status\?\.phase === "upcoming"\) \{\s*elements\.formatSection\.classList\.add\("is-hidden"\);/
+    /if \(!isProPlan\(\) \|\| payload\.status\?\.phase === "upcoming"\) \{\s*elements\.formatSection\.classList\.add\("is-hidden"\);/
+  );
+});
+
+test("free plan hides pro-only prematch and format analysis in the live surfaces", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(contentScript, /function isProPlan\(\) \{\s*return state\.billingPlan === "pro" && state\.billingStatus === "active";\s*\}/);
+  assert.match(
+    contentScript,
+    /if \(!isProPlan\(\) \|\| payload\.status\.phase !== "upcoming" \|\| !payload\.prematch\) \{\s*elements\.prematchSection\.classList\.add\("is-hidden"\);[\s\S]*elements\.predictionsGrid\.innerHTML = "";\s*elements\.lineupsGrid\.innerHTML = "";\s*elements\.injuriesGrid\.innerHTML = "";\s*return;\s*\}/
+  );
+
+  assert.match(sidepanelScript, /function isProPlan\(\) \{\s*return state\.billingPlan === "pro" && state\.billingStatus === "active";\s*\}/);
+  assert.match(
+    sidepanelScript,
+    /if \(!isProPlan\(\) \|\| payload\.status\?\.phase === "upcoming"\) \{\s*elements\.formatSection\.classList\.add\("is-hidden"\);[\s\S]*elements\.formatBody\.textContent = "";\s*return;\s*\}/
+  );
+  assert.match(
+    sidepanelScript,
+    /if \(!isProPlan\(\) \|\| payload\.status\.phase !== "upcoming" \|\| !payload\.prematch\) \{\s*elements\.prematchSection\.classList\.add\("is-hidden"\);[\s\S]*elements\.predictionsGrid\.innerHTML = "";\s*elements\.lineupsGrid\.innerHTML = "";\s*elements\.injuriesGrid\.innerHTML = "";\s*return;\s*\}/
   );
 });
 
@@ -391,6 +412,19 @@ test("popup hides the advanced manual-fixture card on free and only expands it f
   );
   assert.match(popupScript, /advancedOptionsExpanded = isProPlan\(\) && Boolean\(storedFixtureId\);/);
   assert.match(popupScript, /renderBillingCard\(\);\s*[\r\n]+\s*updatePlanHint\(\);\s*[\r\n]+\s*renderAdvancedOptions\(\);/);
+});
+
+test("popup billing card uses the shared pricing catalog instead of a hardcoded Early Bird price", async () => {
+  const popupScript = await readProjectFile("extension/popup.js");
+
+  assert.match(popupScript, /let currentPricingCatalog = \{/);
+  assert.match(popupScript, /function getEarlyBirdDisplayPrice\(\) \{/);
+  assert.match(popupScript, /async function fetchPricingCatalog\(\) \{/);
+  assert.match(popupScript, /const payload = await fetchJson\(`\$\{backendUrl\}\/billing\/plans`\);/);
+  assert.match(popupScript, /price: formatPrice\(getEarlyBirdDisplayPrice\(\)\),/);
+  assert.doesNotMatch(popupScript, /price: formatPrice\(3\.99\)/);
+  assert.match(popupScript, /await fetchPricingCatalog\(\);\s*[\r\n]+\s*await fetchBillingStatus\(\);/);
+  assert.match(popupScript, /await fetchPricingCatalog\(\);\s*[\r\n]+\s*await refreshBillingStatusWithRecovery\(\);/);
 });
 
 test("popup pings existing overlay before reinjecting and relies on storage changes for tracking updates", async () => {

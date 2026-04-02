@@ -841,7 +841,7 @@
   }
 
   function renderFormatContext(payload) {
-    if (payload.status?.phase === "upcoming") {
+    if (!isProPlan() || payload.status?.phase === "upcoming") {
       elements.formatSection.classList.add("is-hidden");
       elements.formatBody.textContent = "";
       return;
@@ -945,8 +945,11 @@
   }
 
   function renderPrematch(payload) {
-    if (payload.status.phase !== "upcoming" || !payload.prematch) {
+    if (!isProPlan() || payload.status.phase !== "upcoming" || !payload.prematch) {
       elements.prematchSection.classList.add("is-hidden");
+      elements.predictionsGrid.innerHTML = "";
+      elements.lineupsGrid.innerHTML = "";
+      elements.injuriesGrid.innerHTML = "";
       return;
     }
 

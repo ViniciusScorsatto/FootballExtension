@@ -90,6 +90,10 @@
     updateStaticCopy();
   }
 
+  function isProPlan() {
+    return state.billingPlan === "pro" && state.billingStatus === "active";
+  }
+
   function init() {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message?.type === "LMI_PING") {
@@ -1060,8 +1064,11 @@
   }
 
   function renderPrematch(payload) {
-    if (payload.status.phase !== "upcoming" || !payload.prematch) {
+    if (!isProPlan() || payload.status.phase !== "upcoming" || !payload.prematch) {
       elements.prematchSection.classList.add("is-hidden");
+      elements.predictionsGrid.innerHTML = "";
+      elements.lineupsGrid.innerHTML = "";
+      elements.injuriesGrid.innerHTML = "";
       return;
     }
 
