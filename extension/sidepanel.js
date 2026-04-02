@@ -33,6 +33,7 @@
     translateDisplayName,
     translateLeagueName,
     translateCompetitionMessage,
+    translatePredictionAdvice,
     buildImpactSummary
   } = window.LMI_I18N;
 
@@ -1033,6 +1034,7 @@
   }
 
   function renderPredictionCard(payload, prediction) {
+    const localizedAdvice = translatePredictionAdvice(state.language, prediction.advice);
     const summary = prediction.winnerName
       ? translate(
           prediction.winOrDraw ? "prematch.predictionWinOrDraw" : "prematch.predictionWinner",
@@ -1042,9 +1044,9 @@
     const comparisonRows = renderPredictionComparisonRows(prediction.comparison || []);
     const metaChips = [];
     const adviceIncludesGoals =
-      prediction.advice &&
+      localizedAdvice &&
       prediction.underOver &&
-      predictionAdviceMentionsGoals(prediction.advice, prediction.underOver);
+      predictionAdviceMentionsGoals(localizedAdvice, prediction.underOver);
 
     if (prediction.underOver && !adviceIncludesGoals) {
       metaChips.push(
@@ -1056,11 +1058,11 @@
       );
     }
 
-    if (prediction.advice) {
+    if (localizedAdvice) {
       metaChips.push(
         `<span class="lmi-prediction-chip lmi-prediction-chip--wide">${escapeHtml(
           translate("prematch.predictionAdviceChip", {
-            value: prediction.advice
+            value: localizedAdvice
           })
         )}</span>`
       );

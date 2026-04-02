@@ -116,11 +116,11 @@ test("prediction chips avoid duplicating the goal line when advice already inclu
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
 
-  assert.match(contentScript, /predictionAdviceMentionsGoals\(prediction\.advice, prediction\.underOver\)/);
+  assert.match(contentScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);
   assert.match(contentScript, /const normalizedPhrase = direction === "-" \? `under \$\{value\}` : `over \$\{value\}`;/);
   assert.match(contentScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
 
-  assert.match(sidepanelScript, /predictionAdviceMentionsGoals\(prediction\.advice, prediction\.underOver\)/);
+  assert.match(sidepanelScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);
   assert.match(sidepanelScript, /const normalizedPhrase = direction === "-" \? `under \$\{value\}` : `over \$\{value\}`;/);
   assert.match(sidepanelScript, /if \(prediction\.underOver && !adviceIncludesGoals\)/);
 });
@@ -366,6 +366,7 @@ test("popup hides the advanced manual-fixture card on free and only expands it f
     /if \(!isProPlan\(\)\) \{[\s\S]*advancedOptionsExpanded = false;[\s\S]*advancedContent\.hidden = true;/
   );
   assert.match(popupScript, /advancedOptionsExpanded = isProPlan\(\) && Boolean\(storedFixtureId\);/);
+  assert.match(popupScript, /renderBillingCard\(\);\s*[\r\n]+\s*updatePlanHint\(\);\s*[\r\n]+\s*renderAdvancedOptions\(\);/);
 });
 
 test("popup pings existing overlay before reinjecting and relies on storage changes for tracking updates", async () => {
@@ -404,4 +405,19 @@ test("overlay and sidepanel resync immediately when scenario mode settings chang
 
   assert.match(sidepanelScript, /changes\.scenarioModeEnabled \|\|/);
   assert.match(sidepanelScript, /changes\.scenarioPayloadPath \|\|/);
+});
+
+test("prediction cards localize API advice text through the shared helper", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const i18n = await readProjectFile("extension/i18n.js");
+
+  assert.match(contentScript, /const localizedAdvice = translatePredictionAdvice\(state\.language, prediction\.advice\);/);
+  assert.match(contentScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);
+
+  assert.match(sidepanelScript, /const localizedAdvice = translatePredictionAdvice\(state\.language, prediction\.advice\);/);
+  assert.match(sidepanelScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);
+
+  assert.match(i18n, /function translatePredictionAdvice\(language, advice\)/);
+  assert.match(i18n, /Double chance/);
 });

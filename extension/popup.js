@@ -957,6 +957,7 @@ async function fetchBillingStatus() {
 
   renderBillingCard();
   updatePlanHint();
+  renderAdvancedOptions();
 
   if (justUnlocked) {
     setStatus(translate("popup.statusProUnlocked"));
@@ -1056,6 +1057,7 @@ async function refreshBillingStatusWithRecovery() {
 
   renderBillingCard();
   updatePlanHint();
+  renderAdvancedOptions();
   renderNotificationsCard();
 
   trackAnalytics("billing_refresh_result", {

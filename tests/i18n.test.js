@@ -9,6 +9,7 @@ const {
   translateDisplayName,
   translateLeagueName,
   translateCompetitionMessage,
+  translatePredictionAdvice,
   buildImpactSummary
 } = globalThis.LMI_I18N;
 
@@ -57,9 +58,22 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Somente placar ao vivo - sem impacto na tabela para esta competição."
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Live table impact will start once the match kicks off"),
+    "O impacto ao vivo na tabela começa quando a partida iniciar."
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );
+});
+
+test("translatePredictionAdvice localizes common API advice strings for pt-BR", () => {
+  assert.equal(
+    translatePredictionAdvice("pt-BR", "Combo Double chance : RB Bragantino U20 or draw and +2.5 goals"),
+    "Dupla chance: RB Bragantino U20 ou empate e +2.5 gols"
+  );
+  assert.equal(translatePredictionAdvice("pt-BR", "Home or draw"), "Casa ou empate");
+  assert.equal(translatePredictionAdvice("en", "Home or draw"), "Home or draw");
 });
 
 test("translateDisplayName localizes supported country names for pt-BR", () => {

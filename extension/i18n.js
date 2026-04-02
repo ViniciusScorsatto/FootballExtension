@@ -947,9 +947,9 @@
         []
       ],
       [/^Live score tracked - table impact limited for this fixture\.$/, "impact.specialFormatLimited", []],
-      [/^Live table impact will start once the match kicks off\.$/, "panel.preMatchCompetitionDetail", []],
+      [/^Live table impact will start once the match kicks off\.?$/, "panel.preMatchCompetitionDetail", []],
       [
-        /^Live score only - no table impact for this competition\.$/,
+        /^Live score only - no table impact for this competition\.?$/,
         "panel.scoreOnlyCompetitionDetail",
         []
       ]
@@ -975,6 +975,41 @@
     }
 
     return message;
+  }
+
+  function translatePredictionAdvice(language, advice) {
+    const normalized = String(advice ?? "").trim();
+
+    if (!normalized || language !== "pt-BR") {
+      return normalized;
+    }
+
+    const directPatterns = [
+      [/^Home or draw$/i, "Casa ou empate"],
+      [/^Away or draw$/i, "Fora ou empate"],
+      [/^Home wins$/i, "Casa vence"],
+      [/^Away wins$/i, "Fora vence"],
+      [/^Draw$/i, "Empate"]
+    ];
+
+    for (const [pattern, replacement] of directPatterns) {
+      if (pattern.test(normalized)) {
+        return replacement;
+      }
+    }
+
+    let localized = normalized;
+
+    localized = localized.replace(/^Combo\s+/i, "");
+    localized = localized.replace(/^Double chance\s*:\s*/i, "Dupla chance: ");
+    localized = localized.replace(/^Advice\s*:\s*/i, "Conselho: ");
+    localized = localized.replace(/\bor draw\b/gi, "ou empate");
+    localized = localized.replace(/\band\b/gi, "e");
+    localized = localized.replace(/\bunder\s+/gi, "menos de ");
+    localized = localized.replace(/\bover\s+/gi, "mais de ");
+    localized = localized.replace(/\bgoals?\b/gi, "gols");
+
+    return localized;
   }
 
   function translateDisplayName(language, value) {
@@ -1061,6 +1096,7 @@
     translateDisplayName,
     translateLeagueName,
     translateCompetitionMessage,
+    translatePredictionAdvice,
     buildImpactSummary
   };
 })(globalThis);
