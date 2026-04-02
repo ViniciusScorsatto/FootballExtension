@@ -782,10 +782,10 @@ export function renderMarketingPage({ pricing }) {
 
         <section class="section">
           <span class="section__eyebrow">See the difference</span>
-          <h2>Free is useful. Pro feels smarter the moment you open it.</h2>
+          <h2>Free explains what is happening. Pro adds the deeper match context.</h2>
           <p>
-            The free tier gives the core experience on featured leagues. Pro expands the meaning
-            layer across the full product, including broader league access and richer live context.
+            The free tier gives the core live-reading experience on featured leagues. Pro keeps that
+            speed, then adds broader league access and deeper pre-match and competition context.
           </p>
           <div class="demo-grid">
             <article class="demo-card">
@@ -811,15 +811,15 @@ export function renderMarketingPage({ pricing }) {
                   </div>
                 </div>
                 <div class="demo-block demo-block--locked">
-                  <span class="mini-label">Beyond featured leagues</span>
-                  <div class="demo-lock">Pro unlocks all supported leagues and manual fixture tracking</div>
+                  <span class="mini-label">What Pro adds</span>
+                  <div class="demo-lock">All supported leagues, manual fixture fallback, and deeper pre-match reading</div>
                 </div>
               </div>
             </article>
 
             <article class="demo-card demo-card--pro">
               <span class="tier-pill">Pro</span>
-              <h3>Deeper match reading across the full product</h3>
+              <h3>Deeper match reading across every supported league</h3>
               <div class="demo-phone">
                 <div class="demo-phone__top">
                   <div>
@@ -835,14 +835,15 @@ export function renderMarketingPage({ pricing }) {
                   </div>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Other Matches This Round</span>
-                  <div class="demo-line"><span>CRB 0-0 Ceará</span><strong>HT</strong></div>
-                  <div class="demo-line"><span>Fortaleza 2-1 Bahia</span><strong>Final</strong></div>
+                  <span class="mini-label">Pre-match depth</span>
+                  <div class="demo-note">
+                    Model outlook, lineup shape, and injury context before kickoff.
+                  </div>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Premium Reach</span>
+                  <span class="mini-label">Competition reading</span>
                   <div class="demo-note">
-                    All supported leagues, manual fixture fallback, and richer consequence copy.
+                    Richer grouped, knockout, aggregate, and penalty interpretation in the live view.
                   </div>
                 </div>
               </div>
@@ -854,8 +855,9 @@ export function renderMarketingPage({ pricing }) {
           <span class="section__eyebrow">Pricing</span>
           <h2>One clear premium tier, plus a beta reward for early believers.</h2>
           <p>
-            The free experience stays genuinely useful. Pro unlocks deeper match meaning, more
-            leagues, and richer live context. Early Bird users lock in the best price forever.
+            Free stays genuinely useful for the core live-reading job. Pro unlocks every supported
+            league plus the deeper match context that already exists in the product today.
+            Early Bird users lock in the best price forever.
           </p>
           <div class="pricing-grid">
             <article class="pricing-card">

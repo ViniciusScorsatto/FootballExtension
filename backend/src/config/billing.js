@@ -3,13 +3,13 @@ export const BILLING_PLANS = {
     id: "free",
     name: "Free",
     priceMonthlyUsd: 0,
-    tagline: "Follow one match and feel the core impact instantly.",
+    tagline: "Track one featured-league match and understand the core impact instantly.",
     features: [
       "Track 1 live match at a time",
-      "Curated league access",
-      "Live score and basic table impact",
-      "Goal event cards",
-      "Round context strip",
+      "Featured league access",
+      "Live score and core table impact",
+      "Competition impact and scorer timeline",
+      "Final stats after full time",
       "English and Portuguese-BR"
     ]
   },
@@ -17,14 +17,14 @@ export const BILLING_PLANS = {
     id: "pro",
     name: "Pro",
     priceMonthlyUsd: null,
-    tagline: "Unlock deeper live meaning, more leagues, and premium alerts.",
+    tagline: "Unlock deeper match reading across every supported league.",
     features: [
       "All supported leagues",
-      "Track up to 3 matches at once",
-      "Projected group positions when scores hold",
-      "Richer pre-match context",
-      "Advanced competition-impact explanations",
-      "Meaningful goal and zone-change alerts"
+      "Manual fixture fallback",
+      "Pre-match model outlook",
+      "Lineup pitch and injuries",
+      "Richer grouped, knockout, and penalty context",
+      "Side panel deep-view mode"
     ]
   }
 };
