@@ -821,7 +821,153 @@ test("second leg of a two-leg tie computes aggregate impact", async () => {
   assert.deepEqual(payload.impact.competition, [
     "Cruzeiro 2-1 Vitoria on aggregate",
     "Cruzeiro is currently going through",
-    "Vitoria needs one more goal to level the aggregate"
+    "Vitoria is one goal from forcing extra time"
+  ]);
+});
+
+test("aggregate level explains next-goal consequence", async () => {
+  const fixtureId = 9106;
+  const kickoff = 1775620800;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: kickoff,
+          date: "2026-04-09T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 61
+          }
+        },
+        league: {
+          id: 73,
+          name: "Copa do Brasil",
+          country: "Brazil",
+          season: 2026,
+          standings: false,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 21, name: "Cruzeiro", logo: "" },
+          away: { id: 22, name: "Vitoria", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9107,
+            timestamp: kickoff - 604800,
+            status: { short: "FT", long: "Match Finished", elapsed: 90 }
+          },
+          teams: {
+            home: { id: 22, name: "Vitoria", logo: "" },
+            away: { id: 21, name: "Cruzeiro", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: kickoff,
+            status: { short: "2H", long: "Second Half", elapsed: 61 }
+          },
+          teams: {
+            home: { id: 21, name: "Cruzeiro", logo: "" },
+            away: { id: 22, name: "Vitoria", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.knockoutContext.type, "two_leg_aggregate");
+  assert.equal(payload.impact.summary, "Next goal would put a side through");
+  assert.deepEqual(payload.impact.competition, [
+    "Cruzeiro 1-1 Vitoria on aggregate",
+    "Aggregate score is level",
+    "Next goal would put a side through"
+  ]);
+});
+
+test("larger aggregate deficits explain how many goals are still needed", async () => {
+  const fixtureId = 9108;
+  const kickoff = 1775620800;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: kickoff,
+          date: "2026-04-09T08:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 70
+          }
+        },
+        league: {
+          id: 73,
+          name: "Copa do Brasil",
+          country: "Brazil",
+          season: 2026,
+          standings: false,
+          round: "Quarter-finals"
+        },
+        teams: {
+          home: { id: 21, name: "Cruzeiro", logo: "" },
+          away: { id: 22, name: "Vitoria", logo: "" }
+        },
+        goals: {
+          home: 3,
+          away: 0
+        }
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9109,
+            timestamp: kickoff - 604800,
+            status: { short: "FT", long: "Match Finished", elapsed: 90 }
+          },
+          teams: {
+            home: { id: 22, name: "Vitoria", logo: "" },
+            away: { id: 21, name: "Cruzeiro", logo: "" }
+          },
+          goals: { home: 1, away: 0 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: kickoff,
+            status: { short: "2H", long: "Second Half", elapsed: 70 }
+          },
+          teams: {
+            home: { id: 21, name: "Cruzeiro", logo: "" },
+            away: { id: 22, name: "Vitoria", logo: "" }
+          },
+          goals: { home: 3, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.knockoutContext.type, "two_leg_aggregate");
+  assert.equal(payload.impact.summary, "Cruzeiro is currently going through");
+  assert.deepEqual(payload.impact.competition, [
+    "Cruzeiro 3-1 Vitoria on aggregate",
+    "Cruzeiro is currently going through",
+    "Vitoria still needs 2 more goals to force extra time"
   ]);
 });
 

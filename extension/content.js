@@ -9,6 +9,8 @@
     "fixtureId",
     "trackingEnabled",
     "activeViewMode",
+    "scenarioModeEnabled",
+    "scenarioPayloadPath",
     "language",
     "billingUserId",
     "billingPlan",
@@ -51,6 +53,8 @@
     notifyTableChanges: true,
     trackingEnabled: false,
     activeViewMode: "overlay",
+    scenarioModeEnabled: false,
+    scenarioPayloadPath: "",
     pollTimer: null,
     renderTimer: null,
     backoffMs: BASE_POLL_INTERVAL_MS,
@@ -350,11 +354,13 @@
     state.notifyTableChanges = settings.notifyTableChanges ?? true;
     state.trackingEnabled = Boolean(settings.trackingEnabled);
     state.activeViewMode = settings.activeViewMode ?? "overlay";
+    state.scenarioModeEnabled = Boolean(settings.scenarioModeEnabled);
+    state.scenarioPayloadPath = String(settings.scenarioPayloadPath || "");
     updateStaticCopy();
 
     if (
       !state.trackingEnabled ||
-      !state.fixtureId ||
+      (!state.fixtureId && !state.scenarioModeEnabled) ||
       state.pageDismissed ||
       state.activeViewMode === "sidepanel"
     ) {
@@ -511,24 +517,34 @@
   }
 
   async function fetchImpact() {
-    if (!state.trackingEnabled || !state.fixtureId || state.pageDismissed) {
+    if (
+      !state.trackingEnabled ||
+      (!state.fixtureId && !state.scenarioModeEnabled) ||
+      state.pageDismissed
+    ) {
       return;
     }
 
     try {
-      const payload = await extensionRequest(
-        `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
-      );
+      const payload = state.scenarioModeEnabled
+        ? await fetchScenarioPayload()
+        : await extensionRequest(
+            `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
+          );
       state.backoffMs = BASE_POLL_INTERVAL_MS;
       handlePayload(payload);
 
-      if (payload.status?.isFinished) {
+      if (!state.scenarioModeEnabled && payload.status?.isFinished) {
         flushSession(payload);
         clearPollTimer();
         return;
       }
 
-      scheduleNextPoll(getPollingIntervalMs(payload));
+      if (state.scenarioModeEnabled) {
+        clearPollTimer();
+      } else {
+        scheduleNextPoll(getPollingIntervalMs(payload));
+      }
     } catch (error) {
       renderErrorState(error);
       elements.lastUpdated.textContent = "";
@@ -542,7 +558,7 @@
   function handlePayload(payload) {
     state.lastPayload = payload;
 
-    if (!state.usageTracked) {
+    if (!state.scenarioModeEnabled && !state.usageTracked) {
       void postJson("/track/usage", {
         fixtureId: payload.fixture_id,
         leagueId: payload.league?.id,
@@ -1143,6 +1159,10 @@
   }
 
   async function notifyGoal(payload, eventLabel) {
+    if (state.scenarioModeEnabled) {
+      return;
+    }
+
     const goalKey = JSON.stringify({
       fixtureId: payload.fixture_id,
       score: payload.score,
@@ -1248,7 +1268,7 @@
   }
 
   async function postJson(path, payload) {
-    if (!state.backendUrl) {
+    if (!state.backendUrl || state.scenarioModeEnabled) {
       return;
     }
 
@@ -1263,7 +1283,7 @@
   }
 
   function flushSession(payload = state.lastPayload) {
-    if (!state.sessionStartedAt || !payload) {
+    if (!state.sessionStartedAt || !payload || state.scenarioModeEnabled) {
       return;
     }
 
@@ -1284,6 +1304,20 @@
     }
 
     return `${value}${suffix}`;
+  }
+
+  async function fetchScenarioPayload() {
+    if (!state.scenarioPayloadPath) {
+      throw new Error("Scenario payload is not configured");
+    }
+
+    const response = await fetch(chrome.runtime.getURL(state.scenarioPayloadPath));
+
+    if (!response.ok) {
+      throw new Error(`Scenario payload failed with ${response.status}`);
+    }
+
+    return response.json();
   }
 
   function formatKickoff(match) {

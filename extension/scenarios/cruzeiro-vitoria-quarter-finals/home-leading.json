@@ -1,0 +1,68 @@
+{
+  "fixture_id": 9104,
+  "startsAt": "2026-04-09T08:00:00.000Z",
+  "last_updated": "2026-04-09T09:14:00.000Z",
+  "league": {
+    "id": 73,
+    "name": "Copa do Brasil",
+    "country": "Brazil",
+    "season": 2026,
+    "round": "Quarter-finals"
+  },
+  "teams": {
+    "home": { "id": 21, "name": "Cruzeiro", "shortName": "CRU", "logo": "" },
+    "away": { "id": 22, "name": "Vitoria", "shortName": "VIT", "logo": "" }
+  },
+  "score": { "home": 2, "away": 0 },
+  "status": {
+    "phase": "live",
+    "short": "2H",
+    "long": "Second Half",
+    "minute": 74,
+    "isFinished": false
+  },
+  "event": {
+    "type": "GOAL",
+    "teamName": "Cruzeiro",
+    "scorer": "Matheus Pereira",
+    "minuteLabel": "74'",
+    "typeLabel": "Goal"
+  },
+  "impact": {
+    "summary": "Cruzeiro is currently going through",
+    "table": null,
+    "competition": [
+      "Cruzeiro 2-1 Vitoria on aggregate",
+      "Cruzeiro is currently going through",
+      "Vitoria is one goal from forcing extra time"
+    ],
+    "biggestMovement": null,
+    "momentum": { "home": 67, "away": 33 },
+    "mode": "cup"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 61, "shotsOnTarget": 5, "totalShots": 12, "corners": 6 },
+    "away": { "possession": 39, "shotsOnTarget": 1, "totalShots": 5, "corners": 1 },
+    "momentum": { "home": 67, "away": 33 },
+    "insights": [
+      "Cruzeiro is creating the better chances",
+      "Cruzeiro is pinning the other side back"
+    ]
+  },
+  "league_context": { "available": false, "fixtures": [] },
+  "metadata": {
+    "tableImpactAvailable": false,
+    "impactMode": "cup",
+    "competitionFormat": "knockout_cup",
+    "knockoutContext": {
+      "type": "two_leg_aggregate",
+      "round": "Quarter-finals"
+    },
+    "scenario": {
+      "familyId": "cruzeiro-vitoria-quarter-finals",
+      "variantId": "home-leading",
+      "label": "Home side going through"
+    }
+  }
+}

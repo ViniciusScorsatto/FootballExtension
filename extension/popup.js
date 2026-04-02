@@ -13,6 +13,10 @@ const languageSelect = document.getElementById("language");
 const notificationsToggleButton = document.getElementById("notificationsToggle");
 const notificationsCloseButton = document.getElementById("notificationsClose");
 const notificationsCard = document.getElementById("notificationsCard");
+const scenarioPreviewSection = document.getElementById("scenarioPreviewSection");
+const scenarioModeToggle = document.getElementById("scenarioModeToggle");
+const scenarioVariantSelect = document.getElementById("scenarioVariant");
+const scenarioPreviewSummary = document.getElementById("scenarioPreviewSummary");
 const notifyGoalsToggle = document.getElementById("notifyGoals");
 const notifyTableChangesToggle = document.getElementById("notifyTableChanges");
 const billingActionButton = document.getElementById("billingAction");
@@ -63,6 +67,8 @@ let currentLanguage = DEFAULT_LANGUAGE;
 let accountCardExpanded = true;
 let notificationsCardExpanded = false;
 let advancedOptionsExpanded = false;
+let scenarioPreviewEnabled = false;
+let currentScenarioCatalog = [];
 let currentBilling = {
   userId: "",
   plan: "free",
@@ -94,6 +100,11 @@ const popupTextElements = {
   languageLabel: document.getElementById("languageLabel"),
   notificationsToggleLabel: document.getElementById("notificationsToggleLabel"),
   notificationsLabel: document.getElementById("notificationsLabel"),
+  scenarioPreviewEyebrow: document.getElementById("scenarioPreviewEyebrow"),
+  scenarioPreviewTitle: document.getElementById("scenarioPreviewTitle"),
+  scenarioModeLabel: document.getElementById("scenarioModeLabel"),
+  scenarioModeHint: document.getElementById("scenarioModeHint"),
+  scenarioVariantLabel: document.getElementById("scenarioVariantLabel"),
   notifyGoalsLabel: document.getElementById("notifyGoalsLabel"),
   notifyGoalsHint: document.getElementById("notifyGoalsHint"),
   notifyTableChangesLabel: document.getElementById("notifyTableChangesLabel"),
@@ -199,6 +210,7 @@ function buildPopupOpenedAnalyticsProperties(trackingEnabled) {
     accountLinked: currentBilling.accountLinked,
     trackingEnabled: Boolean(trackingEnabled),
     activeViewMode: trackingEnabled ? "overlay" : "idle",
+    scenarioPreviewEnabled,
     hasLiveMatches: currentLiveMatches.length > 0,
     hasUpcomingMatches: currentUpcomingMatches.length > 0,
     liveMatchesCount: currentLiveMatches.length,
@@ -236,6 +248,11 @@ function applyStaticTranslations() {
   popupTextElements.languageLabel.textContent = translate("language.label");
   popupTextElements.notificationsToggleLabel.textContent = translate("popup.notifications");
   popupTextElements.notificationsLabel.textContent = translate("popup.notifications");
+  popupTextElements.scenarioPreviewEyebrow.textContent = translate("popup.scenarioPreviewEyebrow");
+  popupTextElements.scenarioPreviewTitle.textContent = translate("popup.scenarioPreviewTitle");
+  popupTextElements.scenarioModeLabel.textContent = translate("popup.scenarioModeLabel");
+  popupTextElements.scenarioModeHint.textContent = translate("popup.scenarioModeHint");
+  popupTextElements.scenarioVariantLabel.textContent = translate("popup.scenarioVariantLabel");
   popupTextElements.notifyGoalsLabel.textContent = translate("popup.notifyGoalsLabel");
   popupTextElements.notifyGoalsHint.textContent = translate("popup.notifyGoalsHint");
   popupTextElements.notifyTableChangesLabel.textContent = translate("popup.notifyTableChangesLabel");
@@ -267,6 +284,7 @@ function applyStaticTranslations() {
     "language.portugueseBrazil"
   );
   renderAdvancedOptions();
+  renderScenarioPreviewState();
 }
 
 function createBillingUserId() {
@@ -467,6 +485,98 @@ function renderAdvancedOptions() {
   advancedToggleButton.setAttribute("aria-expanded", String(advancedOptionsExpanded));
   advancedContent.hidden = !advancedOptionsExpanded;
   advancedChevron.textContent = advancedOptionsExpanded ? "−" : "+";
+}
+
+function isScenarioPreviewAvailable() {
+  return window.LMI_CONFIG?.releaseChannel !== "production";
+}
+
+function getSelectedScenarioEntry() {
+  const selectedPath = String(scenarioVariantSelect.value || "").trim();
+
+  if (!selectedPath) {
+    return null;
+  }
+
+  return currentScenarioCatalog.find((entry) => entry.path === selectedPath) ?? null;
+}
+
+function renderScenarioPreviewState() {
+  if (!scenarioPreviewSection) {
+    return;
+  }
+
+  scenarioPreviewSection.hidden = !isScenarioPreviewAvailable();
+
+  if (!isScenarioPreviewAvailable()) {
+    return;
+  }
+
+  scenarioModeToggle.checked = scenarioPreviewEnabled;
+  scenarioVariantSelect.disabled = !scenarioPreviewEnabled || currentScenarioCatalog.length === 0;
+
+  const selectedScenario = getSelectedScenarioEntry();
+  scenarioPreviewSummary.textContent = scenarioPreviewEnabled && selectedScenario
+    ? translate("popup.scenarioPreviewSelected", { label: selectedScenario.label })
+    : translate("popup.scenarioPreviewOff");
+}
+
+async function loadScenarioCatalog() {
+  if (!isScenarioPreviewAvailable()) {
+    currentScenarioCatalog = [];
+    renderScenarioPreviewState();
+    return;
+  }
+
+  try {
+    const response = await fetch(chrome.runtime.getURL("scenarios/index.json"));
+
+    if (!response.ok) {
+      throw new Error(`Scenario index failed with ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const families = Array.isArray(payload?.families) ? payload.families : [];
+    currentScenarioCatalog = families.flatMap((family) =>
+      (family.variants || []).map((variant) => ({
+        familyId: family.id,
+        familyLabel: family.label,
+        fixtureId: family.fixtureId ?? variant.fixtureId ?? null,
+        id: variant.id,
+        label: variant.label,
+        path: variant.path
+      }))
+    );
+
+    scenarioVariantSelect.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = translate("popup.scenarioVariantPlaceholder");
+    scenarioVariantSelect.appendChild(placeholder);
+
+    families.forEach((family) => {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = family.label;
+
+      (family.variants || []).forEach((variant) => {
+        const option = document.createElement("option");
+        option.value = variant.path;
+        option.textContent = variant.label;
+        optgroup.appendChild(option);
+      });
+
+      scenarioVariantSelect.appendChild(optgroup);
+    });
+  } catch {
+    currentScenarioCatalog = [];
+    scenarioVariantSelect.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = translate("popup.scenarioVariantPlaceholder");
+    scenarioVariantSelect.appendChild(placeholder);
+  }
+
+  renderScenarioPreviewState();
 }
 
 function renderAccountCard() {
@@ -1000,6 +1110,8 @@ async function loadSettings() {
     "fixtureId",
     "trackingEnabled",
     "activeViewMode",
+    "scenarioModeEnabled",
+    "scenarioPayloadPath",
     "leagueFilterId",
     "language",
     "billingUserId",
@@ -1017,11 +1129,13 @@ async function loadSettings() {
   const storedFixtureId = result.fixtureId ?? null;
   const storedLeagueFilterId = result.leagueFilterId ?? null;
   const storedLanguage = result.language ?? DEFAULT_LANGUAGE;
+  const storedScenarioPayloadPath = String(result.scenarioPayloadPath || "");
 
   setLanguage(storedLanguage);
   fixtureIdInput.value = storedFixtureId ?? "";
   advancedOptionsExpanded = Boolean(storedFixtureId);
   renderAdvancedOptions();
+  scenarioPreviewEnabled = Boolean(result.scenarioModeEnabled) && isScenarioPreviewAvailable();
   currentBilling = {
     ...currentBilling,
     userId: result.billingUserId || createBillingUserId(),
@@ -1045,6 +1159,8 @@ async function loadSettings() {
   await chrome.storage.sync.set({
     billingUserId: currentBilling.userId,
     activeViewMode: result.activeViewMode ?? "overlay",
+    scenarioModeEnabled: scenarioPreviewEnabled,
+    scenarioPayloadPath: storedScenarioPayloadPath,
     notifyGoals: currentNotifications.notifyGoals,
     notifyTableChanges: currentNotifications.notifyTableChanges
   });
@@ -1055,6 +1171,11 @@ async function loadSettings() {
   updatePlanHint();
   accountCardExpanded = !currentBilling.accountLinked || !isProPlan();
 
+  await loadScenarioCatalog();
+  if (storedScenarioPayloadPath) {
+    scenarioVariantSelect.value = storedScenarioPayloadPath;
+  }
+  renderScenarioPreviewState();
   await loadRuntimePublicConfig();
   await fetchBillingStatus();
   await refreshMatchLists(storedFixtureId, storedLeagueFilterId);
@@ -1116,11 +1237,17 @@ async function loadRuntimePublicConfig() {
 }
 
 async function handleStartTracking() {
-  const fixtureId = getSelectedFixtureId();
   const backendUrl = normalizeBackendUrl();
   const selectedMatch = getSelectedMatch();
+  const selectedScenario = scenarioPreviewEnabled ? getSelectedScenarioEntry() : null;
+  const fixtureId = selectedScenario?.fixtureId || getSelectedFixtureId();
 
-  if (!fixtureId) {
+  if (scenarioPreviewEnabled && !selectedScenario) {
+    setStatus(translate("popup.statusChooseScenario"), true);
+    return;
+  }
+
+  if (!scenarioPreviewEnabled && !fixtureId) {
     setStatus(translate("popup.statusChooseFixture"), true);
     return;
   }
@@ -1148,6 +1275,8 @@ async function handleStartTracking() {
 
   await chrome.storage.sync.set({
     fixtureId,
+    scenarioModeEnabled: Boolean(selectedScenario),
+    scenarioPayloadPath: selectedScenario?.path || "",
     language: currentLanguage,
     activeViewMode: "overlay",
     billingUserId: currentBilling.userId,
@@ -1163,7 +1292,11 @@ async function handleStartTracking() {
     type: "LMI_TRACKING_UPDATED"
   });
 
-  trackAnalytics("tracking_started", buildMatchAnalyticsProperties(selectedMatch));
+  trackAnalytics("tracking_started", {
+    ...buildMatchAnalyticsProperties(selectedMatch),
+    scenarioPreviewEnabled: Boolean(selectedScenario),
+    scenarioLabel: selectedScenario?.label
+  });
   setStatus(translate("popup.statusTrackingStarted"));
 }
 
@@ -1425,6 +1558,21 @@ fixtureIdInput.addEventListener("input", () => {
 advancedToggleButton.addEventListener("click", () => {
   advancedOptionsExpanded = !advancedOptionsExpanded;
   renderAdvancedOptions();
+});
+
+scenarioModeToggle.addEventListener("change", async () => {
+  scenarioPreviewEnabled = scenarioModeToggle.checked && isScenarioPreviewAvailable();
+  renderScenarioPreviewState();
+  await chrome.storage.sync.set({
+    scenarioModeEnabled: scenarioPreviewEnabled
+  });
+});
+
+scenarioVariantSelect.addEventListener("change", async () => {
+  renderScenarioPreviewState();
+  await chrome.storage.sync.set({
+    scenarioPayloadPath: scenarioVariantSelect.value || ""
+  });
 });
 
 refreshMatchesButton.addEventListener("click", async () => {

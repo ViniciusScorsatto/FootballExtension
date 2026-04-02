@@ -1045,6 +1045,22 @@ function buildCupMomentumFromScore(score) {
   };
 }
 
+function buildAggregatePressureLines(aggregateHome, aggregateAway, teams) {
+  const goalGap = Math.abs(aggregateHome - aggregateAway);
+
+  if (goalGap === 0) {
+    return ["Next goal would put a side through"];
+  }
+
+  const trailingTeam = aggregateHome > aggregateAway ? teams.away.name : teams.home.name;
+
+  if (goalGap === 1) {
+    return [`${trailingTeam} is one goal from forcing extra time`];
+  }
+
+  return [`${trailingTeam} still needs ${goalGap} more goals to force extra time`];
+}
+
 function buildKnockoutContext(fixture, roundFixtures, competitionFormat) {
   if (!shouldUseKnockoutImpact(fixture, competitionFormat)) {
     return null;
@@ -1171,17 +1187,15 @@ function buildCupImpact(status, fixture, teams, knockoutContext, penaltyContext 
     score.away + getGoalsForTeamInFixture(pairedLeg, fixture?.teams?.away?.id);
   const isAggregateLevel = aggregateHome === aggregateAway;
   const leadingTeam = aggregateHome > aggregateAway ? teams.home.name : teams.away.name;
-  const trailingTeam = aggregateHome > aggregateAway ? teams.away.name : teams.home.name;
+  const pressureLines = buildAggregatePressureLines(aggregateHome, aggregateAway, teams);
 
   return {
     ...baseImpact,
-    summary: isAggregateLevel ? "Aggregate score is level" : `${leadingTeam} is currently going through`,
+    summary: isAggregateLevel ? "Next goal would put a side through" : `${leadingTeam} is currently going through`,
     competition: [
       `${teams.home.name} ${aggregateHome}-${aggregateAway} ${teams.away.name} on aggregate`,
       isAggregateLevel ? "Aggregate score is level" : `${leadingTeam} is currently going through`,
-      Math.abs(aggregateHome - aggregateAway) === 1
-        ? `${trailingTeam} needs one more goal to level the aggregate`
-        : ""
+      ...pressureLines
     ].filter(Boolean)
   };
 }

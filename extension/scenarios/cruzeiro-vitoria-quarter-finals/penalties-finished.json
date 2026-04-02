@@ -1,0 +1,65 @@
+{
+  "fixture_id": 9104,
+  "startsAt": "2026-04-09T08:00:00.000Z",
+  "last_updated": "2026-04-09T09:54:00.000Z",
+  "league": {
+    "id": 73,
+    "name": "Copa do Brasil",
+    "country": "Brazil",
+    "season": 2026,
+    "round": "Quarter-finals"
+  },
+  "teams": {
+    "home": { "id": 21, "name": "Cruzeiro", "shortName": "CRU", "logo": "" },
+    "away": { "id": 22, "name": "Vitoria", "shortName": "VIT", "logo": "" }
+  },
+  "score": { "home": 1, "away": 1 },
+  "status": {
+    "phase": "finished",
+    "short": "PEN",
+    "long": "Match Finished",
+    "minute": 120,
+    "isFinished": true
+  },
+  "event": { "type": "NONE", "message": "" },
+  "impact": {
+    "summary": "Cruzeiro wins on penalties",
+    "table": null,
+    "competition": [
+      "Cruzeiro 4-2 Vitoria on penalties",
+      "Cruzeiro wins on penalties"
+    ],
+    "biggestMovement": null,
+    "momentum": { "home": 50, "away": 50 },
+    "mode": "cup"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 52, "shotsOnTarget": 7, "totalShots": 15, "corners": 6 },
+    "away": { "possession": 48, "shotsOnTarget": 5, "totalShots": 11, "corners": 4 },
+    "momentum": { "home": 50, "away": 50 },
+    "insights": []
+  },
+  "league_context": { "available": false, "fixtures": [] },
+  "metadata": {
+    "tableImpactAvailable": false,
+    "impactMode": "cup",
+    "competitionFormat": "knockout_cup",
+    "knockoutContext": {
+      "type": "two_leg_aggregate",
+      "round": "Quarter-finals"
+    },
+    "penaltyContext": {
+      "available": true,
+      "phase": "finished",
+      "home": 4,
+      "away": 2,
+      "winnerTeam": "Cruzeiro"
+    },
+    "scenario": {
+      "familyId": "cruzeiro-vitoria-quarter-finals",
+      "variantId": "penalties-finished",
+      "label": "Penalty shootout finished"
+    }
+  }
+}

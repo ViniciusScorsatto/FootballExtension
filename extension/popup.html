@@ -110,6 +110,29 @@
         </section>
       </section>
 
+      <section id="scenarioPreviewSection" class="lmi-settings-card" hidden>
+        <div class="lmi-settings-card__header">
+          <div>
+            <div id="scenarioPreviewEyebrow" class="lmi-popup__eyebrow">Scenario preview</div>
+            <div id="scenarioPreviewTitle" class="lmi-billing-card__title">Test saved match states</div>
+          </div>
+        </div>
+        <label class="lmi-toggle">
+          <div class="lmi-toggle__copy">
+            <span id="scenarioModeLabel" class="lmi-toggle__title">Use scenario preview</span>
+            <span id="scenarioModeHint" class="lmi-toggle__hint">Load a bundled payload instead of a live backend match.</span>
+          </div>
+          <input id="scenarioModeToggle" class="lmi-toggle__input" type="checkbox" />
+        </label>
+        <label class="lmi-field lmi-field--tight">
+          <span id="scenarioVariantLabel" class="lmi-field__label">Scenario</span>
+          <select id="scenarioVariant" class="lmi-field__input">
+            <option value="">Choose a scenario</option>
+          </select>
+        </label>
+        <p id="scenarioPreviewSummary" class="lmi-popup__hint"></p>
+      </section>
+
       <button id="refreshMatches" class="lmi-button lmi-button--ghost" type="button">
         Refresh matches
       </button>

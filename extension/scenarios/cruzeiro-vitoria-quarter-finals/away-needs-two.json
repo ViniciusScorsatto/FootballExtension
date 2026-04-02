@@ -1,0 +1,59 @@
+{
+  "fixture_id": 9104,
+  "startsAt": "2026-04-09T08:00:00.000Z",
+  "last_updated": "2026-04-09T09:20:00.000Z",
+  "league": {
+    "id": 73,
+    "name": "Copa do Brasil",
+    "country": "Brazil",
+    "season": 2026,
+    "round": "Quarter-finals"
+  },
+  "teams": {
+    "home": { "id": 21, "name": "Cruzeiro", "shortName": "CRU", "logo": "" },
+    "away": { "id": 22, "name": "Vitoria", "shortName": "VIT", "logo": "" }
+  },
+  "score": { "home": 3, "away": 0 },
+  "status": {
+    "phase": "live",
+    "short": "2H",
+    "long": "Second Half",
+    "minute": 70,
+    "isFinished": false
+  },
+  "event": { "type": "NONE", "message": "" },
+  "impact": {
+    "summary": "Cruzeiro is currently going through",
+    "table": null,
+    "competition": [
+      "Cruzeiro 3-1 Vitoria on aggregate",
+      "Cruzeiro is currently going through",
+      "Vitoria still needs 2 more goals to force extra time"
+    ],
+    "biggestMovement": null,
+    "momentum": { "home": 71, "away": 29 },
+    "mode": "cup"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 54, "shotsOnTarget": 6, "totalShots": 13, "corners": 4 },
+    "away": { "possession": 46, "shotsOnTarget": 2, "totalShots": 8, "corners": 3 },
+    "momentum": { "home": 71, "away": 29 },
+    "insights": ["Cruzeiro has the extra player"]
+  },
+  "league_context": { "available": false, "fixtures": [] },
+  "metadata": {
+    "tableImpactAvailable": false,
+    "impactMode": "cup",
+    "competitionFormat": "knockout_cup",
+    "knockoutContext": {
+      "type": "two_leg_aggregate",
+      "round": "Quarter-finals"
+    },
+    "scenario": {
+      "familyId": "cruzeiro-vitoria-quarter-finals",
+      "variantId": "away-needs-two",
+      "label": "Away side still needs two"
+    }
+  }
+}

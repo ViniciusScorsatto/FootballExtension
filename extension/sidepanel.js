@@ -3,6 +3,8 @@
     "fixtureId",
     "trackingEnabled",
     "activeViewMode",
+    "scenarioModeEnabled",
+    "scenarioPayloadPath",
     "language",
     "billingUserId",
     "billingPlan",
@@ -41,6 +43,8 @@
     billingStatus: "inactive",
     trackingEnabled: false,
     activeViewMode: "overlay",
+    scenarioModeEnabled: false,
+    scenarioPayloadPath: "",
     pollTimer: null,
     backoffMs: BASE_POLL_INTERVAL_MS,
     lastPayload: null
@@ -196,6 +200,8 @@
     state.billingStatus = settings.billingStatus ?? "inactive";
     state.trackingEnabled = Boolean(settings.trackingEnabled);
     state.activeViewMode = settings.activeViewMode ?? "overlay";
+    state.scenarioModeEnabled = Boolean(settings.scenarioModeEnabled);
+    state.scenarioPayloadPath = String(settings.scenarioPayloadPath || "");
 
     renderStaticCopy();
     updatePlanHint();
@@ -211,7 +217,11 @@
       sidepanelOpenedTracked = true;
     }
 
-    if (!state.trackingEnabled || !state.fixtureId || state.activeViewMode !== "sidepanel") {
+    if (
+      !state.trackingEnabled ||
+      (!state.fixtureId && !state.scenarioModeEnabled) ||
+      state.activeViewMode !== "sidepanel"
+    ) {
       clearPollTimer();
       renderEmptyState();
       return;
@@ -433,25 +443,45 @@
     });
   }
 
+  async function fetchScenarioPayload() {
+    if (!state.scenarioPayloadPath) {
+      throw new Error("Scenario payload is not configured");
+    }
+
+    const response = await fetch(chrome.runtime.getURL(state.scenarioPayloadPath));
+
+    if (!response.ok) {
+      throw new Error(`Scenario payload failed with ${response.status}`);
+    }
+
+    return response.json();
+  }
+
   async function fetchImpact() {
-    if (!state.trackingEnabled || !state.fixtureId) {
+    if (!state.trackingEnabled || (!state.fixtureId && !state.scenarioModeEnabled)) {
       return;
     }
 
     try {
-      const payload = await extensionRequest(
-        `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
-      );
+      const payload = state.scenarioModeEnabled
+        ? await fetchScenarioPayload()
+        : await extensionRequest(
+            `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
+          );
       state.lastPayload = payload;
       state.backoffMs = BASE_POLL_INTERVAL_MS;
       render(payload);
 
-      if (payload.status?.isFinished) {
+      if (!state.scenarioModeEnabled && payload.status?.isFinished) {
         clearPollTimer();
         return;
       }
 
-      scheduleNextPoll(getPollingIntervalMs(payload));
+      if (state.scenarioModeEnabled) {
+        clearPollTimer();
+      } else {
+        scheduleNextPoll(getPollingIntervalMs(payload));
+      }
     } catch (error) {
       renderErrorState(error);
       state.backoffMs = Math.min(state.backoffMs * 2, MAX_POLL_INTERVAL_MS);

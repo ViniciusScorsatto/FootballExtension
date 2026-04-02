@@ -1,0 +1,41 @@
+{
+  "families": [
+    {
+      "id": "cruzeiro-vitoria-quarter-finals",
+      "label": "Cruzeiro vs Vitoria - Copa do Brasil QF",
+      "fixtureId": 9104,
+      "variants": [
+        {
+          "id": "prematch",
+          "label": "Pre-match with prediction",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/prematch.json"
+        },
+        {
+          "id": "aggregate-level",
+          "label": "Aggregate level",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/aggregate-level.json"
+        },
+        {
+          "id": "home-leading",
+          "label": "Home side going through",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/home-leading.json"
+        },
+        {
+          "id": "away-needs-two",
+          "label": "Away side still needs two",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/away-needs-two.json"
+        },
+        {
+          "id": "penalties-live",
+          "label": "Penalty shootout live",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/penalties-live.json"
+        },
+        {
+          "id": "penalties-finished",
+          "label": "Penalty shootout finished",
+          "path": "scenarios/cruzeiro-vitoria-quarter-finals/penalties-finished.json"
+        }
+      ]
+    }
+  ]
+}

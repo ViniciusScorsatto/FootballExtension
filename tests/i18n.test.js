@@ -39,6 +39,10 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "Italy precisa marcar para seguir vivo"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Vitoria is one goal from forcing extra time"),
+    "Vitoria está a um gol de forçar a prorrogação"
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );
