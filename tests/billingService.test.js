@@ -56,6 +56,65 @@ test("pricing catalog exposes free, pro, and early bird metadata", async () => {
   assert.equal(catalog.offers.early_bird_lifetime.remaining, 100);
 });
 
+test("pricing catalog uses Stripe-backed amounts when Stripe returns prices", async () => {
+  const cacheService = new CacheService({
+    redisUrl: ""
+  });
+  const accountService = new AccountService({
+    cacheService,
+    env: {
+      authMagicLinkMode: "preview",
+      authMagicLinkTtlMinutes: 20
+    }
+  });
+
+  const billingService = new BillingService({
+    cacheService,
+    accountService,
+    stripeService: {
+      async findRecoverableSubscriptionByEmail() {
+        return null;
+      },
+      async getPriceSnapshot() {
+        return {
+          currency: "USD",
+          prices: {
+            pro: {
+              id: "price_normal",
+              priceMonthlyUsd: 7.99,
+              interval: "month",
+              active: true
+            },
+            early_bird_lifetime: {
+              id: "price_early",
+              priceMonthlyUsd: 4.49,
+              interval: "month",
+              active: true
+            }
+          }
+        };
+      }
+    },
+    env: {
+      betaModeEnabled: true,
+      billingCurrency: "USD",
+      proMonthlyPriceUsd: 5.99,
+      earlyBirdProMonthlyPriceUsd: 3.99,
+      earlyBirdOfferEnabled: true,
+      earlyBirdOfferMaxClaims: 100,
+      supportEmail: "support@example.com",
+      stripeNormalPriceId: "price_normal",
+      stripeEarlyPriceId: "price_early"
+    }
+  });
+
+  const catalog = await billingService.getPricingCatalog();
+
+  assert.equal(catalog.plans.pro.priceMonthlyUsd, 7.99);
+  assert.equal(catalog.offers.early_bird_lifetime.priceMonthlyUsd, 4.49);
+  assert.equal(catalog.offers.early_bird_lifetime.regularPriceMonthlyUsd, 7.99);
+});
+
 test("billing status falls back to free when no entitlement exists", async () => {
   const { billingService } = createBillingService();
   const status = await billingService.getBillingStatus({

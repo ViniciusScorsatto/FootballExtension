@@ -13,6 +13,14 @@ function normalizeEmail(email) {
   return String(email ?? "").trim().toLowerCase();
 }
 
+function toMajorCurrencyAmount(unitAmount) {
+  if (typeof unitAmount !== "number" || !Number.isFinite(unitAmount)) {
+    return null;
+  }
+
+  return unitAmount / 100;
+}
+
 function isRecoverableSubscriptionStatus(status) {
   return ["active", "trialing", "past_due", "unpaid"].includes(status);
 }
@@ -116,6 +124,60 @@ export class StripeService {
       webhookConfigured: Boolean(this.env.stripeWebhookSecret),
       successUrlConfigured: Boolean(this.env.stripeSuccessUrl),
       cancelUrlConfigured: Boolean(this.env.stripeCancelUrl)
+    };
+  }
+
+  async getPriceSnapshot({ normalPriceId, earlyPriceId }) {
+    if (!this.enabled || !this.client || (!normalPriceId && !earlyPriceId)) {
+      return null;
+    }
+
+    const [normalResult, earlyResult] = await Promise.allSettled([
+      normalPriceId
+        ? this.client.prices.retrieve(normalPriceId, {
+            expand: ["product"]
+          })
+        : Promise.resolve(null),
+      earlyPriceId
+        ? this.client.prices.retrieve(earlyPriceId, {
+            expand: ["product"]
+          })
+        : Promise.resolve(null)
+    ]);
+
+    const normalPrice = normalResult.status === "fulfilled" ? normalResult.value : null;
+    const earlyPrice = earlyResult.status === "fulfilled" ? earlyResult.value : null;
+
+    if (!normalPrice && !earlyPrice) {
+      return null;
+    }
+
+    const resolvedCurrency = (
+      normalPrice?.currency ||
+      earlyPrice?.currency ||
+      ""
+    ).toUpperCase();
+
+    return {
+      currency: resolvedCurrency || this.env.billingCurrency || "USD",
+      prices: {
+        pro: normalPrice
+          ? {
+              id: normalPrice.id,
+              priceMonthlyUsd: toMajorCurrencyAmount(normalPrice.unit_amount),
+              interval: normalPrice.recurring?.interval || "",
+              active: Boolean(normalPrice.active)
+            }
+          : null,
+        early_bird_lifetime: earlyPrice
+          ? {
+              id: earlyPrice.id,
+              priceMonthlyUsd: toMajorCurrencyAmount(earlyPrice.unit_amount),
+              interval: earlyPrice.recurring?.interval || "",
+              active: Boolean(earlyPrice.active)
+            }
+          : null
+      }
     };
   }
 

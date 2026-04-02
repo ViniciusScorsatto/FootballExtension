@@ -2,6 +2,7 @@ import { BILLING_OFFERS, BILLING_PLANS } from "../config/billing.js";
 
 const EARLY_BIRD_COUNTER_KEY = "billing:offer:early_bird_lifetime:claims";
 const BILLING_COUNTER_TTL_SECONDS = 60 * 60 * 24 * 365 * 10;
+const STRIPE_PRICE_SNAPSHOT_TTL_SECONDS = 60 * 10;
 
 function buildEntitlementKey(userId) {
   return `billing:user:${userId}`;
@@ -17,6 +18,10 @@ function buildCustomerKey(customerId) {
 
 function buildWebhookStatusKey() {
   return "billing:webhook:last_status";
+}
+
+function buildStripePricingSnapshotKey(currency, normalPriceId, earlyPriceId) {
+  return `billing:stripe_prices:${currency}:${normalPriceId || "none"}:${earlyPriceId || "none"}`;
 }
 
 function entitlementKeyPrefix() {
@@ -94,22 +99,30 @@ export class BillingService {
   }
 
   async getPricingCatalog() {
+    const stripePricing = await this.getStripePricingSnapshot();
     const earlyBirdStats = await this.getEarlyBirdStats();
+    const pricingCurrency =
+      stripePricing?.currency || this.env.billingCurrency;
+    const proMonthlyPriceUsd =
+      stripePricing?.prices?.pro?.priceMonthlyUsd ?? this.env.proMonthlyPriceUsd;
+    const earlyBirdProMonthlyPriceUsd =
+      stripePricing?.prices?.early_bird_lifetime?.priceMonthlyUsd ??
+      this.env.earlyBirdProMonthlyPriceUsd;
 
     return {
       betaModeEnabled: this.env.betaModeEnabled,
-      currency: this.env.billingCurrency,
+      currency: pricingCurrency,
       supportEmail: this.env.supportEmail,
       plans: {
-        free: mapPlan(BILLING_PLANS.free, 0, this.env.billingCurrency),
-        pro: mapPlan(BILLING_PLANS.pro, this.env.proMonthlyPriceUsd, this.env.billingCurrency)
+        free: mapPlan(BILLING_PLANS.free, 0, pricingCurrency),
+        pro: mapPlan(BILLING_PLANS.pro, proMonthlyPriceUsd, pricingCurrency)
       },
       offers: {
         early_bird_lifetime: {
           ...BILLING_OFFERS.early_bird_lifetime,
-          currency: this.env.billingCurrency,
-          priceMonthlyUsd: this.env.earlyBirdProMonthlyPriceUsd,
-          regularPriceMonthlyUsd: this.env.proMonthlyPriceUsd,
+          currency: pricingCurrency,
+          priceMonthlyUsd: earlyBirdProMonthlyPriceUsd,
+          regularPriceMonthlyUsd: proMonthlyPriceUsd,
           enabled: this.env.earlyBirdOfferEnabled,
           maxClaims: this.env.earlyBirdOfferMaxClaims,
           claimed: earlyBirdStats.claimed,
@@ -118,6 +131,40 @@ export class BillingService {
         }
       }
     };
+  }
+
+  async getStripePricingSnapshot() {
+    if (!this.stripeService?.getPriceSnapshot) {
+      return null;
+    }
+
+    const cacheKey = buildStripePricingSnapshotKey(
+      this.env.billingCurrency,
+      this.env.stripeNormalPriceId,
+      this.env.stripeEarlyPriceId
+    );
+    const cachedSnapshot = await this.cacheService.getJson(cacheKey);
+
+    if (cachedSnapshot) {
+      return cachedSnapshot;
+    }
+
+    const snapshot = await this.stripeService.getPriceSnapshot({
+      normalPriceId: this.env.stripeNormalPriceId,
+      earlyPriceId: this.env.stripeEarlyPriceId
+    });
+
+    if (!snapshot) {
+      return null;
+    }
+
+    await this.cacheService.setJson(
+      cacheKey,
+      snapshot,
+      STRIPE_PRICE_SNAPSHOT_TTL_SECONDS
+    );
+
+    return snapshot;
   }
 
   async getEarlyBirdStats() {
