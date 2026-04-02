@@ -1611,6 +1611,572 @@ test("live statistics add pressure insights and competition-specific zone messag
   assert.ok(payload.statistics.insights.includes("Leeds is pinning the other side back"));
 });
 
+test("stale standings are corrected with finished fixtures from the same round before live simulation", async () => {
+  const fixtureId = 9202;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775624400,
+          date: "2026-04-09T09:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 70
+          }
+        },
+        league: {
+          id: 40,
+          name: "Championship",
+          country: "England",
+          season: 2026,
+          standings: true,
+          round: "Regular Season - 41"
+        },
+        teams: {
+          home: { id: 31, name: "Leeds", logo: "" },
+          away: { id: 32, name: "Coventry", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    rank: 1,
+                    update: "2026-04-01T06:00:00+00:00",
+                    team: { id: 99, name: "Sheffield United" },
+                    points: 80,
+                    goalsDiff: 25,
+                    all: { played: 40, win: 24, draw: 8, lose: 8, goals: { for: 70, against: 45 } }
+                  },
+                  {
+                    rank: 2,
+                    update: "2026-04-01T06:00:00+00:00",
+                    team: { id: 98, name: "Burnley" },
+                    points: 75,
+                    goalsDiff: 21,
+                    all: { played: 40, win: 22, draw: 9, lose: 9, goals: { for: 69, against: 48 } }
+                  },
+                  {
+                    rank: 3,
+                    update: "2026-04-01T06:00:00+00:00",
+                    team: { id: 31, name: "Leeds" },
+                    points: 75,
+                    goalsDiff: 20,
+                    all: { played: 40, win: 22, draw: 9, lose: 9, goals: { for: 70, against: 50 } }
+                  },
+                  {
+                    rank: 21,
+                    update: "2026-04-01T06:00:00+00:00",
+                    team: { id: 32, name: "Coventry" },
+                    points: 41,
+                    goalsDiff: -12,
+                    all: { played: 40, win: 10, draw: 11, lose: 19, goals: { for: 39, against: 51 } }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9199,
+            timestamp: 1775617200,
+            date: "2026-04-09T07:00:00+00:00",
+            status: {
+              short: "FT",
+              long: "Match Finished",
+              elapsed: 90
+            }
+          },
+          teams: {
+            home: { id: 98, name: "Burnley" },
+            away: { id: 97, name: "Stoke" }
+          },
+          goals: { home: 0, away: 1 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: 1775624400,
+            date: "2026-04-09T09:00:00+00:00",
+            status: {
+              short: "2H",
+              long: "Second Half",
+              elapsed: 70
+            }
+          },
+          teams: {
+            home: { id: 31, name: "Leeds" },
+            away: { id: 32, name: "Coventry" }
+          },
+          goals: { home: 1, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.impactBasis, "corrected-round-baseline");
+  assert.equal(payload.metadata.standingsUpdateTimestamps.home, "2026-04-01T06:00:00+00:00");
+  assert.equal(payload.standings_snapshot.before.find((row) => row.teamId === 31)?.liveRank, 2);
+  assert.equal(payload.standings_snapshot.before.find((row) => row.teamId === 98)?.liveRank, 3);
+});
+
+test("group-table correction skips finished round fixtures from other groups", async () => {
+  const fixtureId = 9203;
+  const { service } = createService({
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775624400,
+          date: "2026-04-09T09:00:00+00:00",
+          status: {
+            short: "2H",
+            long: "Second Half",
+            elapsed: 63
+          }
+        },
+        league: {
+          id: 555,
+          name: "Regional League",
+          country: "Brazil",
+          season: 2026,
+          standings: true,
+          round: "Group Stage - 4"
+        },
+        teams: {
+          home: { id: 1, name: "Home", logo: "" },
+          away: { id: 2, name: "Away", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => ({
+        response: [
+          {
+            league: {
+              standings: [
+                [
+                  {
+                    group: "Group A",
+                    rank: 1,
+                    update: "2026-04-09T05:00:00+00:00",
+                    team: { id: 3, name: "Other A" },
+                    points: 7,
+                    goalsDiff: 3,
+                    all: { played: 3, win: 2, draw: 1, lose: 0, goals: { for: 5, against: 2 } }
+                  },
+                  {
+                    group: "Group A",
+                    rank: 2,
+                    update: "2026-04-09T05:00:00+00:00",
+                    team: { id: 1, name: "Home" },
+                    points: 6,
+                    goalsDiff: 2,
+                    all: { played: 3, win: 2, draw: 0, lose: 1, goals: { for: 4, against: 2 } }
+                  },
+                  {
+                    group: "Group A",
+                    rank: 3,
+                    update: "2026-04-09T05:00:00+00:00",
+                    team: { id: 2, name: "Away" },
+                    points: 4,
+                    goalsDiff: 0,
+                    all: { played: 3, win: 1, draw: 1, lose: 1, goals: { for: 3, against: 3 } }
+                  }
+                ],
+                [
+                  {
+                    group: "Group B",
+                    rank: 1,
+                    update: "2026-04-09T05:00:00+00:00",
+                    team: { id: 4, name: "Other B1" },
+                    points: 7,
+                    goalsDiff: 3,
+                    all: { played: 3, win: 2, draw: 1, lose: 0, goals: { for: 4, against: 1 } }
+                  },
+                  {
+                    group: "Group B",
+                    rank: 2,
+                    update: "2026-04-09T05:00:00+00:00",
+                    team: { id: 5, name: "Other B2" },
+                    points: 5,
+                    goalsDiff: 1,
+                    all: { played: 3, win: 1, draw: 2, lose: 0, goals: { for: 3, against: 2 } }
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }),
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: 9204,
+            timestamp: 1775613600,
+            date: "2026-04-09T06:00:00+00:00",
+            status: {
+              short: "FT",
+              long: "Match Finished",
+              elapsed: 90
+            }
+          },
+          teams: {
+            home: { id: 4, name: "Other B1" },
+            away: { id: 5, name: "Other B2" }
+          },
+          goals: { home: 0, away: 1 }
+        },
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: 1775624400,
+            date: "2026-04-09T09:00:00+00:00",
+            status: {
+              short: "2H",
+              long: "Second Half",
+              elapsed: 63
+            }
+          },
+          teams: {
+            home: { id: 1, name: "Home" },
+            away: { id: 2, name: "Away" }
+          },
+          goals: { home: 1, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const payload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(payload.metadata.impactBasis, "official-baseline");
+  assert.deepEqual(
+    payload.standings_snapshot.before.map((row) => row.teamId),
+    [3, 1, 2]
+  );
+});
+
+test("finished matches stay provisional until standings row updates change, then switch to official", async () => {
+  const fixtureId = 9205;
+  let standingsCall = 0;
+  const { service } = createService({
+    env: {
+      standingsCacheTtlSeconds: 0
+    },
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775624400,
+          date: "2026-04-09T09:00:00+00:00",
+          status: {
+            short: "FT",
+            long: "Match Finished",
+            elapsed: 90
+          }
+        },
+        league: {
+          id: 71,
+          name: "Serie A",
+          country: "Brazil",
+          season: 2026,
+          standings: true,
+          round: "Regular Season - 4"
+        },
+        teams: {
+          home: { id: 1, name: "Cruzeiro", logo: "" },
+          away: { id: 2, name: "Vitoria", logo: "" }
+        },
+        goals: {
+          home: 2,
+          away: 0
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => {
+        standingsCall += 1;
+
+        if (standingsCall === 1) {
+          return {
+            response: [
+              {
+                league: {
+                  standings: [
+                    [
+                      {
+                        rank: 3,
+                        update: "2026-04-09T05:00:00+00:00",
+                        team: { id: 1, name: "Cruzeiro" },
+                        points: 7,
+                        goalsDiff: 1,
+                        all: { played: 3, win: 2, draw: 1, lose: 0, goals: { for: 4, against: 3 } }
+                      },
+                      {
+                        rank: 4,
+                        update: "2026-04-09T05:00:00+00:00",
+                        team: { id: 2, name: "Vitoria" },
+                        points: 7,
+                        goalsDiff: 0,
+                        all: { played: 3, win: 2, draw: 1, lose: 0, goals: { for: 3, against: 3 } }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          };
+        }
+
+        return {
+          response: [
+            {
+              league: {
+                standings: [
+                  [
+                    {
+                      rank: 2,
+                      update: "2026-04-09T12:00:00+00:00",
+                      team: { id: 1, name: "Cruzeiro" },
+                      points: 10,
+                      goalsDiff: 3,
+                      all: { played: 4, win: 3, draw: 1, lose: 0, goals: { for: 6, against: 3 } }
+                    },
+                    {
+                      rank: 5,
+                      update: "2026-04-09T12:00:00+00:00",
+                      team: { id: 2, name: "Vitoria" },
+                      points: 7,
+                      goalsDiff: -2,
+                      all: { played: 4, win: 2, draw: 1, lose: 1, goals: { for: 3, against: 5 } }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        };
+      },
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: 1775624400,
+            date: "2026-04-09T09:00:00+00:00",
+            status: {
+              short: "FT",
+              long: "Match Finished",
+              elapsed: 90
+            }
+          },
+          teams: {
+            home: { id: 1, name: "Cruzeiro" },
+            away: { id: 2, name: "Vitoria" }
+          },
+          goals: { home: 2, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const firstPayload = await service.refreshMatchImpact(fixtureId);
+  const secondPayload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(firstPayload.metadata.impactBasis, "finished-provisional");
+  assert.equal(firstPayload.metadata.standingsUpdateTimestamps.home, "2026-04-09T05:00:00+00:00");
+  assert.equal(secondPayload.metadata.impactBasis, "finished-official");
+  assert.equal(secondPayload.metadata.standingsUpdateTimestamps.home, "2026-04-09T12:00:00+00:00");
+  assert.equal(secondPayload.standings_snapshot.after.find((row) => row.teamId === 1)?.points, 10);
+});
+
+test("finished matches without standings row updates stay on provisional impact", async () => {
+  const fixtureId = 9206;
+  let standingsCall = 0;
+  const { service } = createService({
+    env: {
+      standingsCacheTtlSeconds: 0
+    },
+    apiFootballClient: {
+      getFixture: async () => ({
+        fixture: {
+          id: fixtureId,
+          timestamp: 1775624400,
+          date: "2026-04-09T09:00:00+00:00",
+          status: {
+            short: "FT",
+            long: "Match Finished",
+            elapsed: 90
+          }
+        },
+        league: {
+          id: 71,
+          name: "Serie A",
+          country: "Brazil",
+          season: 2026,
+          standings: true,
+          round: "Regular Season - 4"
+        },
+        teams: {
+          home: { id: 10, name: "Botafogo", logo: "" },
+          away: { id: 11, name: "Palmeiras", logo: "" }
+        },
+        goals: {
+          home: 1,
+          away: 0
+        }
+      }),
+      getLeagueCoverage: async () => ({
+        standings: true,
+        injuries: false,
+        players: false,
+        predictions: false,
+        fixtures: {
+          events: false,
+          lineups: false,
+          statisticsFixtures: false,
+          statisticsPlayers: false
+        }
+      }),
+      getStandings: async () => {
+        standingsCall += 1;
+
+        if (standingsCall === 1) {
+          return {
+            response: [
+              {
+                league: {
+                  standings: [
+                    [
+                      {
+                        rank: 5,
+                        team: { id: 10, name: "Botafogo" },
+                        points: 6,
+                        goalsDiff: 0,
+                        all: { played: 3, win: 2, draw: 0, lose: 1, goals: { for: 3, against: 3 } }
+                      },
+                      {
+                        rank: 3,
+                        team: { id: 11, name: "Palmeiras" },
+                        points: 7,
+                        goalsDiff: 2,
+                        all: { played: 3, win: 2, draw: 1, lose: 0, goals: { for: 4, against: 2 } }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          };
+        }
+
+        return {
+          response: [
+            {
+              league: {
+                standings: [
+                  [
+                    {
+                      rank: 4,
+                      team: { id: 10, name: "Botafogo" },
+                      points: 9,
+                      goalsDiff: 1,
+                      all: { played: 4, win: 3, draw: 0, lose: 1, goals: { for: 4, against: 3 } }
+                    },
+                    {
+                      rank: 6,
+                      team: { id: 11, name: "Palmeiras" },
+                      points: 7,
+                      goalsDiff: 1,
+                      all: { played: 4, win: 2, draw: 1, lose: 1, goals: { for: 4, against: 3 } }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        };
+      },
+      getFixturesByRound: async () => [
+        {
+          fixture: {
+            id: fixtureId,
+            timestamp: 1775624400,
+            date: "2026-04-09T09:00:00+00:00",
+            status: {
+              short: "FT",
+              long: "Match Finished",
+              elapsed: 90
+            }
+          },
+          teams: {
+            home: { id: 10, name: "Botafogo" },
+            away: { id: 11, name: "Palmeiras" }
+          },
+          goals: { home: 1, away: 0 }
+        }
+      ]
+    }
+  });
+
+  const firstPayload = await service.refreshMatchImpact(fixtureId);
+  const secondPayload = await service.refreshMatchImpact(fixtureId);
+
+  assert.equal(firstPayload.metadata.impactBasis, "finished-provisional");
+  assert.equal(secondPayload.metadata.impactBasis, "finished-provisional");
+  assert.equal(secondPayload.metadata.standingsUpdateTimestamps.home, null);
+});
+
 test("prematch payload carries lineup grid positions and jersey colors", async () => {
   const fixtureId = 9301;
   const { service } = createService({

@@ -158,6 +158,110 @@ function buildResourceEnvelope(data, extra = {}) {
   };
 }
 
+function parseTimestampValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildTrackedStandingsUpdates(table, teams) {
+  return {
+    home: table.find((row) => row.teamId === teams.home.id)?.update ?? null,
+    away: table.find((row) => row.teamId === teams.away.id)?.update ?? null
+  };
+}
+
+function haveTrackedStandingsUpdatesChanged(previousUpdates, currentUpdates) {
+  if (!previousUpdates || !currentUpdates) {
+    return false;
+  }
+
+  return ["home", "away"].some((side) => {
+    const previous = previousUpdates[side];
+    const current = currentUpdates[side];
+    return Boolean(previous && current && previous !== current);
+  });
+}
+
+function getFixtureSortKey(fixture) {
+  return Number(fixture?.fixture?.timestamp ?? 0);
+}
+
+function getFixtureDateMs(fixture) {
+  const timestamp = Number(fixture?.fixture?.timestamp ?? 0);
+
+  if (timestamp > 0) {
+    return timestamp * 1000;
+  }
+
+  return parseTimestampValue(fixture?.fixture?.date);
+}
+
+function shouldApplyFinishedRoundFixture(table, fixture) {
+  const homeId = fixture?.teams?.home?.id;
+  const awayId = fixture?.teams?.away?.id;
+  const homeRow = table.find((row) => row.teamId === homeId);
+  const awayRow = table.find((row) => row.teamId === awayId);
+
+  if (!homeRow && !awayRow) {
+    return false;
+  }
+
+  const fixtureDateMs = getFixtureDateMs(fixture);
+  const relevantUpdates = [homeRow?.update, awayRow?.update]
+    .map(parseTimestampValue)
+    .filter((value) => Number.isFinite(value));
+
+  if (!fixtureDateMs || relevantUpdates.length === 0) {
+    return false;
+  }
+
+  return relevantUpdates.some((updateMs) => updateMs < fixtureDateMs);
+}
+
+function buildCorrectedBaseline(officialTable, roundFixtures, trackedFixtureId) {
+  if (!Array.isArray(officialTable) || officialTable.length === 0 || !Array.isArray(roundFixtures) || roundFixtures.length === 0) {
+    return {
+      table: officialTable,
+      source: "official-baseline"
+    };
+  }
+
+  const finishedFixtures = roundFixtures
+    .filter((entry) => entry?.fixture?.id && entry.fixture.id !== trackedFixtureId)
+    .filter((entry) => getMatchStatus(entry).phase === "finished")
+    .sort((left, right) => {
+      const timestampDiff = getFixtureSortKey(left) - getFixtureSortKey(right);
+      if (timestampDiff !== 0) {
+        return timestampDiff;
+      }
+
+      return Number(left?.fixture?.id ?? 0) - Number(right?.fixture?.id ?? 0);
+    });
+
+  let correctedTable = officialTable;
+  let appliedFixtureCount = 0;
+
+  for (const roundFixture of finishedFixtures) {
+    if (!shouldApplyFinishedRoundFixture(correctedTable, roundFixture)) {
+      continue;
+    }
+
+    correctedTable = simulateTableSubset(correctedTable, roundFixture, {
+      applyResult: true
+    });
+    appliedFixtureCount += 1;
+  }
+
+  return {
+    table: correctedTable,
+    source: appliedFixtureCount > 0 ? "corrected-round-baseline" : "official-baseline"
+  };
+}
+
 function isLineupsConfirmed(lineups) {
   return lineups.some((entry) => Array.isArray(entry?.startXI) && entry.startXI.length > 0);
 }
@@ -1502,14 +1606,23 @@ export class MatchImpactService {
     }
 
     const officialTable = competitionFormat.selectedGroup?.table ?? [];
+    const correctedBaseline = buildCorrectedBaseline(officialTable, roundFixtures, fixtureId);
     const canUseSavedBaseline =
       Array.isArray(previousState.baselineStandings) && previousState.baselineStandings.length > 0;
-    const baselineStandings = canUseSavedBaseline ? previousState.baselineStandings : officialTable;
+    const baselineStandings = canUseSavedBaseline ? previousState.baselineStandings : correctedBaseline.table;
+    const baselineSource = canUseSavedBaseline
+      ? previousState.baselineSource ?? correctedBaseline.source
+      : correctedBaseline.source;
+    const trackedStandingsUpdates = buildTrackedStandingsUpdates(officialTable, teams);
+    const finishedOfficialCaughtUp =
+      status.phase === "finished" &&
+      haveTrackedStandingsUpdatesChanged(previousState.finishedTrackedStandingsUpdates, trackedStandingsUpdates);
     const applyResult = status.phase !== "upcoming";
-    const simulatedTable = simulateTable(baselineStandings, fixture, {
+    const provisionalTable = simulateTable(baselineStandings, fixture, {
       applyResult
     });
-    const impact = computeImpact(baselineStandings, simulatedTable, fixture, {
+    const afterTable = finishedOfficialCaughtUp ? officialTable : provisionalTable;
+    const impact = computeImpact(baselineStandings, afterTable, fixture, {
       zoneProfile: competitionFormat.registry?.zoneProfile ?? ""
     });
     const statisticsSummary = buildStatisticsSummary(statistics, teams, impact.momentum);
@@ -1544,15 +1657,16 @@ export class MatchImpactService {
       goal_timeline: buildGoalTimeline(events, teams),
       standings_snapshot: {
         before: serializeTable(baselineStandings),
-        after: serializeTable(simulatedTable)
+        after: serializeTable(afterTable)
       },
       recent_events: buildRecentEvents(events),
       metadata: {
         cacheTtlSeconds: getCacheTtl(status, this.env),
-        impactBasis:
-          canUseSavedBaseline || status.phase !== "finished"
-            ? "baseline-standings"
-            : "estimated-from-current-standings",
+        impactBasis: finishedOfficialCaughtUp
+          ? "finished-official"
+          : status.phase === "finished"
+            ? "finished-provisional"
+            : baselineSource,
         tableImpactAvailable: true,
         prematchCadence,
         competitionFormat: competitionFormat.format,
@@ -1560,6 +1674,7 @@ export class MatchImpactService {
         groupLabel: competitionFormat.selectedGroup?.name ?? "",
         teamGroupPositions: competitionFormat.teamPositions ?? null,
         projectedTeamGroupPositions: groupProjection,
+        standingsUpdateTimestamps: trackedStandingsUpdates,
         penaltyContext,
         leagueCoverage
       }
@@ -1569,10 +1684,15 @@ export class MatchImpactService {
       previousScore: score,
       baselineStandings:
         status.phase === "upcoming"
-          ? officialTable
+          ? correctedBaseline.table
           : canUseSavedBaseline
             ? previousState.baselineStandings
-            : officialTable,
+            : correctedBaseline.table,
+      baselineSource,
+      finishedTrackedStandingsUpdates:
+        status.phase === "finished"
+          ? previousState.finishedTrackedStandingsUpdates ?? trackedStandingsUpdates
+          : previousState.finishedTrackedStandingsUpdates ?? null,
       lastStatus: status
     };
 
