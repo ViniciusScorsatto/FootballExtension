@@ -90,7 +90,14 @@
   }
 
   function init() {
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message?.type === "LMI_PING") {
+        sendResponse({
+          ok: true
+        });
+        return false;
+      }
+
       if (message?.type === "LMI_TRACKING_UPDATED") {
         state.pageDismissed = false;
         syncSettings(true);

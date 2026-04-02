@@ -310,6 +310,17 @@ function notifyActiveTab(message) {
   });
 }
 
+async function pingContentScript(tabId) {
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, {
+      type: "LMI_PING"
+    });
+    return Boolean(response?.ok);
+  } catch {
+    return false;
+  }
+}
+
 async function ensureContentScriptInjected() {
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -318,6 +329,12 @@ async function ensureContentScriptInjected() {
   }
 
   if (!activeTab.url || !/^https?:/i.test(activeTab.url)) {
+    return;
+  }
+
+  const alreadyInjected = await pingContentScript(activeTab.id);
+
+  if (alreadyInjected) {
     return;
   }
 
@@ -1299,10 +1316,6 @@ async function handleStartTracking() {
     trackingEnabled: true
   });
 
-  notifyActiveTab({
-    type: "LMI_TRACKING_UPDATED"
-  });
-
   trackAnalytics("tracking_started", {
     ...buildMatchAnalyticsProperties(selectedMatch),
     scenarioPreviewEnabled: Boolean(selectedScenario),
@@ -1320,10 +1333,6 @@ async function handleStopTracking() {
     billingPlan: currentBilling.plan,
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId
-  });
-
-  notifyActiveTab({
-    type: "LMI_TRACKING_STOPPED"
   });
 
   trackAnalytics("tracking_stopped", buildMatchAnalyticsProperties(selectedMatch));

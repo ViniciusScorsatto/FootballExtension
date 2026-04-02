@@ -367,3 +367,18 @@ test("popup hides the advanced manual-fixture card on free and only expands it f
   );
   assert.match(popupScript, /advancedOptionsExpanded = isProPlan\(\) && Boolean\(storedFixtureId\);/);
 });
+
+test("popup pings existing overlay before reinjecting and relies on storage changes for tracking updates", async () => {
+  const popupScript = await readProjectFile("extension/popup.js");
+  const contentScript = await readProjectFile("extension/content.js");
+
+  assert.match(popupScript, /async function pingContentScript\(tabId\)/);
+  assert.match(popupScript, /type:\s*"LMI_PING"/);
+  assert.match(popupScript, /const alreadyInjected = await pingContentScript\(activeTab\.id\);/);
+  assert.match(popupScript, /if \(alreadyInjected\) \{\s*return;\s*\}/);
+  assert.doesNotMatch(popupScript, /notifyActiveTab\(\{\s*type:\s*"LMI_TRACKING_UPDATED"/);
+  assert.doesNotMatch(popupScript, /notifyActiveTab\(\{\s*type:\s*"LMI_TRACKING_STOPPED"/);
+
+  assert.match(contentScript, /if \(message\?\.type === "LMI_PING"\) \{/);
+  assert.match(contentScript, /sendResponse\(\{\s*ok:\s*true\s*\}\);/);
+});
