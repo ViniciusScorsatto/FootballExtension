@@ -65,7 +65,6 @@
     emptyTitle: document.getElementById("sidepanelEmptyTitle"),
     emptyBody: document.getElementById("sidepanelEmptyBody"),
     content: document.getElementById("sidepanelContent"),
-    leagueEyebrow: document.getElementById("sidepanelLeagueEyebrow"),
     leagueName: document.getElementById("sidepanelLeagueName"),
     phasePill: document.getElementById("sidepanelPhasePill"),
     freshness: document.getElementById("sidepanelFreshness"),
@@ -306,7 +305,6 @@
     elements.emptyEyebrow.textContent = translate("sidepanel.eyebrow");
     elements.emptyTitle.textContent = translate("sidepanel.emptyTitle");
     elements.emptyBody.textContent = translate("sidepanel.emptyBody");
-    elements.leagueEyebrow.textContent = translate("panel.eyebrow");
     elements.eventLabel.textContent = translate("panel.goalImpact");
     elements.tableLabel.textContent = translate("panel.tableImpact");
     elements.competitionLabel.textContent = translate("panel.competitionImpact");

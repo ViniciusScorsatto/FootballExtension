@@ -157,17 +157,13 @@
         <div class="lmi-collapsed-card__impact">${escapeHtml(translate("panel.waitingImpact"))}</div>
       </button>
       <div class="lmi-expanded">
-        <div class="lmi-expanded__header">
-          <div class="lmi-expanded__summary">
-            <div class="lmi-expanded__brand">
-              <div>
-                <div class="lmi-expanded__eyebrow">${escapeHtml(translate("panel.eyebrow"))}</div>
-                <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
-              </div>
-            </div>
-            <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
+        <div class="lmi-overlay-topbar">
+          <div class="lmi-brand__copy lmi-brand__copy--surface">
+            <div class="lmi-popup__eyebrow lmi-overlay-brand-eyebrow">${escapeHtml(translate("popup.eyebrow"))}</div>
+            <div class="lmi-brand__subhead lmi-overlay-brand-subhead">${escapeHtml(translate("popup.subhead"))}</div>
           </div>
-          <div class="lmi-expanded__actions">
+          <div class="lmi-overlay-topbar__actions">
+            <div class="lmi-top-plan-pill lmi-overlay-plan-pill">${escapeHtml(translate("popup.freePlan"))}</div>
             <button
               data-action="collapse"
               class="lmi-overlay-action"
@@ -186,6 +182,12 @@
             >
               <span aria-hidden="true">×</span>
             </button>
+          </div>
+        </div>
+        <div class="lmi-expanded__header">
+          <div class="lmi-expanded__summary">
+            <div class="lmi-expanded__brand-subhead lmi-expanded__league-name"></div>
+            <div class="lmi-expanded__headline">${escapeHtml(translate("panel.waitingMatch"))}</div>
           </div>
         </div>
         <div class="lmi-scoreboard-card">
@@ -327,10 +329,12 @@
       leagueContextList: root.querySelector(".lmi-league-context-list"),
       headerPhase: root.querySelector(".lmi-header-phase"),
       headerFreshness: root.querySelector(".lmi-header-freshness"),
+      topbarEyebrow: root.querySelector(".lmi-overlay-brand-eyebrow"),
+      topbarSubhead: root.querySelector(".lmi-overlay-brand-subhead"),
+      topbarPlanPill: root.querySelector(".lmi-overlay-plan-pill"),
       statusRow: root.querySelector(".lmi-status-row"),
       connectionStatus: root.querySelector(".lmi-connection-status"),
       lastUpdated: root.querySelector(".lmi-last-updated"),
-      eyebrow: root.querySelector(".lmi-expanded__eyebrow"),
       headlineLabel: root.querySelector(".lmi-expanded__headline"),
       collapseButton: root.querySelector('[data-action="collapse"]'),
       closeButton: root.querySelector('[data-action="close"]'),
@@ -444,7 +448,9 @@
     elements.collapsedImpact.textContent = state.lastPayload
       ? elements.collapsedImpact.textContent
       : translate("panel.waitingImpact");
-    elements.eyebrow.textContent = translate("panel.eyebrow");
+    elements.topbarEyebrow.textContent = translate("popup.eyebrow");
+    elements.topbarSubhead.textContent = translate("popup.subhead");
+    elements.topbarPlanPill.textContent = state.billingPlan === "pro" ? translate("popup.proPlan") : translate("popup.freePlan");
     if (!state.lastPayload) {
       showHeroMessage(translate("panel.waitingMatch"));
     }

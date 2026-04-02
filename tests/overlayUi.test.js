@@ -254,11 +254,19 @@ test("goal timeline renders scorer history while the sidepanel summary stays foc
   assert.match(stylesheet, /\.lmi-goal-timeline__item\s*\{/);
 });
 
-test("overlay and sidepanel hero use a centered scoreboard with full team names and separate minute line", async () => {
+test("overlay and sidepanel share the branded top header while keeping the league label near the scoreboard", async () => {
   const contentScript = await readProjectFile("extension/content.js");
   const sidepanelScript = await readProjectFile("extension/sidepanel.js");
   const sidepanelHtml = await readProjectFile("extension/sidepanel.html");
   const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(contentScript, /<div class="lmi-overlay-topbar">/);
+  assert.match(contentScript, /lmi-overlay-brand-eyebrow/);
+  assert.match(contentScript, /lmi-overlay-brand-subhead/);
+  assert.match(contentScript, /lmi-overlay-plan-pill/);
+  assert.match(contentScript, /elements\.topbarEyebrow\.textContent = translate\("popup\.eyebrow"\);/);
+  assert.match(contentScript, /elements\.topbarSubhead\.textContent = translate\("popup\.subhead"\);/);
+  assert.match(contentScript, /elements\.topbarPlanPill\.textContent = state\.billingPlan === "pro" \? translate\("popup\.proPlan"\) : translate\("popup\.freePlan"\);/);
 
   assert.match(contentScript, /<div class="lmi-scoreboard">/);
   assert.match(contentScript, /<div class="lmi-scoreboard-card">/);
@@ -268,16 +276,23 @@ test("overlay and sidepanel hero use a centered scoreboard with full team names 
   assert.match(contentScript, /showHeroScoreboard\(\{/);
   assert.match(contentScript, /scoreline: `\$\{payload\.score\.home\} - \$\{payload\.score\.away\}`/);
 
+  assert.doesNotMatch(sidepanelHtml, /id="sidepanelLeagueEyebrow"/);
+  assert.match(sidepanelHtml, /class="lmi-brand__copy lmi-brand__copy--surface"/);
+  assert.match(sidepanelHtml, /class="lmi-panel-footer lmi-panel-footer--sidepanel"/);
   assert.match(sidepanelHtml, /id="sidepanelScoreboardCard" class="lmi-scoreboard-card"/);
   assert.match(sidepanelHtml, /id="sidepanelScoreboard" class="lmi-scoreboard"/);
   assert.match(sidepanelHtml, /id="sidepanelHomeTeamName" class="lmi-scoreboard__team-name lmi-scoreboard__team-name--home"/);
   assert.match(sidepanelHtml, /id="sidepanelScoreValue" class="lmi-scoreboard__score"/);
   assert.match(sidepanelHtml, /id="sidepanelScoreMinute" class="lmi-scoreboard__minute"/);
+  assert.doesNotMatch(sidepanelScript, /leagueEyebrow/);
   assert.match(sidepanelScript, /showHeroScoreboard\(\{/);
   assert.match(sidepanelScript, /scoreline: `\$\{payload\.score\.home\} - \$\{payload\.score\.away\}`/);
 
   assert.match(stylesheet, /\.lmi-scoreboard\s*\{/);
   assert.match(stylesheet, /\.lmi-scoreboard-card\s*\{/);
+  assert.match(stylesheet, /\.lmi-overlay-topbar\s*\{/);
+  assert.match(stylesheet, /\.lmi-overlay-topbar__actions\s*\{/);
+  assert.match(stylesheet, /\.lmi-brand__copy--surface\s*\{/);
   assert.match(stylesheet, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(74px,\s*auto\)\s*minmax\(0,\s*1fr\);/);
   assert.match(stylesheet, /width:\s*100%;/);
   assert.match(stylesheet, /\.lmi-scoreboard-card\s*\{[\s\S]*box-sizing:\s*border-box;/);
@@ -292,7 +307,7 @@ test("overlay and sidepanel hero use a centered scoreboard with full team names 
   assert.match(stylesheet, /\.lmi-scoreboard__minute\s*\{/);
   assert.match(stylesheet, /\.lmi-surface-meta\s*\{[\s\S]*flex-wrap:\s*nowrap;/);
   assert.match(stylesheet, /\.lmi-surface-pill,[\s\S]*\.lmi-surface-freshness\s*\{[\s\S]*font-size:\s*10px;[\s\S]*white-space:\s*nowrap;/);
-  assert.match(stylesheet, /\.lmi-expanded__actions\s*\{[\s\S]*position:\s*absolute;[\s\S]*right:\s*0;/);
+  assert.match(stylesheet, /\.lmi-expanded__header\s*\{[\s\S]*flex-direction:\s*column;/);
 });
 
 test("table impact rows render movement as a badge instead of inline parenthetical text", async () => {
