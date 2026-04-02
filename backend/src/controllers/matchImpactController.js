@@ -57,10 +57,11 @@ export function createMatchImpactController({
       });
     },
 
-    async getMarketingPage(_req, res, next) {
+    async getMarketingPage(req, res, next) {
       try {
         const pricing = await billingService.getPricingCatalog();
-        res.type("html").send(renderMarketingPage({ pricing }));
+        const language = typeof req.query?.lang === "string" ? req.query.lang.trim() : "en";
+        res.type("html").send(renderMarketingPage({ pricing, language }));
       } catch (error) {
         next(error);
       }

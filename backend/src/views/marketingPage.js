@@ -1,31 +1,272 @@
-function formatPrice(value, currency) {
+function formatPrice(value, currency, locale) {
   if (!value) {
     return "Free";
   }
 
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale === "pt-BR" ? "pt-BR" : "en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2
   }).format(value);
 }
 
-export function renderMarketingPage({ pricing }) {
+function getLocalizedPlanContent(locale) {
+  if (locale === "pt-BR") {
+    return {
+      free: {
+        name: "Free",
+        tagline: "Acompanhe uma partida de liga em destaque e entenda o impacto principal na hora.",
+        features: [
+          "Acompanhe 1 jogo ao vivo por vez",
+          "Acesso às ligas em destaque",
+          "Placar ao vivo e impacto principal na tabela",
+          "Impacto na competição e linha dos gols",
+          "Estatísticas finais após o apito final",
+          "Inglês e português-BR"
+        ]
+      },
+      pro: {
+        name: "Pro",
+        tagline: "Desbloqueie uma leitura mais profunda da partida em todas as ligas suportadas.",
+        features: [
+          "Todas as ligas suportadas",
+          "Fallback por fixture manual",
+          "Projeção pré-jogo do modelo",
+          "Campo tático da escalação e lesões",
+          "Contexto mais rico para grupos, mata-mata e pênaltis",
+          "Modo de leitura profunda no painel lateral"
+        ]
+      }
+    };
+  }
+
+  return {
+    free: {
+      name: "Free",
+      tagline: "Track one featured-league match and understand the core impact instantly.",
+      features: [
+        "Track 1 live match at a time",
+        "Featured league access",
+        "Live score and core table impact",
+        "Competition impact and scorer timeline",
+        "Final stats after full time",
+        "English and Portuguese-BR"
+      ]
+    },
+    pro: {
+      name: "Pro",
+      tagline: "Unlock deeper match reading across every supported league.",
+      features: [
+        "All supported leagues",
+        "Manual fixture fallback",
+        "Pre-match model outlook",
+        "Lineup pitch and injuries",
+        "Richer grouped, knockout, and penalty context",
+        "Side panel deep-view mode"
+      ]
+    }
+  };
+}
+
+function getMarketingCopy(locale) {
+  if (locale === "pt-BR") {
+    return {
+      htmlLang: "pt-BR",
+      title: "Foot Analysis · Live Match Impact",
+      description: "Entendimento instantâneo do que um gol muda. Live Match Impact transforma placares em consequências de título, G4, rebaixamento e posições de grupo.",
+      brandTitle: "Live Match Impact",
+      navPricing: "Preços da API",
+      navJoinBeta: "Entrar no beta",
+      navSeePlans: "Ver planos",
+      languageEnglish: "🇺🇸 EN",
+      languagePortuguese: "🇧🇷 PT-BR",
+      heroEyebrow: "Lançamento beta para fãs de dia de jogo",
+      heroTitle: "Entenda na hora o que um gol muda.",
+      heroSubcopy: "Live Match Impact transforma placares em significado: pressão na briga pelo título, mudanças no G4, risco de rebaixamento, movimentação em grupos e contexto da rodada em segundos.",
+      heroPrimaryCta: "Desbloquear Early Bird Pro",
+      heroSecondaryCta: "Falar com a gente",
+      proofLanguages: "Inglês + português-BR",
+      proofInfra: "Extensão Chrome + cache no backend",
+      proofSpeed: "Criado para significado ao vivo",
+      mockupGoalImpact: "Impacto do gol",
+      mockupGoalImpactLine: "Gol do Saka muda a corrida imediatamente.",
+      mockupTableImpact: "Impacto na tabela",
+      mockupCompetitionImpact: "Impacto na competição",
+      mockupCompetitionNote: "Arsenal entra na zona de Champions League. Chelsea sai do top 4.",
+      mockupRoundContext: "Outros jogos da rodada",
+      whyEyebrow: "Por que isso existe",
+      whyTitle: "Feito para uma pergunta, não para sobrecarga de dashboard.",
+      whyBody: "Quando sai um gol, o torcedor não precisa de mais uma parede de estatísticas. Precisa de uma resposta limpa: o que esse resultado muda agora?",
+      story1Title: "Acompanhe um jogo",
+      story1Body: "Foque na partida que importa para você em vez de ficar pulando entre dez apps diferentes.",
+      story2Title: "Veja a consequência",
+      story2Body: "Mudanças na tabela, posições de grupo e impacto na competição aparecem traduzidos na hora.",
+      story3Title: "Mantenha a rodada no radar",
+      story3Body: "Outros jogos da mesma rodada continuam visíveis para a história nunca perder contexto.",
+      feelEyebrow: "Como a experiência funciona",
+      feelTitle: "Não é um dump de estatísticas. É uma camada de leitura ao vivo do futebol.",
+      feature1Title: "Entendível em menos de dois segundos",
+      feature1Body: "O painel flutuante é feito para compreensão instantânea, não para exploração profunda.",
+      feature2Title: "Lógica ao vivo focada em confiança",
+      feature2Body: "Ligas de tabela única, competições em grupos e formatos especiais são tratados com fallbacks explícitos.",
+      feature3Title: "Backend rápido e consciente de cache",
+      feature3Body: "O cache compartilhado mantém o produto responsivo enquanto protege o uso de chamadas da API-Football.",
+      feature4Title: "Feito para a sua mistura de audiência",
+      feature4Body: "Inglês e português-BR já saem prontos para o produto crescer com os dois canais.",
+      differenceEyebrow: "Veja a diferença",
+      differenceTitle: "Free explica o que está acontecendo. Pro adiciona o contexto mais profundo da partida.",
+      differenceBody: "A versão gratuita entrega a leitura principal ao vivo nas ligas em destaque. O Pro mantém essa velocidade e adiciona mais ligas e mais contexto pré-jogo e de competição.",
+      freeTierTitle: "Significado rápido da partida nas ligas em destaque",
+      proTierTitle: "Leitura mais profunda da partida em todas as ligas suportadas",
+      demoTableImpact: "Impacto na tabela",
+      demoCompetitionImpact: "Impacto na competição",
+      demoCompetitionNote: "Arsenal entra na zona de Champions League.",
+      demoWhatProAdds: "O que o Pro adiciona",
+      demoProAddsNote: "Todas as ligas suportadas, fallback por fixture manual e leitura pré-jogo mais profunda",
+      demoGroupPosition: "Posição no grupo",
+      demoGroupPositionNote: "America-RN está em 2º no Grupo C e sobe para 1º se o placar continuar assim.",
+      demoPreMatchDepth: "Profundidade pré-jogo",
+      demoPreMatchDepthNote: "Projeção do modelo, forma da escalação e contexto de lesões antes do início.",
+      demoCompetitionReading: "Leitura da competição",
+      demoCompetitionReadingNote: "Interpretação mais rica de grupos, mata-mata, agregado e pênaltis na visão ao vivo.",
+      pricingEyebrow: "Preços",
+      pricingTitle: "Uma camada premium clara, com recompensa beta para quem chega cedo.",
+      pricingBody: "O Free continua realmente útil para a leitura principal ao vivo. O Pro desbloqueia todas as ligas suportadas e o contexto mais profundo da partida que já existe hoje no produto. Usuários Early Bird travam o melhor preço para sempre.",
+      pricingFreeLabel: "Comece no free",
+      pricingProLabel: "Para quem vive o matchday",
+      pricingEarlyLabel: "Melhor oferta do beta",
+      pricePerMonth: "/mês",
+      pricePerMonthForever: "/mês para sempre",
+      earlyBirdCopy: "Preço Pro com desconto vitalício para os primeiros apoiadores que ajudarem a moldar o beta.",
+      earlyBirdAvailability: "vagas disponíveis no momento de",
+      claimEarlyBird: "Garantir Early Bird",
+      betaEyebrow: "Por que o beta importa",
+      betaTitle: "Estamos refinando a lógica das ligas, a qualidade dos insights ao vivo e o que os fãs realmente pagam.",
+      betaUsersTitle: "O que os usuários beta recebem",
+      betaUsersBullet1: "Acesso ao produto enquanto a lógica das partidas continua melhorando",
+      betaUsersBullet2: "A chance de moldar o que Free e Pro serão antes do lançamento público",
+      betaUsersBullet3: "Visibilidade antecipada sobre novas ligas, insights em grupos e ideias de alertas",
+      betaRefiningTitle: "O que ainda estamos refinando",
+      betaRefiningBullet1: "Formatos de competição com casos de borda e lógica específica de copas",
+      betaRefiningBullet2: "Os melhores ganchos premium para alertas, comportamento multi-jogo e interpretação mais profunda",
+      betaRefiningBullet3: "Integração de marca mais forte com os canais Foot Analysis em inglês e PT-BR",
+      footerLead: "Live Match Impact está em beta no momento. Para suporte, parcerias ou acesso antecipado:",
+      freeLabel: "Free",
+      proLabel: "Pro",
+      freePrice: "Grátis"
+    };
+  }
+
+  return {
+    htmlLang: "en",
+    title: "Foot Analysis · Live Match Impact",
+    description: "Instant understanding of what a goal means. Live Match Impact turns football scores into title-race, top-4, relegation, and group-position consequences.",
+    brandTitle: "Live Match Impact",
+    navPricing: "Pricing API",
+    navJoinBeta: "Join Beta",
+    navSeePlans: "See plans",
+    languageEnglish: "🇺🇸 EN",
+    languagePortuguese: "🇧🇷 PT-BR",
+    heroEyebrow: "Beta launch for matchday fans",
+    heroTitle: "Instant understanding of what a goal changes.",
+    heroSubcopy: "Live Match Impact turns football scores into meaning: title race pressure, top-four swings, relegation danger, group-position movement, and round context in seconds.",
+    heroPrimaryCta: "Unlock Early Bird Pro",
+    heroSecondaryCta: "Talk to us",
+    proofLanguages: "English + Portuguese-BR",
+    proofInfra: "Chrome extension + backend cache",
+    proofSpeed: "Built for fast live meaning",
+    mockupGoalImpact: "Goal Impact",
+    mockupGoalImpactLine: "Saka goal changes the race immediately.",
+    mockupTableImpact: "Table Impact",
+    mockupCompetitionImpact: "Competition Impact",
+    mockupCompetitionNote: "Arsenal moves into the Champions League places. Chelsea drops out of the top four.",
+    mockupRoundContext: "Other Matches This Round",
+    whyEyebrow: "Why this exists",
+    whyTitle: "Built for one question, not for dashboard overload.",
+    whyBody: "Fans do not need another wall of stats when a goal goes in. They need one clean answer: what does this result change right now?",
+    story1Title: "Track one match",
+    story1Body: "Stay focused on the fixture you care about instead of scanning ten different apps.",
+    story2Title: "See the consequence",
+    story2Body: "Table movement, group-position shifts, and competition consequences are translated instantly.",
+    story3Title: "Keep the round in view",
+    story3Body: "Other matches from the same round stay visible so the story never loses context.",
+    feelEyebrow: "How it feels",
+    feelTitle: "Not a stats dump. A live football reading layer.",
+    feature1Title: "Glanceable in under two seconds",
+    feature1Body: "The floating panel is built for instant comprehension, not deep exploration.",
+    feature2Title: "Trust-first live logic",
+    feature2Body: "Single-table leagues, grouped competitions, and special formats are handled with explicit fallbacks.",
+    feature3Title: "Fast, cache-aware backend",
+    feature3Body: "Shared caching keeps the product responsive while protecting API-Football request usage.",
+    feature4Title: "Made for your audience mix",
+    feature4Body: "English and Portuguese-BR are supported from day one so the product can grow with both channels.",
+    differenceEyebrow: "See the difference",
+    differenceTitle: "Free explains what is happening. Pro adds the deeper match context.",
+    differenceBody: "The free tier gives the core live-reading experience on featured leagues. Pro keeps that speed, then adds broader league access and deeper pre-match and competition context.",
+    freeTierTitle: "Fast match meaning on featured leagues",
+    proTierTitle: "Deeper match reading across every supported league",
+    demoTableImpact: "Table Impact",
+    demoCompetitionImpact: "Competition Impact",
+    demoCompetitionNote: "Arsenal enters the Champions League places.",
+    demoWhatProAdds: "What Pro adds",
+    demoProAddsNote: "All supported leagues, manual fixture fallback, and deeper pre-match reading",
+    demoGroupPosition: "Group Position",
+    demoGroupPositionNote: "America-RN is 2nd in Group C and moves into 1st if scores hold.",
+    demoPreMatchDepth: "Pre-match depth",
+    demoPreMatchDepthNote: "Model outlook, lineup shape, and injury context before kickoff.",
+    demoCompetitionReading: "Competition reading",
+    demoCompetitionReadingNote: "Richer grouped, knockout, aggregate, and penalty interpretation in the live view.",
+    pricingEyebrow: "Pricing",
+    pricingTitle: "One clear premium tier, plus a beta reward for early believers.",
+    pricingBody: "Free stays genuinely useful for the core live-reading job. Pro unlocks every supported league plus the deeper match context that already exists in the product today. Early Bird users lock in the best price forever.",
+    pricingFreeLabel: "Start free",
+    pricingProLabel: "For matchday power users",
+    pricingEarlyLabel: "Best beta offer",
+    pricePerMonth: "/month",
+    pricePerMonthForever: "/month forever",
+    earlyBirdCopy: "Lifetime discounted Pro pricing for early adopters who help shape the beta.",
+    earlyBirdAvailability: "spots currently available out of",
+    claimEarlyBird: "Claim Early Bird",
+    betaEyebrow: "Why beta matters",
+    betaTitle: "We are refining league logic, live insight quality, and what fans actually pay for.",
+    betaUsersTitle: "What beta users get",
+    betaUsersBullet1: "Access to the product while the match logic keeps improving",
+    betaUsersBullet2: "The chance to shape what Free and Pro become before public launch",
+    betaUsersBullet3: "Early visibility into new league support, grouped insights, and alert ideas",
+    betaRefiningTitle: "What we are still refining",
+    betaRefiningBullet1: "Edge-case competition formats and cup-specific live consequence logic",
+    betaRefiningBullet2: "The best premium hooks for alerts, multi-match behavior, and deeper interpretation",
+    betaRefiningBullet3: "Tighter brand integration with the Foot Analysis English and PT-BR channels",
+    footerLead: "Live Match Impact is currently in beta. For support, partnerships, or early access:",
+    freeLabel: "Free",
+    proLabel: "Pro",
+    freePrice: "Free"
+  };
+}
+
+export function renderMarketingPage({ pricing, language = "en" }) {
+  const locale = language === "pt-BR" ? "pt-BR" : "en";
+  const copy = getMarketingCopy(locale);
+  const localizedPlans = getLocalizedPlanContent(locale);
   const freePlan = pricing.plans.free;
   const proPlan = pricing.plans.pro;
   const earlyBird = pricing.offers.early_bird_lifetime;
-  const regularPrice = formatPrice(proPlan.priceMonthlyUsd, pricing.currency);
-  const earlyBirdPrice = formatPrice(earlyBird.priceMonthlyUsd, pricing.currency);
+  const regularPrice = formatPrice(proPlan.priceMonthlyUsd, pricing.currency, locale);
+  const earlyBirdPrice = formatPrice(earlyBird.priceMonthlyUsd, pricing.currency, locale);
+  const freePlanName = localizedPlans.free.name || freePlan.name;
+  const proPlanName = localizedPlans.pro.name || proPlan.name;
+  const activeEnClass = locale === "en" ? " language-pill--active" : "";
+  const activePtClass = locale === "pt-BR" ? " language-pill--active" : "";
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${copy.htmlLang}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Foot Analysis · Live Match Impact</title>
+    <title>${copy.title}</title>
     <meta
       name="description"
-      content="Instant understanding of what a goal means. Live Match Impact turns football scores into title-race, top-4, relegation, and group-position consequences."
+      content="${copy.description}"
     />
     <style>
       :root {
@@ -143,6 +384,36 @@ export function renderMarketingPage({ pricing }) {
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
+      }
+
+      .language-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .language-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+
+      .language-pill--active {
+        border-color: rgba(114, 240, 194, 0.34);
+        background: rgba(114, 240, 194, 0.12);
+        color: var(--text);
       }
 
       .button {
@@ -648,36 +919,39 @@ export function renderMarketingPage({ pricing }) {
           <div class="brand__mark"><div class="brand__ball"></div></div>
           <div class="brand__copy">
             <small>Foot Analysis</small>
-            <strong>Live Match Impact</strong>
+            <strong>${copy.brandTitle}</strong>
           </div>
         </div>
         <div class="nav__links">
-          <a class="button button--soft" href="/billing/plans">Pricing API</a>
+          <div class="language-switch">
+            <a class="language-pill${activeEnClass}" href="/?lang=en">${copy.languageEnglish}</a>
+            <a class="language-pill${activePtClass}" href="/?lang=pt-BR">${copy.languagePortuguese}</a>
+          </div>
+          <a class="button button--soft" href="/billing/plans">${copy.navPricing}</a>
           <a class="button button--ghost" href="mailto:${pricing.supportEmail}?subject=Live%20Match%20Impact%20Beta">
-            Join Beta
+            ${copy.navJoinBeta}
           </a>
-          <a class="button button--primary" href="/billing/plans">See plans</a>
+          <a class="button button--primary" href="/billing/plans">${copy.navSeePlans}</a>
         </div>
       </header>
 
       <section class="hero">
         <div class="hero__copy">
-          <span class="eyebrow">Beta launch for matchday fans</span>
-          <h1>Instant understanding of what a goal changes.</h1>
+          <span class="eyebrow">${copy.heroEyebrow}</span>
+          <h1>${copy.heroTitle}</h1>
           <p class="hero__subcopy">
-            Live Match Impact turns football scores into meaning: title race pressure, top-four
-            swings, relegation danger, group-position movement, and round context in seconds.
+            ${copy.heroSubcopy}
           </p>
           <div class="hero__actions">
-            <a class="button button--primary" href="/billing/plans">Unlock Early Bird Pro</a>
+            <a class="button button--primary" href="/billing/plans">${copy.heroPrimaryCta}</a>
             <a class="button button--ghost" href="mailto:${pricing.supportEmail}?subject=Live%20Match%20Impact%20Beta">
-              Talk to us
+              ${copy.heroSecondaryCta}
             </a>
           </div>
           <div class="hero__proof">
-            <span class="proof-pill">English + Portuguese-BR</span>
-            <span class="proof-pill">Chrome extension + backend cache</span>
-            <span class="proof-pill">Built for fast live meaning</span>
+            <span class="proof-pill">${copy.proofLanguages}</span>
+            <span class="proof-pill">${copy.proofInfra}</span>
+            <span class="proof-pill">${copy.proofSpeed}</span>
           </div>
         </div>
 
@@ -691,16 +965,16 @@ export function renderMarketingPage({ pricing }) {
           </div>
 
           <div class="mockup-score">ARS 1-0 CHE</div>
-          <div class="mockup-note">Arsenal enters the top four and Chelsea falls out of it.</div>
+          <div class="mockup-note">${locale === "pt-BR" ? "Arsenal entra no top 4 e Chelsea sai dele." : "Arsenal enters the top four and Chelsea falls out of it."}</div>
 
           <div class="mockup-banner">
-            <span class="mini-label">Goal Impact</span>
-            <strong>Saka goal changes the race immediately.</strong>
+            <span class="mini-label">${copy.mockupGoalImpact}</span>
+            <strong>${copy.mockupGoalImpactLine}</strong>
           </div>
 
           <div class="mockup-grid">
             <div class="mockup-card">
-              <span class="mini-label">Table Impact</span>
+              <span class="mini-label">${copy.mockupTableImpact}</span>
               <div class="mockup-card__row">
                 <span>Arsenal</span>
                 <strong>4th (+1)</strong>
@@ -712,14 +986,12 @@ export function renderMarketingPage({ pricing }) {
             </div>
 
             <div class="mockup-card">
-              <span class="mini-label">Competition Impact</span>
-              <div class="mockup-note">
-                Arsenal moves into the Champions League places. Chelsea drops out of the top four.
-              </div>
+              <span class="mini-label">${copy.mockupCompetitionImpact}</span>
+              <div class="mockup-note">${copy.mockupCompetitionNote}</div>
             </div>
 
             <div class="mockup-card">
-              <span class="mini-label">Other Matches This Round</span>
+              <span class="mini-label">${copy.mockupRoundContext}</span>
               <div class="mockup-round">
                 <div class="mockup-round__item"><strong>LIV 2-1 TOT</strong> 73'</div>
                 <div class="mockup-round__item"><strong>AVL 0-0 NEW</strong> HT</div>
@@ -732,65 +1004,59 @@ export function renderMarketingPage({ pricing }) {
 
       <div class="sections">
         <section class="section">
-          <span class="section__eyebrow">Why this exists</span>
-          <h2>Built for one question, not for dashboard overload.</h2>
-          <p>
-            Fans do not need another wall of stats when a goal goes in. They need one clean answer:
-            what does this result change right now?
-          </p>
+          <span class="section__eyebrow">${copy.whyEyebrow}</span>
+          <h2>${copy.whyTitle}</h2>
+          <p>${copy.whyBody}</p>
           <div class="story-grid">
             <article class="story-card">
               <div class="story-number">1</div>
-              <h3>Track one match</h3>
-              <p>Stay focused on the fixture you care about instead of scanning ten different apps.</p>
+              <h3>${copy.story1Title}</h3>
+              <p>${copy.story1Body}</p>
             </article>
             <article class="story-card">
               <div class="story-number">2</div>
-              <h3>See the consequence</h3>
-              <p>Table movement, group-position shifts, and competition consequences are translated instantly.</p>
+              <h3>${copy.story2Title}</h3>
+              <p>${copy.story2Body}</p>
             </article>
             <article class="story-card">
               <div class="story-number">3</div>
-              <h3>Keep the round in view</h3>
-              <p>Other matches from the same round stay visible so the story never loses context.</p>
+              <h3>${copy.story3Title}</h3>
+              <p>${copy.story3Body}</p>
             </article>
           </div>
         </section>
 
         <section class="section">
-          <span class="section__eyebrow">How it feels</span>
-          <h2>Not a stats dump. A live football reading layer.</h2>
+          <span class="section__eyebrow">${copy.feelEyebrow}</span>
+          <h2>${copy.feelTitle}</h2>
           <div class="feature-grid">
             <article class="feature-card">
-              <h3>Glanceable in under two seconds</h3>
-              <p>The floating panel is built for instant comprehension, not deep exploration.</p>
+              <h3>${copy.feature1Title}</h3>
+              <p>${copy.feature1Body}</p>
             </article>
             <article class="feature-card">
-              <h3>Trust-first live logic</h3>
-              <p>Single-table leagues, grouped competitions, and special formats are handled with explicit fallbacks.</p>
+              <h3>${copy.feature2Title}</h3>
+              <p>${copy.feature2Body}</p>
             </article>
             <article class="feature-card">
-              <h3>Fast, cache-aware backend</h3>
-              <p>Shared caching keeps the product responsive while protecting API-Football request usage.</p>
+              <h3>${copy.feature3Title}</h3>
+              <p>${copy.feature3Body}</p>
             </article>
             <article class="feature-card">
-              <h3>Made for your audience mix</h3>
-              <p>English and Portuguese-BR are supported from day one so the product can grow with both channels.</p>
+              <h3>${copy.feature4Title}</h3>
+              <p>${copy.feature4Body}</p>
             </article>
           </div>
         </section>
 
         <section class="section">
-          <span class="section__eyebrow">See the difference</span>
-          <h2>Free explains what is happening. Pro adds the deeper match context.</h2>
-          <p>
-            The free tier gives the core live-reading experience on featured leagues. Pro keeps that
-            speed, then adds broader league access and deeper pre-match and competition context.
-          </p>
+          <span class="section__eyebrow">${copy.differenceEyebrow}</span>
+          <h2>${copy.differenceTitle}</h2>
+          <p>${copy.differenceBody}</p>
           <div class="demo-grid">
             <article class="demo-card">
-              <span class="tier-pill">Free</span>
-              <h3>Fast match meaning on featured leagues</h3>
+              <span class="tier-pill">${copy.freeLabel}</span>
+              <h3>${copy.freeTierTitle}</h3>
               <div class="demo-phone">
                 <div class="demo-phone__top">
                   <div>
@@ -800,26 +1066,24 @@ export function renderMarketingPage({ pricing }) {
                   <span class="demo-phone__status">67'</span>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Table Impact</span>
+                  <span class="mini-label">${copy.demoTableImpact}</span>
                   <div class="demo-line"><span>Arsenal</span><strong>4th (+1)</strong></div>
                   <div class="demo-line"><span>Chelsea</span><strong>5th (-1)</strong></div>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Competition Impact</span>
-                  <div class="demo-note">
-                    Arsenal enters the Champions League places.
-                  </div>
+                  <span class="mini-label">${copy.demoCompetitionImpact}</span>
+                  <div class="demo-note">${copy.demoCompetitionNote}</div>
                 </div>
                 <div class="demo-block demo-block--locked">
-                  <span class="mini-label">What Pro adds</span>
-                  <div class="demo-lock">All supported leagues, manual fixture fallback, and deeper pre-match reading</div>
+                  <span class="mini-label">${copy.demoWhatProAdds}</span>
+                  <div class="demo-lock">${copy.demoProAddsNote}</div>
                 </div>
               </div>
             </article>
 
             <article class="demo-card demo-card--pro">
-              <span class="tier-pill">Pro</span>
-              <h3>Deeper match reading across every supported league</h3>
+              <span class="tier-pill">${copy.proLabel}</span>
+              <h3>${copy.proTierTitle}</h3>
               <div class="demo-phone">
                 <div class="demo-phone__top">
                   <div>
@@ -829,22 +1093,16 @@ export function renderMarketingPage({ pricing }) {
                   <span class="demo-phone__status">74'</span>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Group Position</span>
-                  <div class="demo-note">
-                    America-RN is 2nd in Group C and moves into 1st if scores hold.
-                  </div>
+                  <span class="mini-label">${copy.demoGroupPosition}</span>
+                  <div class="demo-note">${copy.demoGroupPositionNote}</div>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Pre-match depth</span>
-                  <div class="demo-note">
-                    Model outlook, lineup shape, and injury context before kickoff.
-                  </div>
+                  <span class="mini-label">${copy.demoPreMatchDepth}</span>
+                  <div class="demo-note">${copy.demoPreMatchDepthNote}</div>
                 </div>
                 <div class="demo-block">
-                  <span class="mini-label">Competition reading</span>
-                  <div class="demo-note">
-                    Richer grouped, knockout, aggregate, and penalty interpretation in the live view.
-                  </div>
+                  <span class="mini-label">${copy.demoCompetitionReading}</span>
+                  <div class="demo-note">${copy.demoCompetitionReadingNote}</div>
                 </div>
               </div>
             </article>
@@ -852,71 +1110,65 @@ export function renderMarketingPage({ pricing }) {
         </section>
 
         <section class="section">
-          <span class="section__eyebrow">Pricing</span>
-          <h2>One clear premium tier, plus a beta reward for early believers.</h2>
-          <p>
-            Free stays genuinely useful for the core live-reading job. Pro unlocks every supported
-            league plus the deeper match context that already exists in the product today.
-            Early Bird users lock in the best price forever.
-          </p>
+          <span class="section__eyebrow">${copy.pricingEyebrow}</span>
+          <h2>${copy.pricingTitle}</h2>
+          <p>${copy.pricingBody}</p>
           <div class="pricing-grid">
             <article class="pricing-card">
-              <span class="mini-label">Start free</span>
-              <h3>${freePlan.name}</h3>
-              <div class="price">Free</div>
-              <div class="pricing-card__copy">${freePlan.tagline}</div>
+              <span class="mini-label">${copy.pricingFreeLabel}</span>
+              <h3>${freePlanName}</h3>
+              <div class="price">${copy.freePrice}</div>
+              <div class="pricing-card__copy">${localizedPlans.free.tagline}</div>
               <div class="bullet-list">
-                ${freePlan.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
+                ${localizedPlans.free.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
               </div>
             </article>
 
             <article class="pricing-card pricing-card--pro">
-              <span class="mini-label">For matchday power users</span>
-              <h3>${proPlan.name}</h3>
-              <div class="price">${regularPrice}<small>/month</small></div>
-              <div class="pricing-card__copy">${proPlan.tagline}</div>
+              <span class="mini-label">${copy.pricingProLabel}</span>
+              <h3>${proPlanName}</h3>
+              <div class="price">${regularPrice}<small>${copy.pricePerMonth}</small></div>
+              <div class="pricing-card__copy">${localizedPlans.pro.tagline}</div>
               <div class="bullet-list">
-                ${proPlan.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
+                ${localizedPlans.pro.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
               </div>
             </article>
 
             <article class="pricing-card pricing-card--early">
               ${earlyBird.active ? `<div class="pricing-badge">${earlyBird.badge}</div>` : ""}
-              <span class="mini-label">Best beta offer</span>
+              <span class="mini-label">${copy.pricingEarlyLabel}</span>
               <h3>${earlyBird.name}</h3>
-              <div class="price">${earlyBirdPrice}<small>/month forever</small></div>
-              <div class="pricing-card__copy">
-                Lifetime discounted Pro pricing for early adopters who help shape the beta.
-              </div>
+              <div class="price">${earlyBirdPrice}<small>${copy.pricePerMonthForever}</small></div>
+              <div class="pricing-card__copy">${copy.earlyBirdCopy}</div>
               <div class="offer-note">
-                <strong>${earlyBird.remaining}</strong> spots currently available out of
+                <strong>${earlyBird.remaining}</strong> ${copy.earlyBirdAvailability}
                 <strong>${earlyBird.maxClaims}</strong>.
               </div>
               <div class="hero__actions" style="margin-top:16px;">
-                <a class="button button--primary" href="/billing/plans">Claim Early Bird</a>
+                <a class="button button--primary" href="/billing/plans">${copy.claimEarlyBird}</a>
               </div>
             </article>
           </div>
         </section>
 
         <section class="section">
-          <span class="section__eyebrow">Why beta matters</span>
-          <h2>We are refining league logic, live insight quality, and what fans actually pay for.</h2>
+          <span class="section__eyebrow">${copy.betaEyebrow}</span>
+          <h2>${copy.betaTitle}</h2>
           <div class="comparison-grid">
             <article class="comparison-card">
-              <h3>What beta users get</h3>
+              <h3>${copy.betaUsersTitle}</h3>
               <ul>
-                <li>Access to the product while the match logic keeps improving</li>
-                <li>The chance to shape what Free and Pro become before public launch</li>
-                <li>Early visibility into new league support, grouped insights, and alert ideas</li>
+                <li>${copy.betaUsersBullet1}</li>
+                <li>${copy.betaUsersBullet2}</li>
+                <li>${copy.betaUsersBullet3}</li>
               </ul>
             </article>
             <article class="comparison-card">
-              <h3>What we are still refining</h3>
+              <h3>${copy.betaRefiningTitle}</h3>
               <ul>
-                <li>Edge-case competition formats and cup-specific live consequence logic</li>
-                <li>The best premium hooks for alerts, multi-match behavior, and deeper interpretation</li>
-                <li>Tighter brand integration with the Foot Analysis English and PT-BR channels</li>
+                <li>${copy.betaRefiningBullet1}</li>
+                <li>${copy.betaRefiningBullet2}</li>
+                <li>${copy.betaRefiningBullet3}</li>
               </ul>
             </article>
           </div>
@@ -924,7 +1176,7 @@ export function renderMarketingPage({ pricing }) {
       </div>
 
       <footer class="footer">
-        Live Match Impact is currently in beta. For support, partnerships, or early access:
+        ${copy.footerLead}
         <a href="mailto:${pricing.supportEmail}">${pricing.supportEmail}</a>
       </footer>
     </div>
