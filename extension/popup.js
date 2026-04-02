@@ -40,6 +40,7 @@ const accountChevron = document.getElementById("accountChevron");
 const accountEmailLabel = document.getElementById("accountEmailLabel");
 const accountSummary = document.getElementById("accountSummary");
 const advancedToggleButton = document.getElementById("advancedToggle");
+const advancedOptionsCard = document.getElementById("advancedOptionsCard");
 const advancedEyebrow = document.getElementById("advancedEyebrow");
 const advancedTitle = document.getElementById("advancedTitle");
 const advancedSummary = document.getElementById("advancedSummary");
@@ -482,6 +483,16 @@ function updatePlanHint() {
 }
 
 function renderAdvancedOptions() {
+  advancedOptionsCard.hidden = !isProPlan();
+
+  if (!isProPlan()) {
+    advancedOptionsExpanded = false;
+    advancedContent.hidden = true;
+    advancedToggleButton.setAttribute("aria-expanded", "false");
+    advancedChevron.textContent = "+";
+    return;
+  }
+
   advancedToggleButton.setAttribute("aria-expanded", String(advancedOptionsExpanded));
   advancedContent.hidden = !advancedOptionsExpanded;
   advancedChevron.textContent = advancedOptionsExpanded ? "−" : "+";
@@ -1133,7 +1144,7 @@ async function loadSettings() {
 
   setLanguage(storedLanguage);
   fixtureIdInput.value = storedFixtureId ?? "";
-  advancedOptionsExpanded = Boolean(storedFixtureId);
+  advancedOptionsExpanded = isProPlan() && Boolean(storedFixtureId);
   renderAdvancedOptions();
   scenarioPreviewEnabled = Boolean(result.scenarioModeEnabled) && isScenarioPreviewAvailable();
   currentBilling = {

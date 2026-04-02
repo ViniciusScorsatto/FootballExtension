@@ -353,3 +353,17 @@ test("score-only matches hide table and competition sections instead of showing 
     /elements\.competitionSection\.classList\.toggle\("is-hidden", isPrematch \|\| isScoreOnlyImpact\);/
   );
 });
+
+test("popup hides the advanced manual-fixture card on free and only expands it for pro", async () => {
+  const popupHtml = await readProjectFile("extension/popup.html");
+  const popupScript = await readProjectFile("extension/popup.js");
+
+  assert.match(popupHtml, /<section id="advancedOptionsCard" class="lmi-advanced-card">/);
+  assert.match(popupScript, /const advancedOptionsCard = document\.getElementById\("advancedOptionsCard"\);/);
+  assert.match(popupScript, /advancedOptionsCard\.hidden = !isProPlan\(\);/);
+  assert.match(
+    popupScript,
+    /if \(!isProPlan\(\)\) \{[\s\S]*advancedOptionsExpanded = false;[\s\S]*advancedContent\.hidden = true;/
+  );
+  assert.match(popupScript, /advancedOptionsExpanded = isProPlan\(\) && Boolean\(storedFixtureId\);/);
+});
