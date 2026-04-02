@@ -275,6 +275,10 @@ test("overlay and sidepanel hero use a centered scoreboard with full team names 
   assert.match(sidepanelScript, /scoreline: `\$\{payload\.score\.home\} - \$\{payload\.score\.away\}`/);
 
   assert.match(stylesheet, /\.lmi-scoreboard\s*\{/);
+  assert.match(stylesheet, /grid-template-columns:\s*minmax\(96px,\s*1fr\)\s*auto\s*minmax\(96px,\s*1fr\);/);
+  assert.match(stylesheet, /width:\s*100%;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team--home\s*\{[\s\S]*align-items:\s*flex-start;[\s\S]*justify-self:\s*start;/);
+  assert.match(stylesheet, /\.lmi-scoreboard__team--away\s*\{[\s\S]*align-items:\s*flex-end;[\s\S]*justify-self:\s*end;/);
   assert.match(stylesheet, /\.lmi-scoreboard__score\s*\{/);
   assert.match(stylesheet, /font-variant-numeric:\s*tabular-nums;/);
   assert.match(stylesheet, /\.lmi-scoreboard__minute\s*\{/);

@@ -736,10 +736,11 @@ select.lmi-field__input {
 
 .lmi-scoreboard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(96px, 1fr) auto minmax(96px, 1fr);
   align-items: center;
   gap: 14px;
   margin-top: 12px;
+  width: 100%;
 }
 
 .lmi-scoreboard__team {
@@ -750,12 +751,30 @@ select.lmi-field__input {
   min-width: 0;
 }
 
+.lmi-scoreboard__team--home {
+  align-items: flex-start;
+  justify-self: start;
+}
+
+.lmi-scoreboard__team--away {
+  align-items: flex-end;
+  justify-self: end;
+}
+
 .lmi-scoreboard__team-name {
   font-size: 15px;
   line-height: 1.25;
   color: var(--lmi-text);
   text-align: center;
   word-break: break-word;
+}
+
+.lmi-scoreboard__team-name--home {
+  text-align: left;
+}
+
+.lmi-scoreboard__team-name--away {
+  text-align: right;
 }
 
 .lmi-scoreboard__center {
