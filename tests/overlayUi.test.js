@@ -328,3 +328,28 @@ test("competition and momentum insights use semantic accent rows instead of mute
     /\.lmi-stat-insight\s*\{[\s\S]*border-left:\s*3px solid rgba\(61,\s*219,\s*137,\s*0\.95\);[\s\S]*background:\s*rgba\(43,\s*122,\s*88,\s*0\.22\);/
   );
 });
+
+test("score-only matches hide table and competition sections instead of showing fallback copy", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(contentScript, /const isScoreOnlyImpact = payload\.impact\?\.mode === "score-only";/);
+  assert.match(
+    contentScript,
+    /elements\.tableSection\.classList\.toggle\("is-hidden", isPrematch \|\| isCupImpact \|\| isScoreOnlyImpact\);/
+  );
+  assert.match(
+    contentScript,
+    /elements\.competitionSection\.classList\.toggle\("is-hidden", isPrematch \|\| isScoreOnlyImpact\);/
+  );
+
+  assert.match(sidepanelScript, /const isScoreOnlyImpact = payload\.impact\?\.mode === "score-only";/);
+  assert.match(
+    sidepanelScript,
+    /elements\.tableSection\.classList\.toggle\("is-hidden", isPrematch \|\| isCupImpact \|\| isScoreOnlyImpact\);/
+  );
+  assert.match(
+    sidepanelScript,
+    /elements\.competitionSection\.classList\.toggle\("is-hidden", isPrematch \|\| isScoreOnlyImpact\);/
+  );
+});

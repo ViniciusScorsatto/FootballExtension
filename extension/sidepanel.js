@@ -599,6 +599,7 @@
     const localizedImpactSummary = buildImpactSummary(state.language, payload.impact, payload.teams);
     const isLimitedImpact = payload.impact?.mode === "limited";
     const isCupImpact = payload.impact?.mode === "cup";
+    const isScoreOnlyImpact = payload.impact?.mode === "score-only";
     const updatedLabel = translate("panel.updatedAt", {
       time: new Date(payload.last_updated).toLocaleTimeString(
         state.language === "pt-BR" ? "pt-BR" : "en-US"
@@ -625,8 +626,8 @@
     });
     renderGoalTimeline(elements.goalTimeline, payload.goal_timeline);
     elements.summary.textContent = localizedImpactSummary;
-    elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact);
-    elements.competitionSection.classList.toggle("is-hidden", isPrematch);
+    elements.tableSection.classList.toggle("is-hidden", isPrematch || isCupImpact || isScoreOnlyImpact);
+    elements.competitionSection.classList.toggle("is-hidden", isPrematch || isScoreOnlyImpact);
     elements.momentumSection.classList.toggle("is-hidden", isPrematch || (isFinished && !hasStatistics));
     elements.momentumMeter.classList.toggle("is-hidden", isFinished);
     if (isPrematch) {
