@@ -194,6 +194,7 @@
         preMatchTableHome: "{team} is being tracked before kickoff",
         preMatchTableAway: "Live table impact starts when the match kicks off",
         preMatchCompetitionDetail: "Live table impact will start once the match kicks off.",
+        scoreOnlyCompetitionDetail: "Live score only - no table impact for this competition.",
         momentumFallback: "Momentum is currently based on score and table movement.",
         scoreOnlyHome: "{team} live score tracked",
         scoreOnlyAway: "Table impact unavailable for this competition",
@@ -525,6 +526,8 @@
         preMatchTableHome: "{team} está sendo acompanhado antes do pontapé inicial",
         preMatchTableAway: "O impacto ao vivo na tabela começa quando a partida iniciar",
         preMatchCompetitionDetail: "O impacto ao vivo na tabela começa quando a partida iniciar.",
+        scoreOnlyCompetitionDetail:
+          "Somente placar ao vivo - sem impacto na tabela para esta competição.",
         momentumFallback: "O momento está sendo calculado com placar e movimento na tabela.",
         scoreOnlyHome: "{team} com placar ao vivo acompanhado",
         scoreOnlyAway: "Impacto na tabela indisponível para esta competição",
@@ -657,6 +660,83 @@
         noneReported: "Nenhuma reportada"
       }
     }
+  };
+
+  const localizedDisplayNames = {
+    "pt-BR": new Map([
+      ["Algeria", "Argélia"],
+      ["Argentina", "Argentina"],
+      ["Australia", "Austrália"],
+      ["Austria", "Áustria"],
+      ["Belgium", "Bélgica"],
+      ["Bolivia", "Bolívia"],
+      ["Bosnia & Herzegovina", "Bósnia e Herzegovina"],
+      ["Bosnia and Herzegovina", "Bósnia e Herzegovina"],
+      ["Brazil", "Brasil"],
+      ["Cabo Verde", "Cabo Verde"],
+      ["Cameroon", "Camarões"],
+      ["Canada", "Canadá"],
+      ["Chile", "Chile"],
+      ["Colombia", "Colômbia"],
+      ["Congo DR", "RD Congo"],
+      ["Croatia", "Croácia"],
+      ["Curaçao", "Curaçao"],
+      ["Czech Republic", "República Tcheca"],
+      ["Czechia", "Tchéquia"],
+      ["Côte d'Ivoire", "Costa do Marfim"],
+      ["Denmark", "Dinamarca"],
+      ["Ecuador", "Equador"],
+      ["Egypt", "Egito"],
+      ["England", "Inglaterra"],
+      ["France", "França"],
+      ["Germany", "Alemanha"],
+      ["Ghana", "Gana"],
+      ["Greece", "Grécia"],
+      ["Haiti", "Haiti"],
+      ["IR Iran", "Irã"],
+      ["Iraq", "Iraque"],
+      ["Italy", "Itália"],
+      ["Japan", "Japão"],
+      ["Jordan", "Jordânia"],
+      ["Korea Republic", "Coreia do Sul"],
+      ["Mexico", "México"],
+      ["Morocco", "Marrocos"],
+      ["Netherlands", "Países Baixos"],
+      ["New Zealand", "Nova Zelândia"],
+      ["Nigeria", "Nigéria"],
+      ["Norway", "Noruega"],
+      ["Panama", "Panamá"],
+      ["Paraguay", "Paraguai"],
+      ["Peru", "Peru"],
+      ["Poland", "Polônia"],
+      ["Portugal", "Portugal"],
+      ["Qatar", "Catar"],
+      ["Saudi Arabia", "Arábia Saudita"],
+      ["Scotland", "Escócia"],
+      ["Senegal", "Senegal"],
+      ["Serbia", "Sérvia"],
+      ["South Africa", "África do Sul"],
+      ["South Korea", "Coreia do Sul"],
+      ["Spain", "Espanha"],
+      ["Sweden", "Suécia"],
+      ["Switzerland", "Suíça"],
+      ["Tunisia", "Tunísia"],
+      ["Turkey", "Turquia"],
+      ["Türkiye", "Turquia"],
+      ["Ukraine", "Ucrânia"],
+      ["United States", "Estados Unidos"],
+      ["Uruguay", "Uruguai"],
+      ["USA", "Estados Unidos"],
+      ["Uzbekistan", "Uzbequistão"],
+      ["Venezuela", "Venezuela"]
+    ])
+  };
+
+  const localizedLeagueNames = {
+    "pt-BR": new Map([
+      ["Friendlies", "Amistosos"],
+      ["International Friendlies", "Amistosos Internacionais"]
+    ])
   };
 
   function normalizeLanguage(language) {
@@ -854,7 +934,12 @@
         []
       ],
       [/^Live score tracked - table impact limited for this fixture\.$/, "impact.specialFormatLimited", []],
-      [/^Live table impact will start once the match kicks off\.$/, "panel.preMatchCompetitionDetail", []]
+      [/^Live table impact will start once the match kicks off\.$/, "panel.preMatchCompetitionDetail", []],
+      [
+        /^Live score only - no table impact for this competition\.$/,
+        "panel.scoreOnlyCompetitionDetail",
+        []
+      ]
     ];
 
     for (const [pattern, key, fields] of patterns) {
@@ -866,13 +951,37 @@
 
       const values = {};
       fields.forEach((field, index) => {
-        values[field] = match[index + 1];
+        const rawValue = match[index + 1];
+        values[field] =
+          field === "team" || field === "homeTeam" || field === "awayTeam"
+            ? translateDisplayName(language, rawValue)
+            : rawValue;
       });
 
       return t(language, key, values);
     }
 
     return message;
+  }
+
+  function translateDisplayName(language, value) {
+    const normalized = String(value ?? "").trim();
+
+    if (!normalized || language !== "pt-BR") {
+      return normalized;
+    }
+
+    return localizedDisplayNames["pt-BR"].get(normalized) || normalized;
+  }
+
+  function translateLeagueName(language, value) {
+    const normalized = String(value ?? "").trim();
+
+    if (!normalized || language !== "pt-BR") {
+      return normalized;
+    }
+
+    return localizedLeagueNames["pt-BR"].get(normalized) || normalized;
   }
 
   function buildImpactSummary(language, impact, teams) {
@@ -905,7 +1014,7 @@
 
     if (movementEntry.movement > 0) {
       return t(language, "impact.movesTo", {
-        team: movementEntry.teamName,
+        team: translateDisplayName(language, movementEntry.teamName),
         position: formatOrdinal(language, movementEntry.newPosition),
         movement: formatMovement(movementEntry.movement)
       });
@@ -913,13 +1022,13 @@
 
     if (movementEntry.movement < 0) {
       return t(language, "impact.dropsTo", {
-        team: movementEntry.teamName,
+        team: translateDisplayName(language, movementEntry.teamName),
         position: formatOrdinal(language, movementEntry.newPosition),
         movement: formatMovement(movementEntry.movement)
       });
     }
 
-    const fallbackTeam = teams?.home?.name ?? movementEntry.teamName;
+    const fallbackTeam = translateDisplayName(language, teams?.home?.name ?? movementEntry.teamName);
 
     return t(language, "impact.stays", {
       team: fallbackTeam,
@@ -936,6 +1045,8 @@
     formatMovement,
     translateGoalType,
     translateInjuryReason,
+    translateDisplayName,
+    translateLeagueName,
     translateCompetitionMessage,
     buildImpactSummary
   };

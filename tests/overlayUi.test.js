@@ -203,3 +203,22 @@ test("lineup cards include explicit coach labels and own the injuries content", 
   assert.match(i18n, /coachLabel:\s*"Coach \{name\}"/);
   assert.match(i18n, /coachLabel:\s*"Técnico \{name\}"/);
 });
+
+test("overlay and side panel localize league and country display names through shared helpers", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const i18n = await readProjectFile("extension/i18n.js");
+
+  assert.match(contentScript, /const localizedLeagueName = translateLeagueName\(state\.language, payload\.league\?\.name\);/);
+  assert.match(contentScript, /const localizedHomeName = translateDisplayName\(state\.language, payload\.teams\.home\.name\);/);
+  assert.match(contentScript, /const localizedAwayName = translateDisplayName\(state\.language, payload\.teams\.away\.name\);/);
+
+  assert.match(sidepanelScript, /const localizedLeagueName = translateLeagueName\(state\.language, payload\.league\?\.name\);/);
+  assert.match(sidepanelScript, /const localizedHomeName = translateDisplayName\(state\.language, payload\.teams\.home\.name\);/);
+  assert.match(sidepanelScript, /const localizedAwayName = translateDisplayName\(state\.language, payload\.teams\.away\.name\);/);
+
+  assert.match(i18n, /translateLeagueName/);
+  assert.match(i18n, /\["Friendlies", "Amistosos"\]/);
+  assert.match(i18n, /\["Brazil", "Brasil"\]/);
+  assert.match(i18n, /scoreOnlyCompetitionDetail:/);
+});

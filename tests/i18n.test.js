@@ -6,6 +6,8 @@ await import("../extension/i18n.js");
 const {
   normalizeLanguage,
   formatOrdinal,
+  translateDisplayName,
+  translateLeagueName,
   translateCompetitionMessage,
   buildImpactSummary
 } = globalThis.LMI_I18N;
@@ -32,20 +34,42 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
   );
   assert.equal(
     translateCompetitionMessage("pt-BR", "Bosnia & Herzegovina wins on penalties"),
-    "Bosnia & Herzegovina vence nos pênaltis"
+    "Bósnia e Herzegovina vence nos pênaltis"
   );
   assert.equal(
     translateCompetitionMessage("pt-BR", "Italy must score to stay alive"),
-    "Italy precisa marcar para seguir vivo"
+    "Itália precisa marcar para seguir vivo"
   );
   assert.equal(
     translateCompetitionMessage("pt-BR", "Vitoria is one goal from forcing extra time"),
     "Vitoria está a um gol de forçar a prorrogação"
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Live score only - no table impact for this competition."),
+    "Somente placar ao vivo - sem impacto na tabela para esta competição."
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
   );
+});
+
+test("translateDisplayName localizes supported country names for pt-BR", () => {
+  assert.equal(translateDisplayName("pt-BR", "Brazil"), "Brasil");
+  assert.equal(translateDisplayName("pt-BR", "Croatia"), "Croácia");
+  assert.equal(translateDisplayName("pt-BR", "Bosnia and Herzegovina"), "Bósnia e Herzegovina");
+  assert.equal(translateDisplayName("pt-BR", "USA"), "Estados Unidos");
+  assert.equal(translateDisplayName("en", "Brazil"), "Brazil");
+  assert.equal(translateDisplayName("pt-BR", "Cruzeiro"), "Cruzeiro");
+});
+
+test("translateLeagueName localizes supported league labels for pt-BR", () => {
+  assert.equal(translateLeagueName("pt-BR", "Friendlies"), "Amistosos");
+  assert.equal(
+    translateLeagueName("pt-BR", "International Friendlies"),
+    "Amistosos Internacionais"
+  );
+  assert.equal(translateLeagueName("en", "Friendlies"), "Friendlies");
 });
 
 test("buildImpactSummary renders localized movement summaries", () => {

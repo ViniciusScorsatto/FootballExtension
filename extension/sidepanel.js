@@ -30,6 +30,8 @@
     formatMovement,
     translateGoalType,
     translateInjuryReason,
+    translateDisplayName,
+    translateLeagueName,
     translateCompetitionMessage,
     buildImpactSummary
   } = window.LMI_I18N;
@@ -570,8 +572,12 @@
       )
     });
 
-    elements.leagueName.textContent = payload.league?.name || translate("panel.matchTracker");
-    elements.headline.textContent = `${payload.teams.home.name} ${payload.score.home}-${payload.score.away} ${payload.teams.away.name} · ${clockLabel}`;
+    const localizedLeagueName = translateLeagueName(state.language, payload.league?.name);
+    const localizedHomeName = translateDisplayName(state.language, payload.teams.home.name);
+    const localizedAwayName = translateDisplayName(state.language, payload.teams.away.name);
+
+    elements.leagueName.textContent = localizedLeagueName || translate("panel.matchTracker");
+    elements.headline.textContent = `${localizedHomeName} ${payload.score.home}-${payload.score.away} ${localizedAwayName} · ${clockLabel}`;
     elements.summary.textContent = eventLabel || localizedImpactSummary;
     setBadge(elements.homeBadge, payload.teams.home.logo, payload.teams.home.name);
     setBadge(elements.awayBadge, payload.teams.away.logo, payload.teams.away.name);
@@ -599,8 +605,8 @@
       elements.homeRow.textContent = "";
       elements.awayRow.textContent = "";
     } else if (hasTableImpact && payload.impact?.table?.home && payload.impact?.table?.away) {
-      renderTableImpactRow(elements.homeRow, payload.teams.home.name, payload.impact.table.home);
-      renderTableImpactRow(elements.awayRow, payload.teams.away.name, payload.impact.table.away);
+      renderTableImpactRow(elements.homeRow, localizedHomeName, payload.impact.table.home);
+      renderTableImpactRow(elements.awayRow, localizedAwayName, payload.impact.table.away);
     } else if (payload.impact?.mode === "limited") {
       const homeGroupPosition = payload.metadata?.teamGroupPositions?.home;
       const awayGroupPosition = payload.metadata?.teamGroupPositions?.away;
@@ -608,19 +614,19 @@
       const awayProjectedGroupPosition = payload.metadata?.projectedTeamGroupPositions?.away;
 
       elements.homeRow.textContent = homeGroupPosition
-        ? formatGroupPositionLine(payload.teams.home.name, homeGroupPosition, homeProjectedGroupPosition)
+        ? formatGroupPositionLine(localizedHomeName, homeGroupPosition, homeProjectedGroupPosition)
         : translate("panel.limitedHome");
       elements.awayRow.textContent = awayGroupPosition
-        ? formatGroupPositionLine(payload.teams.away.name, awayGroupPosition, awayProjectedGroupPosition)
+        ? formatGroupPositionLine(localizedAwayName, awayGroupPosition, awayProjectedGroupPosition)
         : translate("panel.limitedAway");
     } else if (payload.status.phase === "upcoming") {
       elements.homeRow.textContent = translate("panel.preMatchTableHome", {
-        team: payload.teams.home.name
+        team: localizedHomeName
       });
       elements.awayRow.textContent = translate("panel.preMatchTableAway");
     } else {
       elements.homeRow.textContent = translate("panel.scoreOnlyHome", {
-        team: payload.teams.home.name
+        team: localizedHomeName
       });
       elements.awayRow.textContent = translate("panel.scoreOnlyAway");
     }
