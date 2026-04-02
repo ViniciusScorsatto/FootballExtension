@@ -222,3 +222,14 @@ test("overlay and side panel localize league and country display names through s
   assert.match(i18n, /\["Brazil", "Brasil"\]/);
   assert.match(i18n, /scoreOnlyCompetitionDetail:/);
 });
+
+test("goal banners fall back to backend event messages when scorer fragments are missing", async () => {
+  const contentScript = await readProjectFile("extension/content.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+
+  assert.match(contentScript, /const label = pieces\.filter\(Boolean\)\.join\(" · "\);/);
+  assert.match(contentScript, /return event\.message \|\| "";/);
+
+  assert.match(sidepanelScript, /const label = pieces\.filter\(Boolean\)\.join\(" · "\);/);
+  assert.match(sidepanelScript, /return event\.message \|\| "";/);
+});

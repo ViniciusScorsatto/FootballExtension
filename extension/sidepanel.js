@@ -694,7 +694,13 @@
       pieces.push(event.minuteLabel);
     }
 
-    return pieces.join(" · ");
+    const label = pieces.filter(Boolean).join(" · ");
+
+    if (label) {
+      return label;
+    }
+
+    return event.message || "";
   }
 
   function setBadge(element, src, alt) {
