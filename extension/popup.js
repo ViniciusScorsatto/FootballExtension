@@ -53,7 +53,6 @@ const liveMatchesSelect = document.getElementById("liveMatches");
 const upcomingMatchesSelect = document.getElementById("upcomingMatches");
 const refreshMatchesButton = document.getElementById("refreshMatches");
 const startButton = document.getElementById("startTracking");
-const stopButton = document.getElementById("stopTracking");
 const openSidePanelButton = document.getElementById("openSidePanel");
 const statusMessage = document.getElementById("statusMessage");
 
@@ -103,6 +102,7 @@ let currentBilling = {
 };
 let lastBillingDebug = null;
 let popupOpenedTracked = false;
+let currentTrackingEnabled = false;
 let currentNotifications = {
   notifyGoals: true,
   notifyTableChanges: true
@@ -284,8 +284,7 @@ function applyStaticTranslations() {
   billingEyebrow.textContent = translate("popup.billingEyebrow");
   fixtureIdInput.placeholder = translate("popup.manualFixturePlaceholder");
   refreshMatchesButton.textContent = translate("popup.refreshMatches");
-  startButton.textContent = translate("popup.startTracking");
-  stopButton.textContent = translate("popup.stopTracking");
+  renderTrackingButton();
   openSidePanelButton.textContent = translate("popup.openSidePanel");
   billingRefreshButton.textContent = translate("popup.refreshPlan");
   accountEyebrow.textContent = translate("popup.restoreEyebrow");
@@ -301,6 +300,15 @@ function applyStaticTranslations() {
   );
   renderAdvancedOptions();
   renderScenarioPreviewState();
+}
+
+function renderTrackingButton() {
+  startButton.textContent = currentTrackingEnabled
+    ? translate("popup.stopTracking")
+    : translate("popup.startTracking");
+  startButton.classList.toggle("lmi-button--primary", !currentTrackingEnabled);
+  startButton.classList.toggle("lmi-button--ghost", currentTrackingEnabled);
+  startButton.dataset.trackingEnabled = currentTrackingEnabled ? "true" : "false";
 }
 
 function createBillingUserId() {
@@ -1262,6 +1270,8 @@ async function loadSettings() {
       ? translate("popup.statusTrackingActive")
       : translate("popup.statusPickMatch")
   );
+  currentTrackingEnabled = Boolean(result.trackingEnabled);
+  renderTrackingButton();
 
   if (!popupOpenedTracked) {
     trackAnalytics("popup_opened", buildPopupOpenedAnalyticsProperties(result.trackingEnabled));
@@ -1307,8 +1317,14 @@ async function handleStartTracking() {
   const selectedMatch = getSelectedMatch();
   const selectedScenario = scenarioPreviewEnabled ? getSelectedScenarioEntry() : null;
   const fixtureId = selectedScenario?.fixtureId || getSelectedFixtureId();
-  const currentSettings = await chrome.storage.sync.get(["activeViewMode"]);
-  const preferredViewMode = currentSettings.activeViewMode === "sidepanel" ? "sidepanel" : "overlay";
+  const currentSettings = await chrome.storage.sync.get([
+    "activeViewMode",
+    "sidepanelSessionActive"
+  ]);
+  const preferredViewMode =
+    currentSettings.activeViewMode === "sidepanel" && currentSettings.sidepanelSessionActive
+      ? "sidepanel"
+      : "overlay";
 
   if (scenarioPreviewEnabled && !selectedScenario) {
     setStatus(translate("popup.statusChooseScenario"), true);
@@ -1355,6 +1371,8 @@ async function handleStartTracking() {
     notifyTableChanges: currentNotifications.notifyTableChanges,
     trackingEnabled: true
   });
+  currentTrackingEnabled = true;
+  renderTrackingButton();
 
   trackAnalytics("tracking_started", {
     ...buildMatchAnalyticsProperties(selectedMatch),
@@ -1374,6 +1392,8 @@ async function handleStopTracking() {
     billingStatus: currentBilling.status,
     billingOfferId: currentBilling.offerId
   });
+  currentTrackingEnabled = false;
+  renderTrackingButton();
 
   trackAnalytics("tracking_stopped", buildMatchAnalyticsProperties(selectedMatch));
   setStatus(translate("popup.statusTrackingStopped"));
@@ -1676,9 +1696,23 @@ leagueFilterSelect.addEventListener("change", async () => {
   renderMatchLists();
 });
 
-startButton.addEventListener("click", handleStartTracking);
-stopButton.addEventListener("click", handleStopTracking);
+startButton.addEventListener("click", () => {
+  if (currentTrackingEnabled) {
+    void handleStopTracking();
+    return;
+  }
+
+  void handleStartTracking();
+});
 openSidePanelButton.addEventListener("click", handleOpenSidePanel);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "sync" || !changes.trackingEnabled) {
+    return;
+  }
+
+  currentTrackingEnabled = Boolean(changes.trackingEnabled.newValue);
+  renderTrackingButton();
+});
 billingActionButton.addEventListener("click", handleBillingAction);
 billingRefreshButton.addEventListener("click", async () => {
   try {

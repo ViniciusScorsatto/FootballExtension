@@ -3,6 +3,7 @@
     "fixtureId",
     "trackingEnabled",
     "activeViewMode",
+    "sidepanelSessionActive",
     "scenarioModeEnabled",
     "scenarioPayloadPath",
     "language",
@@ -114,6 +115,18 @@
 
   init();
 
+  window.addEventListener("pagehide", () => {
+    void chrome.storage.sync.set({
+      sidepanelSessionActive: false
+    });
+  });
+
+  window.addEventListener("beforeunload", () => {
+    void chrome.storage.sync.set({
+      sidepanelSessionActive: false
+    });
+  });
+
   function translate(key, values = {}) {
     return t(state.language, key, values);
   }
@@ -146,6 +159,10 @@
   }
 
   function init() {
+    void chrome.storage.sync.set({
+      sidepanelSessionActive: true
+    });
+
     elements.refreshButton.addEventListener("click", async () => {
       if (!state.trackingEnabled || !state.fixtureId) {
         return;

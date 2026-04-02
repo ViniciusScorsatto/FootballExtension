@@ -39,6 +39,13 @@
   padding: 18px;
 }
 
+.lmi-popup__topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .lmi-sidepanel {
   box-sizing: border-box;
   min-height: 100vh;
@@ -120,7 +127,7 @@
 }
 
 .lmi-popup__title {
-  margin: 10px 0 8px;
+  margin: 14px 0 8px;
   font-size: 24px;
   line-height: 1.1;
 }
@@ -1027,6 +1034,11 @@ select.lmi-field__input {
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lmi-panel-footer--popup {
+  margin-top: 18px;
+  padding-top: 14px;
 }
 
 .lmi-wordmark--footer {

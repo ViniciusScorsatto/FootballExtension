@@ -427,6 +427,35 @@ test("popup billing card uses the shared pricing catalog instead of a hardcoded 
   assert.match(popupScript, /await fetchPricingCatalog\(\);\s*[\r\n]+\s*await refreshBillingStatusWithRecovery\(\);/);
 });
 
+test("popup uses a text-first topbar and moves the Foot Analysis logo to the footer", async () => {
+  const popupHtml = await readProjectFile("extension/popup.html");
+  const stylesheet = await readProjectFile("extension/styles.css");
+
+  assert.match(popupHtml, /<div class="lmi-popup__topbar">/);
+  assert.match(popupHtml, /class="lmi-brand__copy lmi-brand__copy--surface"/);
+  assert.doesNotMatch(popupHtml, /<div class="lmi-brand__mark">/);
+  assert.match(popupHtml, /class="lmi-panel-footer lmi-panel-footer--popup"/);
+  assert.match(stylesheet, /\.lmi-popup__topbar\s*\{/);
+  assert.match(stylesheet, /\.lmi-panel-footer--popup\s*\{/);
+});
+
+test("popup uses a single toggle button for start and stop tracking", async () => {
+  const popupHtml = await readProjectFile("extension/popup.html");
+  const popupScript = await readProjectFile("extension/popup.js");
+
+  assert.match(popupHtml, /<button id="startTracking" class="lmi-button lmi-button--primary" type="button">/);
+  assert.doesNotMatch(popupHtml, /id="stopTracking"/);
+
+  assert.match(popupScript, /let currentTrackingEnabled = false;/);
+  assert.match(popupScript, /function renderTrackingButton\(\) \{/);
+  assert.match(popupScript, /startButton\.textContent = currentTrackingEnabled\s*\?\s*translate\("popup\.stopTracking"\)\s*:\s*translate\("popup\.startTracking"\);/);
+  assert.match(popupScript, /startButton\.classList\.toggle\("lmi-button--primary", !currentTrackingEnabled\);/);
+  assert.match(popupScript, /startButton\.classList\.toggle\("lmi-button--ghost", currentTrackingEnabled\);/);
+  assert.match(popupScript, /startButton\.addEventListener\("click", \(\) => \{/);
+  assert.match(popupScript, /if \(currentTrackingEnabled\) \{\s*void handleStopTracking\(\);/);
+  assert.match(popupScript, /chrome\.storage\.onChanged\.addListener\(\(changes, area\) => \{/);
+});
+
 test("popup pings existing overlay before reinjecting and relies on storage changes for tracking updates", async () => {
   const popupScript = await readProjectFile("extension/popup.js");
   const contentScript = await readProjectFile("extension/content.js");
@@ -442,15 +471,21 @@ test("popup pings existing overlay before reinjecting and relies on storage chan
   assert.match(contentScript, /sendResponse\(\{\s*ok:\s*true\s*\}\);/);
 });
 
-test("starting tracking preserves sidepanel mode when sidepanel is already active", async () => {
+test("starting tracking preserves sidepanel mode only when the sidepanel session is active", async () => {
   const popupScript = await readProjectFile("extension/popup.js");
+  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
 
-  assert.match(popupScript, /const currentSettings = await chrome\.storage\.sync\.get\(\["activeViewMode"\]\);/);
   assert.match(
     popupScript,
-    /const preferredViewMode = currentSettings\.activeViewMode === "sidepanel" \? "sidepanel" : "overlay";/
+    /const currentSettings = await chrome\.storage\.sync\.get\(\[\s*"activeViewMode",\s*"sidepanelSessionActive"\s*\]\);/
+  );
+  assert.match(
+    popupScript,
+    /currentSettings\.activeViewMode === "sidepanel" && currentSettings\.sidepanelSessionActive/
   );
   assert.match(popupScript, /activeViewMode:\s*preferredViewMode,/);
+  assert.match(sidepanelScript, /sidepanelSessionActive:\s*true/);
+  assert.match(sidepanelScript, /sidepanelSessionActive:\s*false/);
 });
 
 test("open sidepanel follows the tracked fixture even when popup writes overlay as active view", async () => {

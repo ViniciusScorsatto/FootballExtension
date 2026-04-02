@@ -8,16 +8,13 @@
   </head>
   <body class="lmi-popup-body">
     <main class="lmi-popup">
-      <div class="lmi-brand">
-        <div class="lmi-brand__mark">
-          <img src="assets/footanalysislogo.png" alt="Foot Analysis logo" class="lmi-brand__logo" />
-        </div>
-        <div class="lmi-brand__copy">
+      <div class="lmi-popup__topbar">
+        <div class="lmi-brand__copy lmi-brand__copy--surface">
           <div id="popupEyebrow" class="lmi-popup__eyebrow">Foot Analysis</div>
           <div id="popupSubhead" class="lmi-brand__subhead">Live Match Impact</div>
         </div>
+        <div id="topPlanPill" class="lmi-top-plan-pill" hidden>Pro</div>
       </div>
-      <div id="topPlanPill" class="lmi-top-plan-pill" hidden>Pro</div>
       <h1 id="popupTitle" class="lmi-popup__title">Track what a goal changes</h1>
       <p id="popupDescription" class="lmi-popup__text">
         Pick a supported league and the overlay will explain the live match impact in seconds.
@@ -189,14 +186,15 @@
       <button id="startTracking" class="lmi-button lmi-button--primary" type="button">
         Track this match
       </button>
-      <button id="stopTracking" class="lmi-button lmi-button--ghost" type="button">
-        Stop tracking
-      </button>
       <button id="openSidePanel" class="lmi-button lmi-button--ghost" type="button">
         Open side panel
       </button>
 
       <p id="statusMessage" class="lmi-popup__status" aria-live="polite"></p>
+
+      <div class="lmi-panel-footer lmi-panel-footer--popup">
+        <img src="assets/footanalysislogo.png" alt="Foot Analysis logo" class="lmi-wordmark lmi-wordmark--footer" />
+      </div>
     </main>
 
     <script src="config.js"></script>
