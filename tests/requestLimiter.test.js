@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRequestLimiter, requestLimiterInternals } from "../backend/src/middleware/requestLimiter.js";
-import { CacheService } from "../backend/src/services/cacheService.js";
+import { createRequestLimiter, requestLimiterInternals } from "../apps/api/src/middleware/requestLimiter.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
 
 function createResponseMock() {
   return {

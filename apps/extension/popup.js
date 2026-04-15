@@ -368,7 +368,7 @@ async function ensureContentScriptInjected() {
 
   await chrome.scripting.executeScript({
     target: { tabId: activeTab.id },
-    files: ["config.js", "i18n.js", "content.js"]
+    files: ["config.js", "i18n.js", "sdk-football.js", "content.js"]
   });
 }
 
@@ -386,11 +386,17 @@ function validateBackendUrl(backendUrl) {
 }
 
 function getRequestHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "x-live-impact-user": currentBilling.userId || "anonymous",
-    "x-live-impact-plan": currentBilling.plan || "free"
-  };
+  return window.LMI_SDK.buildIdentityHeaders({
+    userId: currentBilling.userId || "anonymous",
+    plan: currentBilling.plan || "free"
+  });
+}
+
+function createPopupSdkClient(backendUrl) {
+  return window.LMI_SDK.createRequesterBackedSdk({
+    baseUrl: backendUrl,
+    getHeaders: getRequestHeaders
+  });
 }
 
 function formatKickoff(match) {
@@ -899,18 +905,6 @@ function getSelectedMatch() {
   ) ?? null;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, {
-    headers: getRequestHeaders()
-  });
-
-  if (!response.ok) {
-    throw new Error(`Request failed with ${response.status}`);
-  }
-
-  return response.json();
-}
-
 async function fetchBillingStatus() {
   const backendUrl = normalizeBackendUrl();
 
@@ -921,9 +915,9 @@ async function fetchBillingStatus() {
   const previouslyLinked = currentBilling.accountLinked;
   const previousWasPro = isProPlan();
 
-  const payload = await fetchJson(
-    `${backendUrl}/billing/status?user_id=${encodeURIComponent(currentBilling.userId)}`
-  );
+  const payload = await createPopupSdkClient(backendUrl).getBillingStatus({
+    userId: currentBilling.userId
+  });
 
   currentBilling = {
     ...currentBilling,
@@ -999,7 +993,7 @@ async function fetchPricingCatalog() {
   }
 
   try {
-    const payload = await fetchJson(`${backendUrl}/billing/plans`);
+    const payload = await createPopupSdkClient(backendUrl).getBillingPlans();
     currentPricingCatalog = payload || currentPricingCatalog;
     renderBillingCard();
   } catch {
@@ -1023,20 +1017,10 @@ async function refreshBillingStatusWithRecovery() {
 
   const previouslyLinked = currentBilling.accountLinked;
   const previousWasPro = isProPlan();
-  const response = await fetch(`${backendUrl}/billing/status/refresh`, {
-    method: "POST",
-    headers: getRequestHeaders(),
-    body: JSON.stringify({
-      userId: currentBilling.userId,
-      email: recoveryEmail
-    })
+  const payload = await createPopupSdkClient(backendUrl).refreshBillingStatus({
+    userId: currentBilling.userId,
+    email: recoveryEmail
   });
-
-  if (!response.ok) {
-    throw new Error(`Request failed with ${response.status}`);
-  }
-
-  const payload = await response.json();
   lastBillingDebug = payload.debug ?? null;
   console.info("LMI billing refresh debug", lastBillingDebug);
 
@@ -1131,8 +1115,8 @@ async function refreshMatchLists(preferredFixtureId = null, preferredLeagueId = 
 
   try {
     const [livePayload, upcomingPayload] = await Promise.all([
-      fetchJson(`${backendUrl}/matches/live`),
-      fetchJson(`${backendUrl}/matches/upcoming`)
+      createPopupSdkClient(backendUrl).getLiveMatches(),
+      createPopupSdkClient(backendUrl).getUpcomingMatches()
     ]);
 
     currentLiveMatches = livePayload.matches || [];
@@ -1287,15 +1271,7 @@ async function loadRuntimePublicConfig() {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/public-config`, {
-      headers: getRequestHeaders()
-    });
-
-    if (!response.ok) {
-      return;
-    }
-
-    const payload = await response.json();
+    const payload = await createPopupSdkClient(backendUrl).getPublicConfig();
     const posthog = payload?.analytics?.posthog;
 
     if (!posthog) {
@@ -1429,21 +1405,11 @@ async function handleBillingAction() {
   });
 
   try {
-    const response = await fetch(`${backendUrl}/billing/checkout-session`, {
-      method: "POST",
-      headers: getRequestHeaders(),
-      body: JSON.stringify({
-        userId: currentBilling.userId,
-        email: accountEmailInput.value.trim() || undefined,
-        offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : null
-      })
+    const payload = await createPopupSdkClient(backendUrl).createCheckoutSession({
+      userId: currentBilling.userId,
+      email: accountEmailInput.value.trim() || undefined,
+      offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : null
     });
-
-    if (!response.ok) {
-      throw new Error(`Request failed with ${response.status}`);
-    }
-
-    const payload = await response.json();
     currentBilling.checkoutPending = true;
     currentBilling.checkoutStartedAt = Date.now();
     currentBilling.recentlyUnlocked = false;
@@ -1498,20 +1464,10 @@ async function handleRestoreAccess() {
       emailDomain: email.split("@")[1] || ""
     });
 
-    const response = await fetch(`${backendUrl}/auth/magic-link/request`, {
-      method: "POST",
-      headers: getRequestHeaders(),
-      body: JSON.stringify({
-        userId: currentBilling.userId,
-        email
-      })
+    const payload = await createPopupSdkClient(backendUrl).requestMagicLink({
+      userId: currentBilling.userId,
+      email
     });
-
-    if (!response.ok) {
-      throw new Error(`Request failed with ${response.status}`);
-    }
-
-    const payload = await response.json();
     currentBilling.accountEmail = payload.account?.email || email;
     currentBilling.restorePending = true;
     currentBilling.restoreStartedAt = Date.now();

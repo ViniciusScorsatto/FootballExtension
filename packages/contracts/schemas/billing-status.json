@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "billing-status.json",
+  "title": "BillingStatus",
+  "type": "object",
+  "required": ["userId", "plan", "status", "account", "planDetails", "offers", "updatedAt"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "userId": { "type": "string" },
+    "plan": { "type": "string" },
+    "status": { "type": "string" },
+    "offerId": {
+      "type": ["string", "null"]
+    },
+    "grandfatheredPriceUsd": {
+      "type": ["number", "null"]
+    },
+    "betaUser": { "type": "boolean" },
+    "account": {
+      "type": "object",
+      "required": ["linked", "accountId", "email"],
+      "properties": {
+        "linked": { "type": "boolean" },
+        "accountId": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "planDetails": { "type": "object" },
+    "offers": {
+      "type": "object",
+      "required": ["earlyBirdEligible", "earlyBirdActive", "earlyBirdRemaining"],
+      "properties": {
+        "earlyBirdEligible": { "type": "boolean" },
+        "earlyBirdActive": { "type": "boolean" },
+        "earlyBirdRemaining": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "debug": {
+      "type": "object"
+    },
+    "updatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

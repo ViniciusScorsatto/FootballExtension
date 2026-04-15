@@ -271,7 +271,7 @@
     }
 
     try {
-      const payload = await fetchJson(`${state.backendUrl}/public-config`);
+      const payload = await fetchJson("/public-config");
       const posthog = payload?.analytics?.posthog;
 
       if (!posthog) {
@@ -294,9 +294,9 @@
     }
 
     try {
-      const payload = await fetchJson(
-        `${state.backendUrl}/billing/status?user_id=${encodeURIComponent(state.billingUserId)}`
-      );
+      const payload = await fetchJson("/billing/status", {
+        userId: state.billingUserId
+      });
 
       state.billingPlan =
         payload.plan === "pro" && payload.status === "active" ? "pro" : "free";
@@ -472,8 +472,38 @@
     });
   }
 
-  async function fetchJson(url) {
-    return extensionRequest(url, {
+  function createSidepanelSdkClient() {
+    return window.LMI_SDK.createRequesterBackedSdk({
+      baseUrl: state.backendUrl,
+      requester: extensionRequest,
+      getHeaders: () =>
+        window.LMI_SDK.buildIdentityHeaders({
+          userId: state.billingUserId || "anonymous",
+          plan: state.billingPlan || "free"
+        })
+    });
+  }
+
+  async function fetchJson(path, options = {}) {
+    const client = createSidepanelSdkClient();
+
+    if (path === "/public-config") {
+      return client.getPublicConfig();
+    }
+
+    if (path === "/billing/status") {
+      return client.getBillingStatus({
+        userId: options.userId
+      });
+    }
+
+    if (path === "/match-impact") {
+      return client.getMatchImpact({
+        fixtureId: options.fixtureId
+      });
+    }
+
+    return extensionRequest(path, {
       method: "GET"
     });
   }
@@ -518,9 +548,9 @@
     try {
       const payload = state.scenarioModeEnabled
         ? await fetchScenarioPayload()
-        : await extensionRequest(
-            `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
-          );
+        : await fetchJson("/match-impact", {
+            fixtureId: state.fixtureId
+          });
       state.lastPayload = payload;
       state.backoffMs = BASE_POLL_INTERVAL_MS;
       render(payload);

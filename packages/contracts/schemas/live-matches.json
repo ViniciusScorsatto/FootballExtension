@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "live-matches.json",
+  "title": "LiveMatches",
+  "type": "object",
+  "required": ["matches"],
+  "properties": {
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fixtureId", "league", "teams"],
+        "properties": {
+          "fixtureId": { "type": "number" },
+          "league": { "type": "object" },
+          "teams": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

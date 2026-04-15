@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AccountService } from "../backend/src/services/accountService.js";
-import { BillingService } from "../backend/src/services/billingService.js";
-import { CacheService } from "../backend/src/services/cacheService.js";
+import { AccountService } from "../apps/api/src/services/accountService.js";
+import { BillingService } from "../apps/api/src/services/billingService.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
 
 function createServices() {
   const cacheService = new CacheService({
@@ -57,6 +57,21 @@ test("magic link restore links a new browser identity to the same paid account",
     },
     customer: "cus_123",
     subscription: "sub_123"
+  });
+
+  await billingService.handleStripeInvoicePaid({
+    customer_email: "tester@example.com",
+    customer: "cus_123",
+    subscription: "sub_123",
+    lines: {
+      data: [
+        {
+          price: {
+            id: "price_early"
+          }
+        }
+      ]
+    }
   });
 
   const request = await accountService.createMagicLinkRequest({

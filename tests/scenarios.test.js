@@ -13,7 +13,7 @@ async function readJson(relativePath) {
 }
 
 test("scenario catalog variants point to valid JSON payloads", async () => {
-  const catalog = await readJson("extension/scenarios/index.json");
+  const catalog = await readJson("apps/extension/scenarios/index.json");
 
   for (const family of catalog.families || []) {
     assert.ok(family.id);
@@ -24,7 +24,7 @@ test("scenario catalog variants point to valid JSON payloads", async () => {
       assert.ok(variant.id);
       assert.ok(variant.path);
 
-      const payload = await readJson(path.join("extension", variant.path));
+      const payload = await readJson(path.join("apps/extension", variant.path));
       assert.equal(payload.fixture_id, family.fixtureId);
       assert.ok(payload.teams?.home?.name);
       assert.ok(payload.teams?.away?.name);
@@ -34,7 +34,7 @@ test("scenario catalog variants point to valid JSON payloads", async () => {
 });
 
 test("prematch scenarios with available lineups include full starting elevens", async () => {
-  const payload = await readJson("extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json");
+  const payload = await readJson("apps/extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json");
   const lineups = payload.prematch?.lineups;
 
   assert.equal(lineups?.available, true);
@@ -45,7 +45,7 @@ test("prematch scenarios with available lineups include full starting elevens", 
 });
 
 test("prematch scenarios can exercise grid positions and lineup colors", async () => {
-  const payload = await readJson("extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json");
+  const payload = await readJson("apps/extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json");
   const lineups = payload.prematch?.lineups;
 
   assert.equal(lineups.home.colors.playerPrimary, "0038a8");

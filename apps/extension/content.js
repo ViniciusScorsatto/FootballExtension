@@ -590,6 +590,18 @@
     });
   }
 
+  function createContentSdkClient() {
+    return window.LMI_SDK.createRequesterBackedSdk({
+      baseUrl: state.backendUrl,
+      requester: extensionRequest,
+      getHeaders: () =>
+        window.LMI_SDK.buildIdentityHeaders({
+          userId: state.billingUserId || "anonymous",
+          plan: state.billingPlan || "free"
+        })
+    });
+  }
+
   async function fetchImpact() {
     if (
       !state.trackingEnabled ||
@@ -602,9 +614,9 @@
     try {
       const payload = state.scenarioModeEnabled
         ? await fetchScenarioPayload()
-        : await extensionRequest(
-            `${state.backendUrl}/match-impact?fixture_id=${encodeURIComponent(state.fixtureId)}`
-          );
+        : await createContentSdkClient().getMatchImpact({
+            fixtureId: state.fixtureId
+          });
       state.backoffMs = BASE_POLL_INTERVAL_MS;
       handlePayload(payload);
 
@@ -1629,6 +1641,16 @@
     }
 
     try {
+      if (path === "/track/usage") {
+        await createContentSdkClient().trackUsage(payload);
+        return;
+      }
+
+      if (path === "/track/session") {
+        await createContentSdkClient().trackSession(payload);
+        return;
+      }
+
       await extensionRequest(`${state.backendUrl}${path}`, {
         method: "POST",
         body: payload

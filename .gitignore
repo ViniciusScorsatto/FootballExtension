@@ -7,3 +7,5 @@ yarn-debug.log*
 yarn-error.log*
 COMPETITION_FORMAT_PLAN.md
 PRODUCT_HYPOTHESIS_BRIEF.md
+LAUNCH_CHECKLIST.md
+api/league-audit.mjs

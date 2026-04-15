@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createMatchImpactController } from "../backend/src/controllers/matchImpactController.js";
+import { createMatchImpactController } from "../apps/api/src/controllers/matchImpactController.js";
 
 function createResponseMock() {
   return {

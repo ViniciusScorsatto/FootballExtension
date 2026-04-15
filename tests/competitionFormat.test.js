@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { classifyCompetitionFormat } from "../backend/src/utils/competitionFormat.js";
+import { classifyCompetitionFormat } from "../apps/api/src/utils/competitionFormat.js";
 
 test("classifies a single-table competition from standings shape", () => {
   const result = classifyCompetitionFormat({

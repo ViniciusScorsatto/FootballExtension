@@ -3,14 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "description": "Chrome extension and Node.js backend for real-time football match consequence insights.",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "node --watch backend/src/server.js",
-    "start": "node backend/src/server.js",
-    "test": "node --test"
+    "dev": "node --watch apps/api/src/server.js",
+    "start": "node apps/api/src/server.js",
+    "test": "node --test",
+    "contracts:check": "node --test tests/contracts.test.js",
+    "sync:extension-sdk": "cp packages/sdk-football/src/browser.js apps/extension/sdk-football.js"
   },
   "dependencies": {
     "axios": "^1.8.4",

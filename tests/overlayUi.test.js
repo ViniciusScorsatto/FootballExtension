@@ -12,7 +12,7 @@ async function readProjectFile(relativePath) {
 }
 
 test("collapsed overlay card includes home and away badge slots", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
 
   assert.match(
     contentScript,
@@ -27,7 +27,7 @@ test("collapsed overlay card includes home and away badge slots", async () => {
 });
 
 test("collapsed overlay render populates badge logos from the tracked teams", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
 
   assert.match(
     contentScript,
@@ -40,7 +40,7 @@ test("collapsed overlay render populates badge logos from the tracked teams", as
 });
 
 test("collapsed overlay badge styling keeps the compact layout intact", async () => {
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(
     stylesheet,
@@ -53,9 +53,9 @@ test("collapsed overlay badge styling keeps the compact layout intact", async ()
 });
 
 test("finished matches switch momentum sections into final-stats mode", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(
     contentScript,
@@ -84,10 +84,10 @@ test("finished matches switch momentum sections into final-stats mode", async ()
 });
 
 test("pre-match prediction cards use graphical comparison bars instead of text-only compare lines", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const stylesheet = await readProjectFile("extension/styles.css");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(contentScript, /function renderPredictionCard\(payload, prediction\)/);
   assert.match(contentScript, /lmi-prediction-card__summary/);
@@ -113,8 +113,8 @@ test("pre-match prediction cards use graphical comparison bars instead of text-o
 });
 
 test("prediction chips avoid duplicating the goal line when advice already includes it", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);
   assert.match(contentScript, /const normalizedPhrase = direction === "-" \? `under \$\{value\}` : `over \$\{value\}`;/);
@@ -126,8 +126,8 @@ test("prediction chips avoid duplicating the goal line when advice already inclu
 });
 
 test("pre-match sections no longer duplicate summary text above the cards", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /elements\.prematchList\.innerHTML = "";/);
   assert.doesNotMatch(contentScript, /function buildPrematchItems\(payload\)/);
@@ -137,8 +137,8 @@ test("pre-match sections no longer duplicate summary text above the cards", asyn
 });
 
 test("lineup cards render the full starting XI instead of a short preview", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /\(entry\.startXI \|\| \[\]\)\.map\(getLineupPlayerName\)\.filter\(Boolean\)\.join\(", "\)/);
   assert.doesNotMatch(contentScript, /slice\(0,\s*4\)\.join\(", "\)/);
@@ -148,10 +148,10 @@ test("lineup cards render the full starting XI instead of a short preview", asyn
 });
 
 test("lineup cards render a formation pitch when the XI and shape are available", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const stylesheet = await readProjectFile("extension/styles.css");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(contentScript, /function buildFormationPitch\(entry\)/);
   assert.match(contentScript, /buildGridPitchLayout\(players\) \|\| buildFormationPitchLayout\(entry\.formation, players\)/);
@@ -183,10 +183,10 @@ test("lineup cards render a formation pitch when the XI and shape are available"
 });
 
 test("lineup cards include explicit coach labels and own the injuries content", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const stylesheet = await readProjectFile("extension/styles.css");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(contentScript, /translate\("prematch\.coachLabel"/);
   assert.match(contentScript, /function renderLineupCardInjuries\(teamName, injuries\)/);
@@ -205,9 +205,9 @@ test("lineup cards include explicit coach labels and own the injuries content", 
 });
 
 test("overlay and side panel localize league and country display names through shared helpers", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(contentScript, /const localizedLeagueName = translateLeagueName\(state\.language, payload\.league\?\.name\);/);
   assert.match(contentScript, /const localizedHomeName = translateDisplayName\(state\.language, payload\.teams\.home\.name\);/);
@@ -224,8 +224,8 @@ test("overlay and side panel localize league and country display names through s
 });
 
 test("goal banners fall back to backend event messages when scorer fragments are missing", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /const label = pieces\.filter\(Boolean\)\.join\(" · "\);/);
   assert.match(contentScript, /return event\.message \|\| "";/);
@@ -235,10 +235,10 @@ test("goal banners fall back to backend event messages when scorer fragments are
 });
 
 test("goal timeline renders scorer history while the sidepanel summary stays focused on impact", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const sidepanelHtml = await readProjectFile("extension/sidepanel.html");
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const sidepanelHtml = await readProjectFile("apps/extension/sidepanel.html");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(contentScript, /<div class="lmi-goal-timeline is-hidden"><\/div>/);
   assert.match(contentScript, /renderGoalTimeline\(elements\.goalTimeline, payload\.goal_timeline\);/);
@@ -255,10 +255,10 @@ test("goal timeline renders scorer history while the sidepanel summary stays foc
 });
 
 test("overlay and sidepanel share the branded top header while keeping the league label near the scoreboard", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const sidepanelHtml = await readProjectFile("extension/sidepanel.html");
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const sidepanelHtml = await readProjectFile("apps/extension/sidepanel.html");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(contentScript, /<div class="lmi-overlay-topbar">/);
   assert.match(contentScript, /lmi-overlay-brand-eyebrow/);
@@ -311,9 +311,9 @@ test("overlay and sidepanel share the branded top header while keeping the leagu
 });
 
 test("table impact rows render movement as a badge instead of inline parenthetical text", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(contentScript, /lmi-impact-row__movement-badge/);
   assert.match(contentScript, /formatMovement\(tableImpact\.movement\)/);
@@ -332,7 +332,7 @@ test("table impact rows render movement as a badge instead of inline parenthetic
 });
 
 test("competition and momentum insights use semantic accent rows instead of muted structural borders", async () => {
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(
     stylesheet,
@@ -345,8 +345,8 @@ test("competition and momentum insights use semantic accent rows instead of mute
 });
 
 test("score-only matches hide table and competition sections instead of showing fallback copy", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /const isScoreOnlyImpact = payload\.impact\?\.mode === "score-only";/);
   assert.match(
@@ -370,7 +370,7 @@ test("score-only matches hide table and competition sections instead of showing 
 });
 
 test("sidepanel does not show format-context warnings for prematch league fixtures", async () => {
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(
     sidepanelScript,
@@ -379,8 +379,8 @@ test("sidepanel does not show format-context warnings for prematch league fixtur
 });
 
 test("free plan hides pro-only prematch and format analysis in the live surfaces", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /function isProPlan\(\) \{\s*return state\.billingPlan === "pro" && state\.billingStatus === "active";\s*\}/);
   assert.match(
@@ -400,8 +400,8 @@ test("free plan hides pro-only prematch and format analysis in the live surfaces
 });
 
 test("popup hides the advanced manual-fixture card on free and only expands it for pro", async () => {
-  const popupHtml = await readProjectFile("extension/popup.html");
-  const popupScript = await readProjectFile("extension/popup.js");
+  const popupHtml = await readProjectFile("apps/extension/popup.html");
+  const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupHtml, /<section id="advancedOptionsCard" class="lmi-advanced-card">/);
   assert.match(popupScript, /const advancedOptionsCard = document\.getElementById\("advancedOptionsCard"\);/);
@@ -415,12 +415,13 @@ test("popup hides the advanced manual-fixture card on free and only expands it f
 });
 
 test("popup billing card uses the shared pricing catalog instead of a hardcoded Early Bird price", async () => {
-  const popupScript = await readProjectFile("extension/popup.js");
+  const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupScript, /let currentPricingCatalog = \{/);
   assert.match(popupScript, /function getEarlyBirdDisplayPrice\(\) \{/);
   assert.match(popupScript, /async function fetchPricingCatalog\(\) \{/);
-  assert.match(popupScript, /const payload = await fetchJson\(`\$\{backendUrl\}\/billing\/plans`\);/);
+  assert.match(popupScript, /function createPopupSdkClient\(backendUrl\) \{/);
+  assert.match(popupScript, /const payload = await createPopupSdkClient\(backendUrl\)\.getBillingPlans\(\);/);
   assert.match(popupScript, /price: formatPrice\(getEarlyBirdDisplayPrice\(\)\),/);
   assert.doesNotMatch(popupScript, /price: formatPrice\(3\.99\)/);
   assert.match(popupScript, /await fetchPricingCatalog\(\);\s*[\r\n]+\s*await fetchBillingStatus\(\);/);
@@ -428,8 +429,8 @@ test("popup billing card uses the shared pricing catalog instead of a hardcoded 
 });
 
 test("popup uses a text-first topbar and moves the Foot Analysis logo to the footer", async () => {
-  const popupHtml = await readProjectFile("extension/popup.html");
-  const stylesheet = await readProjectFile("extension/styles.css");
+  const popupHtml = await readProjectFile("apps/extension/popup.html");
+  const stylesheet = await readProjectFile("apps/extension/styles.css");
 
   assert.match(popupHtml, /<div class="lmi-popup__topbar">/);
   assert.match(popupHtml, /class="lmi-brand__copy lmi-brand__copy--surface"/);
@@ -440,8 +441,8 @@ test("popup uses a text-first topbar and moves the Foot Analysis logo to the foo
 });
 
 test("popup uses a single toggle button for start and stop tracking", async () => {
-  const popupHtml = await readProjectFile("extension/popup.html");
-  const popupScript = await readProjectFile("extension/popup.js");
+  const popupHtml = await readProjectFile("apps/extension/popup.html");
+  const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupHtml, /<button id="startTracking" class="lmi-button lmi-button--primary" type="button">/);
   assert.doesNotMatch(popupHtml, /id="stopTracking"/);
@@ -457,8 +458,8 @@ test("popup uses a single toggle button for start and stop tracking", async () =
 });
 
 test("popup pings existing overlay before reinjecting and relies on storage changes for tracking updates", async () => {
-  const popupScript = await readProjectFile("extension/popup.js");
-  const contentScript = await readProjectFile("extension/content.js");
+  const popupScript = await readProjectFile("apps/extension/popup.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
 
   assert.match(popupScript, /async function pingContentScript\(tabId\)/);
   assert.match(popupScript, /type:\s*"LMI_PING"/);
@@ -472,8 +473,8 @@ test("popup pings existing overlay before reinjecting and relies on storage chan
 });
 
 test("starting tracking preserves sidepanel mode only when the sidepanel session is active", async () => {
-  const popupScript = await readProjectFile("extension/popup.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const popupScript = await readProjectFile("apps/extension/popup.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(
     popupScript,
@@ -489,7 +490,7 @@ test("starting tracking preserves sidepanel mode only when the sidepanel session
 });
 
 test("open sidepanel follows the tracked fixture even when popup writes overlay as active view", async () => {
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(
     sidepanelScript,
@@ -499,8 +500,8 @@ test("open sidepanel follows the tracked fixture even when popup writes overlay 
 });
 
 test("overlay and sidepanel resync immediately when scenario mode settings change", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
 
   assert.match(contentScript, /changes\.scenarioModeEnabled \|\|/);
   assert.match(contentScript, /changes\.scenarioPayloadPath \|\|/);
@@ -510,9 +511,9 @@ test("overlay and sidepanel resync immediately when scenario mode settings chang
 });
 
 test("prediction cards localize API advice text through the shared helper", async () => {
-  const contentScript = await readProjectFile("extension/content.js");
-  const sidepanelScript = await readProjectFile("extension/sidepanel.js");
-  const i18n = await readProjectFile("extension/i18n.js");
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+  const i18n = await readProjectFile("apps/extension/i18n.js");
 
   assert.match(contentScript, /const localizedAdvice = translatePredictionAdvice\(state\.language, prediction\.advice\);/);
   assert.match(contentScript, /predictionAdviceMentionsGoals\(localizedAdvice, prediction\.underOver\)/);

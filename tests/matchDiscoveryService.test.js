@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MatchDiscoveryService } from "../backend/src/services/matchDiscoveryService.js";
-import { CacheService } from "../backend/src/services/cacheService.js";
+import { MatchDiscoveryService } from "../apps/api/src/services/matchDiscoveryService.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
 
 function createDiscoveryService(overrides = {}) {
   const cacheService = new CacheService({

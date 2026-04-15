@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AccountService } from "../backend/src/services/accountService.js";
-import { CacheService } from "../backend/src/services/cacheService.js";
-import { BillingService } from "../backend/src/services/billingService.js";
+import { AccountService } from "../apps/api/src/services/accountService.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
+import { BillingService } from "../apps/api/src/services/billingService.js";
 
 function createBillingService(envOverrides = {}) {
   const cacheService = new CacheService({

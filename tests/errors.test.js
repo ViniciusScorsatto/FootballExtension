@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeUpstreamApiError } from "../backend/src/utils/errors.js";
+import { normalizeUpstreamApiError } from "../apps/api/src/utils/errors.js";
 
 test("quota-like upstream failures become recoverable app errors", () => {
   const normalizedError = normalizeUpstreamApiError({

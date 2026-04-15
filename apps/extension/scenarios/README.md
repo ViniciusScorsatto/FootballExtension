@@ -61,7 +61,7 @@ That way you only change the fields that matter for the state you want to test:
 
 ## Adding A New Match Family
 
-1. Create a new folder under `extension/scenarios/`.
+1. Create a new folder under `apps/extension/scenarios/`.
 2. Add one or more variant JSON files.
 3. Add a new family entry in `index.json`.
 

@@ -43,15 +43,15 @@
 
 ```bash
 npm test
-node --check extension/background.js
-node --check extension/content.js
-node --check extension/popup.js
-node --check backend/src/app.js
+node --check apps/extension/background.js
+node --check apps/extension/content.js
+node --check apps/extension/popup.js
+node --check apps/api/src/app.js
 ```
 
 ## Publish Notes
 
 - Do not commit `.env`.
 - Confirm `FOOTBALL_API_KEY` and `FOOTBALL_API_HOST` are set in production.
-- Load the extension from the `extension/` folder.
+- Load the extension from the `apps/extension/` folder.
 - Backend is deployable to Vercel, Railway, or Render.

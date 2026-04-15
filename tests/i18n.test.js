@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-await import("../extension/i18n.js");
+await import("../apps/extension/i18n.js");
 
 const {
   normalizeLanguage,

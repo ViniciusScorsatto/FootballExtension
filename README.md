@@ -14,10 +14,13 @@ Live Match Impact is a production-minded Chrome extension plus Node.js backend t
 
 ## Project structure
 
-- `backend/` Node.js + Express API, cache layer, analytics, and match-impact computation.
-- `extension/` Manifest V3 popup and content script UI.
+- `apps/api/` Node.js + Express intelligence API, cache layer, analytics, and match-impact computation.
+- `apps/extension/` Manifest V3 popup and content script UI.
+- `apps/obs-overlay/` Scaffold for the next frontend client.
+- `packages/contracts/` OpenAPI + JSON schema source of truth for public backend contracts.
+- `packages/sdk-football/` Shared frontend API client layer.
 - `api/index.js` Vercel-compatible export.
-- `tests/` Core unit tests for the standings simulation.
+- `tests/` Backend, contract, SDK, and UI regression tests.
 
 ## Backend setup
 
@@ -78,8 +81,8 @@ The backend exposes:
 
 1. Open Chrome and go to `chrome://extensions`.
 2. Enable Developer Mode.
-3. Choose **Load unpacked** and select the `extension/` folder.
-4. Open the popup, set a fixture ID and backend URL, then click **Start Tracking**.
+3. Choose **Load unpacked** and select the `apps/extension/` folder.
+4. Open the popup, select a match, then click the tracking toggle button.
 
 ## Deployment notes
 
@@ -94,7 +97,7 @@ The backend exposes:
 - Add a real auth layer before enabling paid tiers broadly.
 - Stripe Checkout is now wired into the backend, but production launch still needs real customer auth/account linking beyond device-style identifiers.
 - Tune the rate-limit env vars for your expected traffic and plan tiers before launch.
-- Configure `ALLOWED_ORIGINS` with your deployed extension/web origins in production.
+- Configure `ALLOWED_ORIGINS` with your deployed extension and web origins in production.
 - Run Redis in production so all backend instances share the same cache and analytics counters.
 
 ## Billing and Launch Offer

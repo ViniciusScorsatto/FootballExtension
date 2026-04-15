@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { renderMarketingPage } from "../backend/src/views/marketingPage.js";
+import { renderMarketingPage } from "../apps/api/src/views/marketingPage.js";
 
 const pricing = {
   currency: "USD",

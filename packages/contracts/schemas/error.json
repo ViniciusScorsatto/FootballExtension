@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "error.json",
+  "title": "Error",
+  "type": "object",
+  "required": ["error"],
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "retryAfterSeconds": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": true
+}

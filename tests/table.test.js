@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeImpact, formatEventMinute } from "../backend/src/utils/impact.js";
-import { simulateTable, simulateTableSubset } from "../backend/src/utils/table.js";
+import { computeImpact, formatEventMinute } from "../apps/api/src/utils/impact.js";
+import { simulateTable, simulateTableSubset } from "../apps/api/src/utils/table.js";
 
 test("simulateTable applies a live win and reranks the table", () => {
   const standings = [

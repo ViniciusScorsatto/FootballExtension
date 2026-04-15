@@ -4,7 +4,7 @@ import {
   buildLeagueFilterPayload,
   isFeaturedLeague,
   isLeagueSupported
-} from "../backend/src/utils/leagues.js";
+} from "../apps/api/src/utils/leagues.js";
 
 test("isLeagueSupported allows everything when no allowlist is configured", () => {
   assert.equal(isLeagueSupported(39, []), true);

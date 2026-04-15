@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MatchImpactService } from "../backend/src/services/matchImpactService.js";
-import { CacheService } from "../backend/src/services/cacheService.js";
+import { MatchImpactService } from "../apps/api/src/services/matchImpactService.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
 
 function createService(overrides = {}) {
   const cacheService = new CacheService({

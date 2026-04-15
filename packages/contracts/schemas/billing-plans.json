@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "billing-plans.json",
+  "title": "BillingPlans",
+  "type": "object",
+  "required": ["betaModeEnabled", "currency", "plans", "offers"],
+  "properties": {
+    "betaModeEnabled": { "type": "boolean" },
+    "currency": { "type": "string" },
+    "supportEmail": { "type": "string" },
+    "plans": {
+      "type": "object",
+      "required": ["free", "pro"],
+      "properties": {
+        "free": { "type": "object" },
+        "pro": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "offers": {
+      "type": "object",
+      "required": ["early_bird_lifetime"],
+      "properties": {
+        "early_bird_lifetime": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

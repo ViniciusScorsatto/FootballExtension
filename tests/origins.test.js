@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createAllowedOrigins, isOriginAllowed } from "../backend/src/utils/origins.js";
+import { createAllowedOrigins, isOriginAllowed } from "../apps/api/src/utils/origins.js";
 
 test("createAllowedOrigins includes explicit origins and chrome extension origins", () => {
   const allowedOrigins = createAllowedOrigins({

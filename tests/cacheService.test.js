@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CacheService } from "../backend/src/services/cacheService.js";
+import { CacheService } from "../apps/api/src/services/cacheService.js";
 
 test("cache service tracks hits, misses, writes, and namespace breakdown", async () => {
   const cacheService = new CacheService({

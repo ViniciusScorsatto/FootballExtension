@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: Live Match Impact API
+  version: 1.0.0
+  description: Public client-facing API for football intelligence consumers such as the Chrome extension and OBS overlays.
+servers:
+  - url: https://example.com
+paths:
+  /public-config:
+    get:
+      operationId: getPublicConfig
+      responses:
+        "200":
+          description: Public runtime configuration
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/public-config.json
+  /billing/plans:
+    get:
+      operationId: getBillingPlans
+      responses:
+        "200":
+          description: Public pricing catalog
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/billing-plans.json
+  /billing/status:
+    get:
+      operationId: getBillingStatus
+      parameters:
+        - in: query
+          name: user_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current billing status
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/billing-status.json
+  /billing/status/refresh:
+    post:
+      operationId: refreshBillingStatus
+      responses:
+        "200":
+          description: Refreshed billing status
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/billing-status.json
+  /billing/early-bird/claim:
+    post:
+      operationId: claimEarlyBird
+      responses:
+        "200":
+          description: Early Bird claim status
+          content:
+            application/json:
+              schema:
+                type: object
+  /billing/checkout-session:
+    post:
+      operationId: createCheckoutSession
+      responses:
+        "201":
+          description: Stripe checkout session
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, sessionId, checkoutUrl, planId, offerId, priceId]
+                properties:
+                  ok: { type: boolean }
+                  sessionId: { type: string }
+                  checkoutUrl: { type: string }
+                  planId: { type: string }
+                  offerId: { type: [string, "null"] }
+                  priceId: { type: string }
+                additionalProperties: true
+  /matches/live:
+    get:
+      operationId: getLiveMatches
+      responses:
+        "200":
+          description: Live matches
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/live-matches.json
+  /matches/upcoming:
+    get:
+      operationId: getUpcomingMatches
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Upcoming matches
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/upcoming-matches.json
+  /match-impact:
+    get:
+      operationId: getMatchImpact
+      parameters:
+        - in: query
+          name: fixture_id
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Match impact payload
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/match-impact.json
+  /track/usage:
+    post:
+      operationId: trackUsage
+      responses:
+        "202":
+          description: Usage event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted]
+                properties:
+                  accepted: { type: boolean }
+                additionalProperties: true
+  /track/session:
+    post:
+      operationId: trackSession
+      responses:
+        "202":
+          description: Session event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted]
+                properties:
+                  accepted: { type: boolean }
+                additionalProperties: true

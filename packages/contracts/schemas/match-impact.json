@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "match-impact.json",
+  "title": "MatchImpact",
+  "type": "object",
+  "required": ["fixture_id", "league", "teams", "status", "score", "impact"],
+  "properties": {
+    "fixture_id": { "type": "number" },
+    "league": { "type": "object" },
+    "teams": {
+      "type": "object",
+      "required": ["home", "away"],
+      "properties": {
+        "home": { "type": "object" },
+        "away": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "object",
+      "required": ["phase"],
+      "properties": {
+        "phase": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "score": { "type": "object" },
+    "impact": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "event": { "type": "object" },
+    "prematch": { "type": "object" },
+    "league_context": { "type": "object" },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": true
+}
