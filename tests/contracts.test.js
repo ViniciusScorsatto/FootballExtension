@@ -85,14 +85,74 @@ function createController() {
       async getMatchImpact() {
         return {
           fixture_id: 101,
-          league: { id: 71, name: "Serie A" },
+          startsAt: "2026-04-18T05:00:00.000Z",
+          last_updated: "2026-04-18T04:55:00.000Z",
+          league: { id: 71, name: "Serie A", country: "Brazil", season: 2026, round: "Regular Season - 5" },
           teams: {
-            home: { id: 1, name: "Home" },
-            away: { id: 2, name: "Away" }
+            home: { id: 1, name: "Home", shortName: "HOM", logo: "" },
+            away: { id: 2, name: "Away", shortName: "AWY", logo: "" }
           },
-          status: { phase: "live" },
-          score: { home: 1, away: 0 },
-          impact: { summary: "Home climbs to 4th" }
+          status: { phase: "live", short: "1H", long: "First Half", minute: 33, isFinished: false },
+          score: {
+            home: 1,
+            away: 0,
+            penalty: { home: null, away: null },
+            fulltime: { home: null, away: null },
+            extratime: { home: null, away: null }
+          },
+          event: {
+            type: "GOAL",
+            message: "Goal · Home Striker · 33'",
+            teamName: "Home",
+            minuteLabel: "33'",
+            scorer: "Home Striker",
+            impactSummary: "Home climbs to 4th"
+          },
+          impact: {
+            summary: "Home climbs to 4th",
+            competition: ["Home moves into the top four."],
+            momentum: { home: 62, away: 38 },
+            mode: "table",
+            table: {
+              home: { position: 4, movement: 2, pointsDelta: 3, projectedPoints: 11 },
+              away: { position: 9, movement: -1, pointsDelta: 0, projectedPoints: 6 }
+            },
+            biggestMovement: { teamId: 1, movement: 2 }
+          },
+          statistics: {
+            available: true,
+            home: { possession: 58 },
+            away: { possession: 42 },
+            momentum: { home: 62, away: 38 },
+            insights: ["Home is creating the better chances."]
+          },
+          league_context: {
+            available: true,
+            round: "Regular Season - 5",
+            selectionMode: "same_round",
+            totalFixtures: 10,
+            displayedFixtures: 2,
+            limited: false,
+            fixtures: [
+              {
+                fixtureId: 303,
+                startsAt: "2026-04-18T06:00:00.000Z",
+                timestamp: 1776482400,
+                status: { phase: "live", minute: 15 },
+                teams: {
+                  home: { name: "Third", shortName: "THI", logo: "" },
+                  away: { name: "Fourth", shortName: "FOR", logo: "" }
+                },
+                score: { home: 0, away: 0 }
+              }
+            ]
+          },
+          metadata: {
+            tableImpactAvailable: true,
+            impactMode: "table",
+            competitionFormat: "single_table_domestic",
+            impactBasis: "corrected-round-baseline"
+          }
         };
       },
       async trackUsage() {},
@@ -278,4 +338,17 @@ test("public route payloads satisfy the declared contract schemas", async () => 
     throw error;
   });
   validateAgainstSchema(matchImpactRes.body, matchImpactSchema);
+});
+
+test("scenario payloads satisfy the stricter match-impact schema", async () => {
+  const matchImpactSchema = await readJson("packages/contracts/schemas/match-impact.json");
+  const prematchScenario = await readJson(
+    "apps/extension/scenarios/cruzeiro-vitoria-quarter-finals/prematch.json"
+  );
+  const aggregateScenario = await readJson(
+    "apps/extension/scenarios/cruzeiro-vitoria-quarter-finals/aggregate-level.json"
+  );
+
+  validateAgainstSchema(prematchScenario, matchImpactSchema);
+  validateAgainstSchema(aggregateScenario, matchImpactSchema);
 });

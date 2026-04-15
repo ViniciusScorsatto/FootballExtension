@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   buildIdentityHeaders,
+  createChromeRuntimeRequester,
+  createChromeRuntimeSdk,
   createFootballSdk,
   createRequesterBackedSdk,
   normalizeBaseUrl
@@ -68,4 +70,62 @@ test("sdk sends POST bodies through the shared requester", async () => {
     fixtureId: 10,
     durationMs: 5000
   });
+});
+
+test("chrome runtime requester adapts background messaging into sdk responses", async () => {
+  const runtime = {
+    lastError: null,
+    sendMessage(message, callback) {
+      callback({
+        ok: true,
+        data: {
+          echoedUrl: message.url,
+          echoedMethod: message.method
+        }
+      });
+    }
+  };
+
+  const requester = createChromeRuntimeRequester(runtime);
+  const result = await requester({
+    method: "GET",
+    url: "https://example.com/match-impact?fixture_id=10",
+    headers: {},
+    body: null
+  });
+
+  assert.deepEqual(result, {
+    echoedUrl: "https://example.com/match-impact?fixture_id=10",
+    echoedMethod: "GET"
+  });
+});
+
+test("chrome runtime sdk uses endpoint helpers with shared identity headers", async () => {
+  let capturedMessage = null;
+  const runtime = {
+    lastError: null,
+    sendMessage(message, callback) {
+      capturedMessage = message;
+      callback({
+        ok: true,
+        data: {
+          fixture_id: 44
+        }
+      });
+    }
+  };
+
+  const sdk = createChromeRuntimeSdk({
+    baseUrl: "https://api.example.com",
+    runtime,
+    getHeaders: () => buildIdentityHeaders({ userId: "user-9", plan: "pro" })
+  });
+
+  const result = await sdk.getMatchImpact({ fixtureId: 44 });
+
+  assert.equal(result.fixture_id, 44);
+  assert.equal(capturedMessage.method, "GET");
+  assert.equal(capturedMessage.url, "https://api.example.com/match-impact?fixture_id=44");
+  assert.equal(capturedMessage.headers["x-live-impact-user"], "user-9");
+  assert.equal(capturedMessage.headers["x-live-impact-plan"], "pro");
 });

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Live Match Impact API
-  version: 1.0.0
+  version: 1.1.0
   description: Public client-facing API for football intelligence consumers such as the Chrome extension and OBS overlays.
 servers:
   - url: https://example.com

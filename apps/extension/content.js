@@ -551,49 +551,9 @@
     return PREMATCH_FAR_POLL_INTERVAL_MS;
   }
 
-  function extensionRequest(url, options = {}) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: "LMI_HTTP_REQUEST",
-          url,
-          method: options.method || "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "x-live-impact-user": state.billingUserId || "anonymous",
-            "x-live-impact-plan": state.billingPlan || "free",
-            ...(options.headers || {})
-          },
-          body: options.body
-        },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-
-          if (!response?.ok) {
-            const requestError = new Error(
-              response?.error ||
-                response?.data?.error ||
-                `Request failed with ${response?.status ?? "unknown"}`
-            );
-            requestError.status = response?.status ?? 0;
-            requestError.data = response?.data ?? null;
-            reject(requestError);
-            return;
-          }
-
-          resolve(response.data);
-        }
-      );
-    });
-  }
-
   function createContentSdkClient() {
-    return window.LMI_SDK.createRequesterBackedSdk({
+    return window.LMI_SDK.createChromeRuntimeSdk({
       baseUrl: state.backendUrl,
-      requester: extensionRequest,
       getHeaders: () =>
         window.LMI_SDK.buildIdentityHeaders({
           userId: state.billingUserId || "anonymous",
@@ -1643,18 +1603,9 @@
     try {
       if (path === "/track/usage") {
         await createContentSdkClient().trackUsage(payload);
-        return;
-      }
-
-      if (path === "/track/session") {
+      } else if (path === "/track/session") {
         await createContentSdkClient().trackSession(payload);
-        return;
       }
-
-      await extensionRequest(`${state.backendUrl}${path}`, {
-        method: "POST",
-        body: payload
-      });
     } catch {
       // Analytics should never block the UI.
     }

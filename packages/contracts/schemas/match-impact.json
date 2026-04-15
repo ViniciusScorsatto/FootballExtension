@@ -3,40 +3,336 @@
   "$id": "match-impact.json",
   "title": "MatchImpact",
   "type": "object",
-  "required": ["fixture_id", "league", "teams", "status", "score", "impact"],
+  "required": [
+    "fixture_id",
+    "last_updated",
+    "league",
+    "teams",
+    "status",
+    "score",
+    "event",
+    "impact",
+    "metadata"
+  ],
   "properties": {
     "fixture_id": { "type": "number" },
-    "league": { "type": "object" },
+    "startsAt": { "type": ["string", "null"] },
+    "last_updated": { "type": "string" },
+    "league": { "$ref": "#/$defs/league" },
     "teams": {
       "type": "object",
       "required": ["home", "away"],
       "properties": {
-        "home": { "type": "object" },
-        "away": { "type": "object" }
+        "home": { "$ref": "#/$defs/team" },
+        "away": { "$ref": "#/$defs/team" }
+      },
+      "additionalProperties": false
+    },
+    "status": { "$ref": "#/$defs/status" },
+    "score": { "$ref": "#/$defs/score" },
+    "event": { "$ref": "#/$defs/event" },
+    "impact": { "$ref": "#/$defs/impact" },
+    "statistics": { "$ref": "#/$defs/statistics" },
+    "prematch": { "$ref": "#/$defs/prematch" },
+    "league_context": { "$ref": "#/$defs/leagueContext" },
+    "metadata": { "$ref": "#/$defs/metadata" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "league": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "number" },
+        "name": { "type": "string" },
+        "country": { "type": ["string", "null"] },
+        "season": { "type": ["number", "null"] },
+        "round": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "team": {
+      "type": "object",
+      "required": ["id", "name", "shortName", "logo"],
+      "properties": {
+        "id": { "type": ["number", "null"] },
+        "name": { "type": "string" },
+        "shortName": { "type": "string" },
+        "logo": { "type": "string" }
       },
       "additionalProperties": true
     },
     "status": {
       "type": "object",
-      "required": ["phase"],
+      "required": ["phase", "minute", "isFinished"],
       "properties": {
-        "phase": { "type": "string" }
+        "phase": { "type": "string" },
+        "short": { "type": ["string", "null"] },
+        "long": { "type": ["string", "null"] },
+        "minute": { "type": ["number", "null"] },
+        "isFinished": { "type": "boolean" }
       },
       "additionalProperties": true
     },
-    "score": { "type": "object" },
+    "score": {
+      "type": "object",
+      "required": ["home", "away"],
+      "properties": {
+        "home": { "type": ["number", "null"] },
+        "away": { "type": ["number", "null"] },
+        "penalty": { "$ref": "#/$defs/nullableScorePair" },
+        "fulltime": { "$ref": "#/$defs/nullableScorePair" },
+        "extratime": { "$ref": "#/$defs/nullableScorePair" }
+      },
+      "additionalProperties": true
+    },
+    "nullableScorePair": {
+      "type": "object",
+      "required": ["home", "away"],
+      "properties": {
+        "home": { "type": ["number", "null"] },
+        "away": { "type": ["number", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "event": {
+      "type": "object",
+      "required": ["type", "message"],
+      "properties": {
+        "type": { "type": "string" },
+        "message": { "type": "string" },
+        "teamName": { "type": ["string", "null"] },
+        "minuteLabel": { "type": ["string", "null"] },
+        "scorer": { "type": ["string", "null"] },
+        "impactSummary": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
     "impact": {
       "type": "object",
-      "required": ["summary"],
+      "required": ["summary", "competition", "momentum", "mode"],
       "properties": {
-        "summary": { "type": "string" }
+        "summary": { "type": "string" },
+        "competition": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "momentum": {
+          "type": "object",
+          "required": ["home", "away"],
+          "properties": {
+            "home": { "type": "number" },
+            "away": { "type": "number" }
+          },
+          "additionalProperties": true
+        },
+        "mode": { "type": "string" },
+        "table": {
+          "type": ["object", "null"],
+          "properties": {
+            "home": { "$ref": "#/$defs/tableSideImpact" },
+            "away": { "$ref": "#/$defs/tableSideImpact" }
+          },
+          "additionalProperties": true
+        },
+        "biggestMovement": { "type": ["object", "null"] }
       },
       "additionalProperties": true
     },
-    "event": { "type": "object" },
-    "prematch": { "type": "object" },
-    "league_context": { "type": "object" },
-    "metadata": { "type": "object" }
-  },
-  "additionalProperties": true
+    "tableSideImpact": {
+      "type": "object",
+      "required": ["position", "movement", "pointsDelta"],
+      "properties": {
+        "position": { "type": ["number", "null"] },
+        "movement": { "type": "number" },
+        "pointsDelta": { "type": ["number", "null"] },
+        "projectedPoints": { "type": ["number", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "statistics": {
+      "type": "object",
+      "properties": {
+        "available": { "type": "boolean" },
+        "home": { "type": ["object", "null"] },
+        "away": { "type": ["object", "null"] },
+        "momentum": {
+          "type": "object",
+          "required": ["home", "away"],
+          "properties": {
+            "home": { "type": "number" },
+            "away": { "type": "number" }
+          },
+          "additionalProperties": true
+        },
+        "insights": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "prematch": {
+      "type": "object",
+      "properties": {
+        "prediction": {
+          "type": "object",
+          "properties": {
+            "available": { "type": "boolean" },
+            "winnerName": { "type": ["string", "null"] },
+            "winOrDraw": { "type": ["boolean", "null"] },
+            "underOver": { "type": ["string", "null"] },
+            "advice": { "type": ["string", "null"] },
+            "comparison": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key", "home", "away"],
+                "properties": {
+                  "key": { "type": "string" },
+                  "home": { "type": "string" },
+                  "away": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "lineups": {
+          "type": "object",
+          "properties": {
+            "available": { "type": "boolean" },
+            "home": { "$ref": "#/$defs/lineupSide" },
+            "away": { "$ref": "#/$defs/lineupSide" }
+          },
+          "additionalProperties": true
+        },
+        "injuries": {
+          "type": "object",
+          "properties": {
+            "available": { "type": "boolean" },
+            "home": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/injury" }
+            },
+            "away": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/injury" }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "lineupSide": {
+      "type": "object",
+      "properties": {
+        "formation": { "type": ["string", "null"] },
+        "coach": { "type": ["string", "null"] },
+        "colors": {
+          "type": "object",
+          "properties": {
+            "playerPrimary": { "type": ["string", "null"] },
+            "goalkeeperPrimary": { "type": ["string", "null"] }
+          },
+          "additionalProperties": true
+        },
+        "startXI": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "position": { "type": ["string", "null"] },
+              "grid": { "type": ["string", "null"] }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "injury": {
+      "type": "object",
+      "required": ["player", "reason"],
+      "properties": {
+        "player": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "leagueContext": {
+      "type": "object",
+      "properties": {
+        "available": { "type": "boolean" },
+        "round": { "type": ["string", "null"] },
+        "selectionMode": { "type": ["string", "null"] },
+        "totalFixtures": { "type": ["number", "null"] },
+        "displayedFixtures": { "type": ["number", "null"] },
+        "limited": { "type": ["boolean", "null"] },
+        "fixtures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["fixtureId", "teams", "score", "status"],
+            "properties": {
+              "fixtureId": { "type": "number" },
+              "startsAt": { "type": ["string", "null"] },
+              "timestamp": { "type": ["number", "null"] },
+              "teams": {
+                "type": "object",
+                "required": ["home", "away"],
+                "properties": {
+                  "home": { "$ref": "#/$defs/contextTeam" },
+                  "away": { "$ref": "#/$defs/contextTeam" }
+                },
+                "additionalProperties": true
+              },
+              "score": { "$ref": "#/$defs/nullableScorePair" },
+              "status": {
+                "type": "object",
+                "required": ["phase", "minute"],
+                "properties": {
+                  "phase": { "type": "string" },
+                  "minute": { "type": ["number", "null"] }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "contextTeam": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "shortName": { "type": ["string", "null"] },
+        "logo": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["tableImpactAvailable", "impactMode", "competitionFormat"],
+      "properties": {
+        "tableImpactAvailable": { "type": ["boolean", "null"] },
+        "impactMode": { "type": "string" },
+        "competitionFormat": { "type": "string" },
+        "impactBasis": { "type": ["string", "null"] },
+        "groupLabel": { "type": ["string", "null"] },
+        "teamGroupPositions": { "type": ["object", "null"] },
+        "projectedTeamGroupPositions": { "type": ["object", "null"] },
+        "knockoutContext": { "type": ["object", "null"] },
+        "scenario": { "type": ["object", "null"] }
+      },
+      "additionalProperties": true
+    }
+  }
 }

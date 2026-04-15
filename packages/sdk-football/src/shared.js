@@ -21,6 +21,50 @@ export function createSdkError(message, status = 0, data = null) {
   return error;
 }
 
+export function createChromeRuntimeRequester(runtime = globalThis.chrome?.runtime) {
+  return function chromeRuntimeRequester({ method, url, headers, body }) {
+    return new Promise((resolve, reject) => {
+      if (!runtime?.sendMessage) {
+        reject(createSdkError("Chrome runtime messaging is unavailable"));
+        return;
+      }
+
+      runtime.sendMessage(
+        {
+          type: "LMI_HTTP_REQUEST",
+          url,
+          method,
+          headers,
+          body
+        },
+        (response) => {
+          const runtimeError = runtime?.lastError;
+
+          if (runtimeError) {
+            reject(createSdkError(runtimeError.message));
+            return;
+          }
+
+          if (!response?.ok) {
+            reject(
+              createSdkError(
+                response?.error ||
+                  response?.data?.error ||
+                  `Request failed with ${response?.status ?? "unknown"}`,
+                response?.status ?? 0,
+                response?.data ?? null
+              )
+            );
+            return;
+          }
+
+          resolve(response.data);
+        }
+      );
+    });
+  };
+}
+
 function buildQueryString(query = {}) {
   const params = new URLSearchParams();
 
@@ -151,5 +195,13 @@ export function createRequesterBackedSdk({ baseUrl, getHeaders, requester }) {
     baseUrl,
     getHeaders,
     requester
+  });
+}
+
+export function createChromeRuntimeSdk({ baseUrl, getHeaders, runtime }) {
+  return createSdk({
+    baseUrl,
+    getHeaders,
+    requester: createChromeRuntimeRequester(runtime)
   });
 }
