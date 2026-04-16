@@ -81,7 +81,7 @@ const allowedOrigins = createAllowedOrigins(env);
 app.locals.bootstrapPromise = cacheService.connect();
 app.set("trust proxy", env.trustProxy);
 
-if (env.nodeEnv === "production" && allowedOrigins.includes("*")) {
+if (env.nodeEnv === "production" && allowedOrigins.origins.includes("*")) {
   console.warn("ALLOWED_ORIGINS is set to '*' in production. Restrict it before public launch.");
 }
 
