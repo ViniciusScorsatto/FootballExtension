@@ -129,27 +129,40 @@ export class CacheService {
     }
   }
 
+  handleRedisFailure(error, operation, key) {
+    console.warn(
+      `Redis ${operation} failed${key ? ` for key "${key}"` : ""}, falling back to in-memory cache:`,
+      error?.message || String(error)
+    );
+    this.client = null;
+    this.redisEnabled = false;
+  }
+
   async getJson(key) {
     if (this.redisEnabled && this.client) {
-      const rawValue = await this.client.get(key);
-      let parsedValue = null;
+      try {
+        const rawValue = await this.client.get(key);
+        let parsedValue = null;
 
-      if (rawValue) {
-        try {
-          parsedValue = JSON.parse(rawValue);
-        } catch (error) {
-          console.warn(`Invalid JSON in cache for key "${key}", treating as miss:`, error.message);
+        if (rawValue) {
           try {
-            await this.client.del(key);
-          } catch {
-            // Ignore cleanup failure; returning null is the important part.
+            parsedValue = JSON.parse(rawValue);
+          } catch (error) {
+            console.warn(`Invalid JSON in cache for key "${key}", treating as miss:`, error.message);
+            try {
+              await this.client.del(key);
+            } catch {
+              // Ignore cleanup failure; returning null is the important part.
+            }
+            parsedValue = null;
           }
-          parsedValue = null;
         }
-      }
 
-      this.recordReadMetric(key, Boolean(parsedValue));
-      return parsedValue;
+        this.recordReadMetric(key, Boolean(parsedValue));
+        return parsedValue;
+      } catch (error) {
+        this.handleRedisFailure(error, "get", key);
+      }
     }
 
     const value = this.memoryStore.get(key);
@@ -159,11 +172,15 @@ export class CacheService {
 
   async setJson(key, value, ttlSeconds) {
     if (this.redisEnabled && this.client) {
-      await this.client.set(key, JSON.stringify(value), {
-        EX: ttlSeconds
-      });
-      this.recordWriteMetric(key);
-      return;
+      try {
+        await this.client.set(key, JSON.stringify(value), {
+          EX: ttlSeconds
+        });
+        this.recordWriteMetric(key);
+        return;
+      } catch (error) {
+        this.handleRedisFailure(error, "set", key);
+      }
     }
 
     this.memoryStore.set(key, value, ttlSeconds);
@@ -172,8 +189,12 @@ export class CacheService {
 
   async deleteKey(key) {
     if (this.redisEnabled && this.client) {
-      await this.client.del(key);
-      return;
+      try {
+        await this.client.del(key);
+        return;
+      } catch (error) {
+        this.handleRedisFailure(error, "delete", key);
+      }
     }
 
     this.memoryStore.values.delete(key);
@@ -183,8 +204,12 @@ export class CacheService {
 
   async incrementScore(key, member, amount = 1) {
     if (this.redisEnabled && this.client) {
-      await this.client.zIncrBy(key, amount, member);
-      return;
+      try {
+        await this.client.zIncrBy(key, amount, member);
+        return;
+      } catch (error) {
+        this.handleRedisFailure(error, "zincrby", key);
+      }
     }
 
     this.memoryStore.incrementScore(key, member, amount);
@@ -192,14 +217,18 @@ export class CacheService {
 
   async getTopScores(key, limit = 5) {
     if (this.redisEnabled && this.client) {
-      const entries = await this.client.zRangeWithScores(key, 0, limit - 1, {
-        REV: true
-      });
+      try {
+        const entries = await this.client.zRangeWithScores(key, 0, limit - 1, {
+          REV: true
+        });
 
-      return entries.map((entry) => ({
-        member: entry.value,
-        score: Number(entry.score)
-      }));
+        return entries.map((entry) => ({
+          member: entry.value,
+          score: Number(entry.score)
+        }));
+      } catch (error) {
+        this.handleRedisFailure(error, "zrange", key);
+      }
     }
 
     return this.memoryStore.getTopScores(key, limit);
@@ -207,18 +236,22 @@ export class CacheService {
 
   async incrementCounter(key, ttlSeconds, amount = 1) {
     if (this.redisEnabled && this.client) {
-      const count = await this.client.incrBy(key, amount);
+      try {
+        const count = await this.client.incrBy(key, amount);
 
-      if (count === amount) {
-        await this.client.expire(key, ttlSeconds);
+        if (count === amount) {
+          await this.client.expire(key, ttlSeconds);
+        }
+
+        const ttl = await this.client.ttl(key);
+
+        return {
+          count,
+          expiresAt: now() + (ttl > 0 ? ttl : ttlSeconds) * 1000
+        };
+      } catch (error) {
+        this.handleRedisFailure(error, "incrby", key);
       }
-
-      const ttl = await this.client.ttl(key);
-
-      return {
-        count,
-        expiresAt: now() + (ttl > 0 ? ttl : ttlSeconds) * 1000
-      };
     }
 
     return this.memoryStore.incrementCounter(key, ttlSeconds, amount);
@@ -226,8 +259,12 @@ export class CacheService {
 
   async getCounter(key) {
     if (this.redisEnabled && this.client) {
-      const rawValue = await this.client.get(key);
-      return rawValue ? Number(rawValue) : 0;
+      try {
+        const rawValue = await this.client.get(key);
+        return rawValue ? Number(rawValue) : 0;
+      } catch (error) {
+        this.handleRedisFailure(error, "get-counter", key);
+      }
     }
 
     const entry = this.memoryStore.counters.get(key);
@@ -241,15 +278,19 @@ export class CacheService {
 
   async listKeysByPrefix(prefix) {
     if (this.redisEnabled && this.client) {
-      const keys = [];
+      try {
+        const keys = [];
 
-      for await (const key of this.client.scanIterator({
-        MATCH: `${prefix}*`
-      })) {
-        keys.push(key);
+        for await (const key of this.client.scanIterator({
+          MATCH: `${prefix}*`
+        })) {
+          keys.push(key);
+        }
+
+        return keys;
+      } catch (error) {
+        this.handleRedisFailure(error, "scan", prefix);
       }
-
-      return keys;
     }
 
     return this.memoryStore.listKeysByPrefix(prefix);

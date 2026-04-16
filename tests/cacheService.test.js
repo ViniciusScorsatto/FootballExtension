@@ -54,3 +54,40 @@ test("cache service treats invalid redis json as a cache miss", async () => {
   assert.equal(value, null);
   assert.deepEqual(deletedKeys, ["broken:key"]);
 });
+
+test("cache service falls back to memory when redis set fails", async () => {
+  const cacheService = new CacheService({
+    redisUrl: ""
+  });
+
+  cacheService.redisEnabled = true;
+  cacheService.client = {
+    async set() {
+      throw new Error("redis write failed");
+    }
+  };
+
+  await cacheService.setJson("billing:user:tester", { plan: "pro" }, 60);
+  const value = await cacheService.getJson("billing:user:tester");
+
+  assert.equal(cacheService.redisEnabled, false);
+  assert.deepEqual(value, { plan: "pro" });
+});
+
+test("cache service falls back to memory when redis counter operations fail", async () => {
+  const cacheService = new CacheService({
+    redisUrl: ""
+  });
+
+  cacheService.redisEnabled = true;
+  cacheService.client = {
+    async incrBy() {
+      throw new Error("redis counter failed");
+    }
+  };
+
+  const counter = await cacheService.incrementCounter("ratelimit:test", 60, 1);
+
+  assert.equal(cacheService.redisEnabled, false);
+  assert.equal(counter.count, 1);
+});
