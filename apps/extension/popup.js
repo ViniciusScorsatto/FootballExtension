@@ -418,7 +418,7 @@ function getRequestHeaders() {
 }
 
 function createPopupSdkClient(backendUrl) {
-  return window.LMI_SDK.createChromeRuntimeSdk({
+  return window.LMI_SDK.createRequesterBackedSdk({
     baseUrl: backendUrl,
     getHeaders: getRequestHeaders
   });
