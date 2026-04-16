@@ -3,8 +3,19 @@
   "$id": "public-config.json",
   "title": "PublicConfig",
   "type": "object",
-  "required": ["analytics"],
+  "required": ["analytics", "build"],
   "properties": {
+    "build": {
+      "type": "object",
+      "required": ["commitSha", "branch", "deploymentId", "nodeEnv"],
+      "properties": {
+        "commitSha": { "type": "string" },
+        "branch": { "type": "string" },
+        "deploymentId": { "type": "string" },
+        "nodeEnv": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "analytics": {
       "type": "object",
       "required": ["posthog"],

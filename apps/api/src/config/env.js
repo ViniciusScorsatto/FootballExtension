@@ -84,6 +84,22 @@ function readList(name, fallback = ["*"]) {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
+  buildCommitSha:
+    process.env.RAILWAY_GIT_COMMIT_SHA ??
+    process.env.VERCEL_GIT_COMMIT_SHA ??
+    process.env.RENDER_GIT_COMMIT ??
+    process.env.SOURCE_VERSION ??
+    "",
+  buildBranch:
+    process.env.RAILWAY_GIT_BRANCH ??
+    process.env.VERCEL_GIT_COMMIT_REF ??
+    process.env.RENDER_GIT_BRANCH ??
+    "",
+  buildDeploymentId:
+    process.env.RAILWAY_DEPLOYMENT_ID ??
+    process.env.VERCEL_DEPLOYMENT_ID ??
+    process.env.RENDER_SERVICE_ID ??
+    "",
   adminToken: process.env.ADMIN_TOKEN ?? "",
   port: readNumber("PORT", 3000),
   apiFootballKey: process.env.API_FOOTBALL_KEY ?? process.env.FOOTBALL_API_KEY ?? "",

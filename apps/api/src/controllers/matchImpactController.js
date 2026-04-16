@@ -54,6 +54,15 @@ function tagServiceError(error, source, fallbackCode) {
   return error;
 }
 
+function buildRuntimeInfo(env) {
+  return {
+    commitSha: env.buildCommitSha || "",
+    branch: env.buildBranch || "",
+    deploymentId: env.buildDeploymentId || "",
+    nodeEnv: env.nodeEnv || "development"
+  };
+}
+
 export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
@@ -69,7 +78,8 @@ export function createMatchImpactController({
       res.json({
         ok: true,
         service: "live-match-impact",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        build: buildRuntimeInfo(env)
       });
     },
 
@@ -85,6 +95,7 @@ export function createMatchImpactController({
 
     getPublicConfig(_req, res) {
       res.json({
+        build: buildRuntimeInfo(env),
         analytics: {
           posthog: {
             enabled: Boolean(env.posthogProjectApiKey),
@@ -115,6 +126,7 @@ export function createMatchImpactController({
           nodeEnv: env.nodeEnv,
           trustProxy: env.trustProxy
         },
+        build: buildRuntimeInfo(env),
         apiFootball: {
           ...apiFootballClient.getStatus(),
           timeoutMs: env.requestTimeoutMs

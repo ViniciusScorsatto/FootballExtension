@@ -158,6 +158,9 @@ function createController(envOverrides = {}) {
     env: {
       adminToken: "",
       nodeEnv: "test",
+      buildCommitSha: "abc1234",
+      buildBranch: "main",
+      buildDeploymentId: "deploy_123",
       trustProxy: 1,
       requestTimeoutMs: 5000,
       authMagicLinkMode: "preview",
@@ -206,6 +209,9 @@ test("admin health is available without a token when no admin token is configure
   assert.equal(res.body.admin.protected, false);
   assert.deepEqual(res.body.leagues.supportedLeagueIds, [39]);
   assert.equal(res.body.stripe.enabled, true);
+  assert.equal(res.body.build.commitSha, "abc1234");
+  assert.equal(res.body.build.branch, "main");
+  assert.equal(res.body.build.deploymentId, "deploy_123");
 });
 
 test("admin health rejects unauthorized requests when admin token is configured", () => {
