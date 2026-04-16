@@ -16,7 +16,8 @@
     "start": "node apps/api/src/server.js",
     "test": "node --test",
     "contracts:check": "node --test tests/contracts.test.js",
-    "sync:extension-sdk": "cp packages/sdk-football/src/browser.js apps/extension/sdk-football.js"
+    "sync:extension-sdk": "cp packages/sdk-football/src/browser.js apps/extension/sdk-football.js",
+    "check:extension-sdk": "node scripts/check-extension-sdk.mjs"
   },
   "dependencies": {
     "axios": "^1.8.4",

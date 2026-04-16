@@ -1,12 +1,12 @@
-# Working Agreement
+# AGENTS
 
-This repo is split so backend and frontend can move fast without stepping on each other.
+This repo is split so backend and frontend agents can move fast without stepping on each other.
 
 Current working setup:
 
 - backend owner: Codex
 - frontend owner: Claude
-- product owner: you
+- product owner: user
 
 ## Ownership
 
@@ -15,12 +15,12 @@ Current working setup:
 - Backend owner:
   - [apps/api](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/apps/api)
   - [packages/contracts](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/packages/contracts)
-  - [packages/sdk-football](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/packages/sdk-football) initial ownership
+  - [packages/sdk-football](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/packages/sdk-football)
 - Frontend owner:
   - [apps/extension](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/apps/extension)
   - [apps/obs-overlay](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/apps/obs-overlay)
 
-## Boundary rules
+## Boundary Rules
 
 - Backend owns:
   - football intelligence
@@ -36,7 +36,7 @@ Current working setup:
   - client-specific interactions
   - localized presentation copy around backend meaning
 
-## Contract rules
+## Contract Rules
 
 - Public client contracts live in [packages/contracts](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/packages/contracts).
 - Frontends must consume backend routes through [packages/sdk-football](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/packages/sdk-football).
@@ -46,7 +46,7 @@ Current working setup:
   - SDK behavior if needed
   - tests
 
-## Working model
+## Working Model
 
 - Backend-first change:
   1. update backend behavior
@@ -58,7 +58,7 @@ Current working setup:
   2. if blocked by contract shape, request a backend contract change instead of reaching into backend internals
   3. use the SDK, not ad hoc fetch helpers
 
-## File coordination
+## File Coordination
 
 - If a task touches:
   - [apps/api](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/apps/api)
@@ -70,7 +70,7 @@ Current working setup:
   - [apps/obs-overlay](/Users/viniciusscorsatto/Desktop/AI%20Projects/Football%20Extension/apps/obs-overlay)
   frontend should own it unless it requires a contract change.
 
-## Handoff checklist
+## Handoff Checklist
 
 - Before handing a backend change to frontend:
   - contracts updated
@@ -82,7 +82,7 @@ Current working setup:
   - no duplicated endpoint logic added outside the SDK
   - UI still tolerates optional/null contract fields
 
-## Conflict avoidance
+## Conflict Avoidance
 
 - Prefer small commits.
 - Avoid editing the same file at the same time.

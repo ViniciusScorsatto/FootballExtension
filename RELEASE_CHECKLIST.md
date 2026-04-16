@@ -43,6 +43,7 @@
 
 ```bash
 npm test
+npm run check:extension-sdk
 node --check apps/extension/background.js
 node --check apps/extension/content.js
 node --check apps/extension/popup.js
