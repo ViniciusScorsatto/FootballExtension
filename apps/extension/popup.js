@@ -319,6 +319,20 @@ function createBillingUserId() {
   return `lmi_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+async function ensureBillingUserId() {
+  if (currentBilling.userId && currentBilling.userId !== "anonymous") {
+    return currentBilling.userId;
+  }
+
+  currentBilling.userId = createBillingUserId();
+
+  await chrome.storage.sync.set({
+    billingUserId: currentBilling.userId
+  });
+
+  return currentBilling.userId;
+}
+
 function notifyActiveTab(message) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTabId = tabs[0]?.id;
@@ -1396,6 +1410,9 @@ async function handleBillingAction() {
 
   billingActionButton.disabled = true;
   setStatus(translate("popup.upgradeInProgress"));
+
+  const userId = await ensureBillingUserId();
+
   trackAnalytics("upgrade_clicked", {
     offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : "standard_pro",
     fixtureId: getSelectedFixtureId(),
@@ -1406,7 +1423,7 @@ async function handleBillingAction() {
 
   try {
     const payload = await createPopupSdkClient(backendUrl).createCheckoutSession({
-      userId: currentBilling.userId,
+      userId,
       email: accountEmailInput.value.trim() || undefined,
       offerId: currentBilling.earlyBirdEligible ? "early_bird_lifetime" : null
     });
@@ -1460,12 +1477,14 @@ async function handleRestoreAccess() {
   accountRestoreButton.disabled = true;
 
   try {
+    const userId = await ensureBillingUserId();
+
     trackAnalytics("restore_started", {
       emailDomain: email.split("@")[1] || ""
     });
 
     const payload = await createPopupSdkClient(backendUrl).requestMagicLink({
-      userId: currentBilling.userId,
+      userId,
       email
     });
     currentBilling.accountEmail = payload.account?.email || email;

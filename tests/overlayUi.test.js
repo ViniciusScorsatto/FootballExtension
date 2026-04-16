@@ -524,3 +524,14 @@ test("prediction cards localize API advice text through the shared helper", asyn
   assert.match(i18n, /function translatePredictionAdvice\(language, advice\)/);
   assert.match(i18n, /Double chance/);
 });
+
+test("popup ensures a billing user id exists before restore and checkout requests", async () => {
+  const popupScript = await readProjectFile("apps/extension/popup.js");
+
+  assert.match(popupScript, /async function ensureBillingUserId\(\) \{/);
+  assert.match(popupScript, /currentBilling\.userId = createBillingUserId\(\);/);
+  assert.match(popupScript, /await chrome\.storage\.sync\.set\(\{\s*billingUserId:\s*currentBilling\.userId\s*\}\);/);
+  assert.match(popupScript, /const userId = await ensureBillingUserId\(\);/);
+  assert.match(popupScript, /createCheckoutSession\(\{\s*userId,/s);
+  assert.match(popupScript, /requestMagicLink\(\{\s*userId,/s);
+});
