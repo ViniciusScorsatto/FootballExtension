@@ -671,12 +671,28 @@ function buildLineupsSummary(lineups, teams) {
   const awayLineup = lineups.find((entry) => entry.team?.id === teams.away.id);
   const available = Boolean(homeLineup || awayLineup);
 
+  function resolveCoachName(coach) {
+    if (!coach || typeof coach !== "object") {
+      return "";
+    }
+
+    const firstName = String(coach.firstname ?? "").trim();
+    const lastName = String(coach.lastname ?? "").trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
+    if (fullName) {
+      return fullName;
+    }
+
+    return String(coach.name ?? "").trim();
+  }
+
   return {
     available,
     home: homeLineup
       ? {
           formation: homeLineup.formation ?? "",
-          coach: homeLineup.coach?.name ?? "",
+          coach: resolveCoachName(homeLineup.coach),
           colors: {
             playerPrimary: homeLineup.team?.colors?.player?.primary ?? "",
             goalkeeperPrimary: homeLineup.team?.colors?.goalkeeper?.primary ?? ""
@@ -692,7 +708,7 @@ function buildLineupsSummary(lineups, teams) {
     away: awayLineup
       ? {
           formation: awayLineup.formation ?? "",
-          coach: awayLineup.coach?.name ?? "",
+          coach: resolveCoachName(awayLineup.coach),
           colors: {
             playerPrimary: awayLineup.team?.colors?.player?.primary ?? "",
             goalkeeperPrimary: awayLineup.team?.colors?.goalkeeper?.primary ?? ""

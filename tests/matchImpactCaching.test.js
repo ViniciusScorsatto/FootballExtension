@@ -2234,7 +2234,7 @@ test("prematch payload carries lineup grid positions and jersey colors", async (
             }
           },
           formation: "4-2-3-1",
-          coach: { name: "Fernando Seabra" },
+          coach: { name: "Seabra Fernando", firstname: "Fernando", lastname: "Seabra" },
           startXI: [
             { player: { name: "Anderson", pos: "G", grid: "1:1" } },
             { player: { name: "William", pos: "D", grid: "2:4" } },
@@ -2262,4 +2262,5 @@ test("prematch payload carries lineup grid positions and jersey colors", async (
   assert.equal(payload.prematch.lineups.home.startXI[0].name, "Anderson");
   assert.equal(payload.prematch.lineups.home.startXI[0].position, "G");
   assert.equal(payload.prematch.lineups.home.startXI[0].grid, "1:1");
+  assert.equal(payload.prematch.lineups.home.coach, "Fernando Seabra");
 });
