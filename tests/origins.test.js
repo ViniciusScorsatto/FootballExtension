@@ -6,7 +6,7 @@ test("createAllowedOrigins includes explicit origins and chrome extension origin
   const allowedOrigins = createAllowedOrigins({
     allowedOrigins: ["https://liveimpact.example.com"],
     allowedExtensionIds: ["abcdefghijklmnopabcdefghijklmnop"],
-    betaModeEnabled: false,
+    allowUnpackedExtensionOrigins: false,
     nodeEnv: "production"
   });
 
@@ -56,7 +56,7 @@ test("createAllowedOrigins enables unpacked extension origins during beta produc
   const allowedOrigins = createAllowedOrigins({
     allowedOrigins: ["https://footballextension-staging.up.railway.app"],
     allowedExtensionIds: [],
-    betaModeEnabled: true,
+    allowUnpackedExtensionOrigins: true,
     nodeEnv: "production"
   });
 

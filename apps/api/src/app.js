@@ -14,6 +14,7 @@ import { MatchImpactService } from "./services/matchImpactService.js";
 import { MatchDiscoveryService } from "./services/matchDiscoveryService.js";
 import { StripeService } from "./services/stripeService.js";
 import { createAllowedOrigins, isOriginAllowed } from "./utils/origins.js";
+import { createAppError } from "./utils/errors.js";
 
 const cacheService = new CacheService({
   redisUrl: env.redisUrl
@@ -93,7 +94,15 @@ app.use(
         return;
       }
 
-      callback(new Error("Origin is not allowed by CORS."));
+      callback(
+        createAppError({
+          message: "Origin is not allowed by CORS.",
+          statusCode: 403,
+          code: "CORS_ORIGIN_NOT_ALLOWED",
+          source: "cors",
+          recoverable: false
+        })
+      );
     }
   })
 );

@@ -111,6 +111,7 @@ export const env = {
   trustProxy: readTrustProxy("TRUST_PROXY", 1),
   allowedOrigins: readList("ALLOWED_ORIGINS"),
   allowedExtensionIds: readList("ALLOWED_EXTENSION_IDS", []),
+  allowUnpackedExtensionOrigins: readBoolean("ALLOW_UNPACKED_EXTENSION_ORIGINS", false),
   supportedLeagueIds: readNumberList("SUPPORTED_LEAGUE_IDS", []),
   featuredLeagueIds: readNumberList("FEATURED_LEAGUE_IDS", []),
   liveCacheTtlSeconds: readNumber("LIVE_CACHE_TTL_SECONDS", 15),

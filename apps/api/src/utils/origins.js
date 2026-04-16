@@ -5,7 +5,7 @@ function normalizeOrigin(origin) {
 export function createAllowedOrigins({
   allowedOrigins = [],
   allowedExtensionIds = [],
-  betaModeEnabled = false,
+  allowUnpackedExtensionOrigins = false,
   nodeEnv = process.env.NODE_ENV ?? "development"
 }) {
   const explicitOrigins = allowedOrigins
@@ -20,7 +20,7 @@ export function createAllowedOrigins({
   return {
     origins: [...new Set([...explicitOrigins, ...extensionOrigins])],
     allowAnyExtensionOrigin:
-      Boolean(betaModeEnabled) || normalizeOrigin(nodeEnv) !== "production"
+      Boolean(allowUnpackedExtensionOrigins) || normalizeOrigin(nodeEnv) !== "production"
   };
 }
 

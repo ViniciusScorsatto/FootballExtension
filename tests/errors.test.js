@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeUpstreamApiError } from "../apps/api/src/utils/errors.js";
+import { createAppError, normalizeUpstreamApiError } from "../apps/api/src/utils/errors.js";
 import { normalizeStripeError } from "../apps/api/src/services/stripeService.js";
 
 test("quota-like upstream failures become recoverable app errors", () => {
@@ -99,4 +99,19 @@ test("billing and auth 5xx errors keep their original message for clients", () =
 
   assert.equal(billingMessage, "Stripe checkout URLs are not configured.");
   assert.equal(authMessage, "Magic link cache write failed.");
+});
+
+test("cors denials are tagged as explicit 403 application errors", () => {
+  const error = createAppError({
+    message: "Origin is not allowed by CORS.",
+    statusCode: 403,
+    code: "CORS_ORIGIN_NOT_ALLOWED",
+    source: "cors",
+    recoverable: false
+  });
+
+  assert.equal(error.statusCode, 403);
+  assert.equal(error.code, "CORS_ORIGIN_NOT_ALLOWED");
+  assert.equal(error.source, "cors");
+  assert.equal(error.message, "Origin is not allowed by CORS.");
 });
