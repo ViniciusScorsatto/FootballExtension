@@ -136,6 +136,17 @@ function setStatus(message, isError = false) {
   statusMessage.dataset.error = String(isError);
 }
 
+function getPopupErrorMessage(error, fallbackKey) {
+  const fallbackMessage = translate(fallbackKey);
+  const message = String(error?.data?.error || error?.message || "").trim();
+
+  if (!message || message === fallbackMessage) {
+    return fallbackMessage;
+  }
+
+  return `${fallbackMessage} ${message}`;
+}
+
 function summarizeBillingDebug(debug) {
   if (!debug) {
     return "";
@@ -1395,8 +1406,8 @@ async function handleBillingAction() {
       currentBilling.recentlyUnlocked = false;
       await fetchBillingStatus();
       setStatus(translate("popup.statusPlanUpdated"));
-    } catch {
-      setStatus(translate("popup.statusPlanLoadFailed"), true);
+    } catch (error) {
+      setStatus(getPopupErrorMessage(error, "popup.statusPlanLoadFailed"), true);
     }
     return;
   }
@@ -1440,8 +1451,8 @@ async function handleBillingAction() {
       url: payload.checkoutUrl
     });
     setStatus(translate("popup.statusCheckoutPending"));
-  } catch {
-    setStatus(translate("popup.statusUpgradeFailed"), true);
+  } catch (error) {
+    setStatus(getPopupErrorMessage(error, "popup.statusUpgradeFailed"), true);
   } finally {
     billingActionButton.disabled = false;
   }
@@ -1508,12 +1519,12 @@ async function handleRestoreAccess() {
     }
 
     setStatus(translate("popup.statusRestoreSent"));
-  } catch {
+  } catch (error) {
     trackAnalytics("restore_failed", {
       reason: "request_failed",
       emailDomain: email.split("@")[1] || ""
     });
-    setStatus(translate("popup.statusRestoreFailed"), true);
+    setStatus(getPopupErrorMessage(error, "popup.statusRestoreFailed"), true);
   } finally {
     accountRestoreButton.disabled = false;
   }
@@ -1709,8 +1720,8 @@ billingRefreshButton.addEventListener("click", async () => {
       );
     }
     await refreshMatchLists(getSelectedFixtureId(), getSelectedLeagueId());
-  } catch {
-    setStatus(translate("popup.statusPlanLoadFailed"), true);
+  } catch (error) {
+    setStatus(getPopupErrorMessage(error, "popup.statusPlanLoadFailed"), true);
   }
 });
 

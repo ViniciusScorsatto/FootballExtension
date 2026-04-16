@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeUpstreamApiError } from "../apps/api/src/utils/errors.js";
+import { normalizeStripeError } from "../apps/api/src/services/stripeService.js";
 
 test("quota-like upstream failures become recoverable app errors", () => {
   const normalizedError = normalizeUpstreamApiError({
@@ -47,4 +48,30 @@ test("upstream auth failures become configuration errors", () => {
   assert.equal(normalizedError.statusCode, 502);
   assert.equal(normalizedError.code, "UPSTREAM_AUTH_FAILED");
   assert.equal(normalizedError.recoverable, false);
+});
+
+test("stripe invalid request failures become surfaced billing errors", () => {
+  const normalizedError = normalizeStripeError({
+    type: "StripeInvalidRequestError",
+    code: "resource_missing",
+    message: "No such price: 'price_missing'"
+  });
+
+  assert.equal(normalizedError.statusCode, 400);
+  assert.equal(normalizedError.code, "resource_missing");
+  assert.equal(normalizedError.source, "billing");
+  assert.equal(normalizedError.recoverable, false);
+  assert.equal(normalizedError.message, "No such price: 'price_missing'");
+});
+
+test("stripe connection failures become retryable billing errors", () => {
+  const normalizedError = normalizeStripeError({
+    type: "StripeConnectionError",
+    message: "Connection to Stripe failed"
+  });
+
+  assert.equal(normalizedError.statusCode, 502);
+  assert.equal(normalizedError.code, "STRIPE_API_ERROR");
+  assert.equal(normalizedError.source, "billing");
+  assert.equal(normalizedError.recoverable, true);
 });

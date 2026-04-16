@@ -9,6 +9,37 @@ function createConfigurationError(message, code = "STRIPE_NOT_CONFIGURED") {
   return error;
 }
 
+export function normalizeStripeError(
+  error,
+  fallbackMessage = "Stripe request failed."
+) {
+  if (error?.source === "billing" && error?.statusCode) {
+    return error;
+  }
+
+  const normalizedError = new Error(
+    String(error?.message || fallbackMessage).trim() || fallbackMessage
+  );
+  const stripeType = String(error?.type || "").trim();
+  const stripeCode = String(error?.code || "").trim();
+
+  normalizedError.statusCode =
+    typeof error?.statusCode === "number" && Number.isInteger(error.statusCode)
+      ? error.statusCode
+      : stripeType === "StripeInvalidRequestError"
+        ? 400
+        : 502;
+  normalizedError.code = stripeCode || "STRIPE_API_ERROR";
+  normalizedError.source = "billing";
+  normalizedError.recoverable = [
+    "StripeAPIError",
+    "StripeConnectionError",
+    "StripeRateLimitError"
+  ].includes(stripeType);
+
+  return normalizedError;
+}
+
 function normalizeEmail(email) {
   return String(email ?? "").trim().toLowerCase();
 }
@@ -221,27 +252,33 @@ export class StripeService {
       priceId
     };
 
-    const session = await this.client.checkout.sessions.create({
-      mode: "subscription",
-      success_url: this.env.stripeSuccessUrl,
-      cancel_url: this.env.stripeCancelUrl,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1
+    let session;
+
+    try {
+      session = await this.client.checkout.sessions.create({
+        mode: "subscription",
+        success_url: this.env.stripeSuccessUrl,
+        cancel_url: this.env.stripeCancelUrl,
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1
+          }
+        ],
+        allow_promotion_codes: false,
+        client_reference_id: userId,
+        customer_email: email || undefined,
+        metadata,
+        subscription_data: {
+          metadata: {
+            ...metadata,
+            priceId
+          }
         }
-      ],
-      allow_promotion_codes: false,
-      client_reference_id: userId,
-      customer_email: email || undefined,
-      metadata,
-      subscription_data: {
-        metadata: {
-          ...metadata,
-          priceId
-        }
-      }
-    });
+      });
+    } catch (error) {
+      throw normalizeStripeError(error, "Stripe checkout could not be created.");
+    }
 
     return {
       id: session.id,

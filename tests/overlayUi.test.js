@@ -529,10 +529,13 @@ test("popup ensures a billing user id exists before restore and checkout request
   const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupScript, /window\.LMI_SDK\.createChromeRuntimeSdk\(\{/);
+  assert.match(popupScript, /function getPopupErrorMessage\(error, fallbackKey\) \{/);
   assert.match(popupScript, /async function ensureBillingUserId\(\) \{/);
   assert.match(popupScript, /currentBilling\.userId = createBillingUserId\(\);/);
   assert.match(popupScript, /await chrome\.storage\.sync\.set\(\{\s*billingUserId:\s*currentBilling\.userId\s*\}\);/);
   assert.match(popupScript, /const userId = await ensureBillingUserId\(\);/);
   assert.match(popupScript, /createCheckoutSession\(\{\s*userId,/s);
   assert.match(popupScript, /requestMagicLink\(\{\s*userId,/s);
+  assert.match(popupScript, /setStatus\(getPopupErrorMessage\(error, "popup\.statusUpgradeFailed"\), true\);/);
+  assert.match(popupScript, /setStatus\(getPopupErrorMessage\(error, "popup\.statusRestoreFailed"\), true\);/);
 });
