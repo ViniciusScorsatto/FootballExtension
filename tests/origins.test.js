@@ -28,3 +28,35 @@ test("isOriginAllowed permits empty origins and explicit matches", () => {
   );
   assert.equal(isOriginAllowed("https://evil.example.com", allowedOrigins), false);
 });
+
+test("isOriginAllowed permits unpacked chrome extension origins outside production", () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+
+  try {
+    assert.equal(
+      isOriginAllowed("chrome-extension://temporaryunpackedextensionid", [
+        "https://liveimpact.example.com"
+      ]),
+      true
+    );
+  } finally {
+    process.env.NODE_ENV = previousNodeEnv;
+  }
+});
+
+test("isOriginAllowed still blocks unknown chrome extension origins in production", () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+
+  try {
+    assert.equal(
+      isOriginAllowed("chrome-extension://temporaryunpackedextensionid", [
+        "https://liveimpact.example.com"
+      ]),
+      false
+    );
+  } finally {
+    process.env.NODE_ENV = previousNodeEnv;
+  }
+});

@@ -20,6 +20,13 @@ export function isOriginAllowed(origin, allowedOrigins) {
     return true;
   }
 
+  if (
+    origin.startsWith("chrome-extension://") &&
+    !allowedOrigins.includes("*") &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    return true;
+  }
+
   return allowedOrigins.includes("*") || allowedOrigins.includes(origin);
 }
-
