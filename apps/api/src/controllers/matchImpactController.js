@@ -38,6 +38,22 @@ function isAuthorizedAdminRequest(req, adminToken) {
   );
 }
 
+function tagServiceError(error, source, fallbackCode) {
+  if (!error) {
+    return error;
+  }
+
+  if (!error.source) {
+    error.source = source;
+  }
+
+  if (!error.code && fallbackCode) {
+    error.code = fallbackCode;
+  }
+
+  return error;
+}
+
 export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
@@ -475,7 +491,7 @@ export function createMatchImpactController({
           priceId: selection.priceId
         });
       } catch (error) {
-        next(error);
+        next(tagServiceError(error, "billing", "BILLING_CHECKOUT_FAILED"));
       }
     },
 
@@ -500,7 +516,7 @@ export function createMatchImpactController({
           }
         });
       } catch (error) {
-        next(error);
+        next(tagServiceError(error, "auth", "AUTH_MAGIC_LINK_REQUEST_FAILED"));
       }
     },
 

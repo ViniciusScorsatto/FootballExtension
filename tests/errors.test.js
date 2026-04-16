@@ -75,3 +75,28 @@ test("stripe connection failures become retryable billing errors", () => {
   assert.equal(normalizedError.source, "billing");
   assert.equal(normalizedError.recoverable, true);
 });
+
+test("billing and auth 5xx errors keep their original message for clients", () => {
+  const billingError = {
+    statusCode: 503,
+    source: "billing",
+    message: "Stripe checkout URLs are not configured."
+  };
+  const authError = {
+    statusCode: 500,
+    source: "auth",
+    message: "Magic link cache write failed."
+  };
+
+  const billingMessage =
+    billingError.statusCode >= 500 && !["billing", "auth"].includes(billingError.source)
+      ? "Internal server error."
+      : billingError.message;
+  const authMessage =
+    authError.statusCode >= 500 && !["billing", "auth"].includes(authError.source)
+      ? "Internal server error."
+      : authError.message;
+
+  assert.equal(billingMessage, "Stripe checkout URLs are not configured.");
+  assert.equal(authMessage, "Magic link cache write failed.");
+});

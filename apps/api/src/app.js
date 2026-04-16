@@ -121,7 +121,12 @@ registerRoutes(app, controller);
 
 app.use((error, _req, res, _next) => {
   const statusCode = error.statusCode ?? 500;
-  const message = statusCode >= 500 ? "Internal server error." : error.message;
+  const shouldExposeServiceMessage =
+    ["billing", "auth"].includes(error.source) && typeof error.message === "string" && error.message.trim();
+  const message =
+    statusCode >= 500 && !shouldExposeServiceMessage
+      ? "Internal server error."
+      : error.message;
 
   if (error.retryAfterSeconds) {
     res.setHeader("Retry-After", String(error.retryAfterSeconds));
