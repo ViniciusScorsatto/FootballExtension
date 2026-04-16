@@ -3,7 +3,7 @@
   "$id": "public-config.json",
   "title": "PublicConfig",
   "type": "object",
-  "required": ["analytics", "build"],
+  "required": ["analytics", "billingReadiness", "build"],
   "properties": {
     "build": {
       "type": "object",
@@ -13,6 +13,30 @@
         "branch": { "type": "string" },
         "deploymentId": { "type": "string" },
         "nodeEnv": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "billingReadiness": {
+      "type": "object",
+      "required": ["betaModeEnabled", "stripe"],
+      "properties": {
+        "betaModeEnabled": { "type": "boolean" },
+        "stripe": {
+          "type": "object",
+          "required": [
+            "enabled",
+            "pricesConfigured",
+            "successUrlConfigured",
+            "cancelUrlConfigured"
+          ],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "pricesConfigured": { "type": "boolean" },
+            "successUrlConfigured": { "type": "boolean" },
+            "cancelUrlConfigured": { "type": "boolean" }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },

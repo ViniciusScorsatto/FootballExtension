@@ -63,6 +63,21 @@ function buildRuntimeInfo(env) {
   };
 }
 
+function buildPublicBillingReadiness(stripeService, env) {
+  const stripeStatus =
+    typeof stripeService?.getStatus === "function" ? stripeService.getStatus() : {};
+
+  return {
+    betaModeEnabled: Boolean(env.betaModeEnabled),
+    stripe: {
+      enabled: Boolean(stripeStatus.enabled),
+      pricesConfigured: Boolean(stripeStatus.pricesConfigured),
+      successUrlConfigured: Boolean(stripeStatus.successUrlConfigured),
+      cancelUrlConfigured: Boolean(stripeStatus.cancelUrlConfigured)
+    }
+  };
+}
+
 export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
@@ -96,6 +111,7 @@ export function createMatchImpactController({
     getPublicConfig(_req, res) {
       res.json({
         build: buildRuntimeInfo(env),
+        billingReadiness: buildPublicBillingReadiness(stripeService, env),
         analytics: {
           posthog: {
             enabled: Boolean(env.posthogProjectApiKey),

@@ -223,7 +223,17 @@ function createController() {
       }
     },
     accountService: {},
-    stripeService: {},
+    stripeService: {
+      getStatus() {
+        return {
+          enabled: true,
+          pricesConfigured: true,
+          webhookConfigured: true,
+          successUrlConfigured: true,
+          cancelUrlConfigured: true
+        };
+      }
+    },
     cacheService: {},
     apiFootballClient: {
       getStatus() {
