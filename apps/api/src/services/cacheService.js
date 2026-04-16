@@ -132,7 +132,22 @@ export class CacheService {
   async getJson(key) {
     if (this.redisEnabled && this.client) {
       const rawValue = await this.client.get(key);
-      const parsedValue = rawValue ? JSON.parse(rawValue) : null;
+      let parsedValue = null;
+
+      if (rawValue) {
+        try {
+          parsedValue = JSON.parse(rawValue);
+        } catch (error) {
+          console.warn(`Invalid JSON in cache for key "${key}", treating as miss:`, error.message);
+          try {
+            await this.client.del(key);
+          } catch {
+            // Ignore cleanup failure; returning null is the important part.
+          }
+          parsedValue = null;
+        }
+      }
+
       this.recordReadMetric(key, Boolean(parsedValue));
       return parsedValue;
     }

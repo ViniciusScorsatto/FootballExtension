@@ -31,3 +31,26 @@ test("cache service tracks hits, misses, writes, and namespace breakdown", async
     writes: 1
   });
 });
+
+test("cache service treats invalid redis json as a cache miss", async () => {
+  const deletedKeys = [];
+  const cacheService = new CacheService({
+    redisUrl: ""
+  });
+
+  cacheService.redisEnabled = true;
+  cacheService.client = {
+    async get(key) {
+      assert.equal(key, "broken:key");
+      return "not-json";
+    },
+    async del(key) {
+      deletedKeys.push(key);
+    }
+  };
+
+  const value = await cacheService.getJson("broken:key");
+
+  assert.equal(value, null);
+  assert.deepEqual(deletedKeys, ["broken:key"]);
+});
