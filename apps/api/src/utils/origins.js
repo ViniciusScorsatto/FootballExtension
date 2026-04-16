@@ -2,7 +2,12 @@ function normalizeOrigin(origin) {
   return typeof origin === "string" ? origin.trim() : "";
 }
 
-export function createAllowedOrigins({ allowedOrigins = [], allowedExtensionIds = [] }) {
+export function createAllowedOrigins({
+  allowedOrigins = [],
+  allowedExtensionIds = [],
+  betaModeEnabled = false,
+  nodeEnv = process.env.NODE_ENV ?? "development"
+}) {
   const explicitOrigins = allowedOrigins
     .map((origin) => normalizeOrigin(origin))
     .filter(Boolean);
@@ -12,21 +17,33 @@ export function createAllowedOrigins({ allowedOrigins = [], allowedExtensionIds 
     .filter(Boolean)
     .map((extensionId) => `chrome-extension://${extensionId}`);
 
-  return [...new Set([...explicitOrigins, ...extensionOrigins])];
+  return {
+    origins: [...new Set([...explicitOrigins, ...extensionOrigins])],
+    allowAnyExtensionOrigin:
+      Boolean(betaModeEnabled) || normalizeOrigin(nodeEnv) !== "production"
+  };
 }
 
-export function isOriginAllowed(origin, allowedOrigins) {
-  if (!origin) {
+export function isOriginAllowed(origin, allowedOriginConfig) {
+  const normalizedOrigin = normalizeOrigin(origin);
+  const config =
+    Array.isArray(allowedOriginConfig)
+      ? {
+          origins: allowedOriginConfig,
+          allowAnyExtensionOrigin: process.env.NODE_ENV !== "production"
+        }
+      : {
+          origins: allowedOriginConfig?.origins ?? [],
+          allowAnyExtensionOrigin: Boolean(allowedOriginConfig?.allowAnyExtensionOrigin)
+        };
+
+  if (!normalizedOrigin) {
     return true;
   }
 
-  if (
-    origin.startsWith("chrome-extension://") &&
-    !allowedOrigins.includes("*") &&
-    process.env.NODE_ENV !== "production"
-  ) {
+  if (normalizedOrigin.startsWith("chrome-extension://") && !config.origins.includes("*") && config.allowAnyExtensionOrigin) {
     return true;
   }
 
-  return allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+  return config.origins.includes("*") || config.origins.includes(normalizedOrigin);
 }

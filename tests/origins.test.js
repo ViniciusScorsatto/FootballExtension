@@ -5,13 +5,16 @@ import { createAllowedOrigins, isOriginAllowed } from "../apps/api/src/utils/ori
 test("createAllowedOrigins includes explicit origins and chrome extension origins", () => {
   const allowedOrigins = createAllowedOrigins({
     allowedOrigins: ["https://liveimpact.example.com"],
-    allowedExtensionIds: ["abcdefghijklmnopabcdefghijklmnop"]
+    allowedExtensionIds: ["abcdefghijklmnopabcdefghijklmnop"],
+    betaModeEnabled: false,
+    nodeEnv: "production"
   });
 
-  assert.deepEqual(allowedOrigins, [
+  assert.deepEqual(allowedOrigins.origins, [
     "https://liveimpact.example.com",
     "chrome-extension://abcdefghijklmnopabcdefghijklmnop"
   ]);
+  assert.equal(allowedOrigins.allowAnyExtensionOrigin, false);
 });
 
 test("isOriginAllowed permits empty origins and explicit matches", () => {
@@ -30,33 +33,36 @@ test("isOriginAllowed permits empty origins and explicit matches", () => {
 });
 
 test("isOriginAllowed permits unpacked chrome extension origins outside production", () => {
-  const previousNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "development";
-
-  try {
-    assert.equal(
-      isOriginAllowed("chrome-extension://temporaryunpackedextensionid", [
-        "https://liveimpact.example.com"
-      ]),
-      true
-    );
-  } finally {
-    process.env.NODE_ENV = previousNodeEnv;
-  }
+  assert.equal(
+    isOriginAllowed("chrome-extension://temporaryunpackedextensionid", {
+      origins: ["https://liveimpact.example.com"],
+      allowAnyExtensionOrigin: true
+    }),
+    true
+  );
 });
 
 test("isOriginAllowed still blocks unknown chrome extension origins in production", () => {
-  const previousNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "production";
+  assert.equal(
+    isOriginAllowed("chrome-extension://temporaryunpackedextensionid", {
+      origins: ["https://liveimpact.example.com"],
+      allowAnyExtensionOrigin: false
+    }),
+    false
+  );
+});
 
-  try {
-    assert.equal(
-      isOriginAllowed("chrome-extension://temporaryunpackedextensionid", [
-        "https://liveimpact.example.com"
-      ]),
-      false
-    );
-  } finally {
-    process.env.NODE_ENV = previousNodeEnv;
-  }
+test("createAllowedOrigins enables unpacked extension origins during beta production", () => {
+  const allowedOrigins = createAllowedOrigins({
+    allowedOrigins: ["https://footballextension-staging.up.railway.app"],
+    allowedExtensionIds: [],
+    betaModeEnabled: true,
+    nodeEnv: "production"
+  });
+
+  assert.equal(allowedOrigins.allowAnyExtensionOrigin, true);
+  assert.equal(
+    isOriginAllowed("chrome-extension://temporaryunpackedextensionid", allowedOrigins),
+    true
+  );
 });
