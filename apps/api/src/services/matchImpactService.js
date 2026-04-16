@@ -1639,7 +1639,8 @@ export class MatchImpactService {
     });
     const afterTable = finishedOfficialCaughtUp ? officialTable : provisionalTable;
     const impact = computeImpact(baselineStandings, afterTable, fixture, {
-      zoneProfile: competitionFormat.registry?.zoneProfile ?? ""
+      zoneProfile: competitionFormat.registry?.zoneProfile ?? "",
+      impactMode: competitionFormat.impactMode ?? ""
     });
     const statisticsSummary = buildStatisticsSummary(statistics, teams, impact.momentum);
     impact.momentum = statisticsSummary.momentum;

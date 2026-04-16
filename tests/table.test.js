@@ -177,6 +177,48 @@ test("computeImpact uses UEFA league-phase zone messaging when configured", () =
   assert.ok(impact.competition.includes("PSV falls into the elimination zone"));
 });
 
+test("computeImpact uses group-stage messaging instead of title and relegation heuristics", () => {
+  const oldTable = [
+    { teamId: 1, name: "Palmeiras", rank: 3, liveRank: 3 },
+    { teamId: 2, name: "Sporting Cristal", rank: 1, liveRank: 1 },
+    { teamId: 3, name: "Cerro Porteno", rank: 2, liveRank: 2 },
+    { teamId: 4, name: "Bolivar", rank: 4, liveRank: 4 }
+  ];
+
+  const newTable = [
+    { teamId: 1, name: "Palmeiras", rank: 3, liveRank: 1 },
+    { teamId: 2, name: "Sporting Cristal", rank: 1, liveRank: 3 },
+    { teamId: 3, name: "Cerro Porteno", rank: 2, liveRank: 2 },
+    { teamId: 4, name: "Bolivar", rank: 4, liveRank: 4 }
+  ];
+
+  const impact = computeImpact(
+    oldTable,
+    newTable,
+    {
+      teams: {
+        home: { id: 1, name: "Palmeiras" },
+        away: { id: 2, name: "Sporting Cristal" }
+      },
+      goals: {
+        home: 1,
+        away: 0
+      }
+    },
+    {
+      impactMode: "group"
+    }
+  );
+
+  assert.ok(impact.competition.includes("Palmeiras goes top of the group"));
+  assert.ok(impact.competition.includes("Palmeiras moves into the qualification spots"));
+  assert.ok(impact.competition.includes("Sporting Cristal loses the group lead"));
+  assert.ok(impact.competition.includes("Sporting Cristal drops out of the qualification spots"));
+  assert.ok(impact.competition.includes("Sporting Cristal drops to 3rd"));
+  assert.ok(!impact.competition.some((message) => message.includes("title race")));
+  assert.ok(!impact.competition.some((message) => message.includes("relegation")));
+});
+
 test("simulateTableSubset updates only the team present in the group table", () => {
   const standings = [
     {

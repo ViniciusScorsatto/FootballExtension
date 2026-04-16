@@ -169,9 +169,49 @@ function buildZoneTransitionMessage(teamName, oldRank, newRank, zoneProfile) {
   return "";
 }
 
+function buildGroupCompetitionMessages(teamName, oldRank, newRank) {
+  const messages = [];
+
+  if (newRank === 1 && oldRank !== 1) {
+    messages.push(`${teamName} goes top of the group`);
+  }
+
+  if (oldRank === 1 && newRank !== 1) {
+    messages.push(`${teamName} loses the group lead`);
+  }
+
+  if (oldRank > 2 && newRank <= 2) {
+    messages.push(`${teamName} moves into the qualification spots`);
+  }
+
+  if (oldRank <= 2 && newRank > 2) {
+    messages.push(`${teamName} drops out of the qualification spots`);
+  }
+
+  if (oldRank !== 3 && newRank === 3) {
+    messages.push(`${teamName} drops to 3rd`);
+  }
+
+  return messages;
+}
+
 function computeCompetitionMessages(teamName, oldRank, newRank, tableSize, options = {}) {
   const messages = [];
   const zoneProfile = ZONE_PROFILES[options.zoneProfile] ?? null;
+
+  if (options.impactMode === "group") {
+    messages.push(...buildGroupCompetitionMessages(teamName, oldRank, newRank));
+
+    if (zoneProfile?.length) {
+      const zoneMessage = buildZoneTransitionMessage(teamName, oldRank, newRank, zoneProfile);
+
+      if (zoneMessage) {
+        messages.push(zoneMessage);
+      }
+    }
+
+    return [...new Set(messages)];
+  }
 
   if (newRank === 1 && oldRank !== 1) {
     messages.push(`${teamName} goes top of the table`);
