@@ -1,15 +1,21 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
 
-async function start() {
+function start() {
   app.listen(env.port, () => {
     console.info(`Live Match Impact backend listening on port ${env.port}`);
   });
 
-  await app.locals.bootstrapPromise;
+  if (app.locals.bootstrapPromise?.catch) {
+    app.locals.bootstrapPromise.catch((error) => {
+      console.error("Cache bootstrap failed, continuing without blocking startup:", error);
+    });
+  }
 }
 
-start().catch((error) => {
+try {
+  start();
+} catch (error) {
   console.error("Failed to start backend:", error);
   process.exit(1);
-});
+}
