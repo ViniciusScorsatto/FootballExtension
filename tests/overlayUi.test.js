@@ -529,6 +529,9 @@ test("popup ensures a billing user id exists before restore and checkout request
   const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupScript, /window\.LMI_SDK\.createRequesterBackedSdk\(\{/);
+  assert.match(popupScript, /function isNetworkFetchError\(error\) \{/);
+  assert.match(popupScript, /if \(!isNetworkFetchError\(error\)\) \{/);
+  assert.match(popupScript, /const fallbackRequester = window\.LMI_SDK\.createChromeRuntimeRequester\(\);/);
   assert.match(popupScript, /function getPopupErrorMessage\(error, fallbackKey\) \{/);
   assert.match(popupScript, /async function ensureBillingUserId\(\) \{/);
   assert.match(popupScript, /currentBilling\.userId = createBillingUserId\(\);/);

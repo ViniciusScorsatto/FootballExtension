@@ -417,10 +417,42 @@ function getRequestHeaders() {
   });
 }
 
+function isNetworkFetchError(error) {
+  const message = String(error?.message || "").trim().toLowerCase();
+  return message === "failed to fetch" || message.includes("networkerror");
+}
+
 function createPopupSdkClient(backendUrl) {
   return window.LMI_SDK.createRequesterBackedSdk({
     baseUrl: backendUrl,
-    getHeaders: getRequestHeaders
+    getHeaders: getRequestHeaders,
+    requester: async (request) => {
+      try {
+        const response = await fetch(request.url, {
+          method: request.method,
+          headers: request.headers,
+          body: request.body ? JSON.stringify(request.body) : undefined
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw window.LMI_SDK.createSdkError(
+            payload?.error || `Request failed with ${response.status}`,
+            response.status,
+            payload
+          );
+        }
+
+        return payload;
+      } catch (error) {
+        if (!isNetworkFetchError(error)) {
+          throw error;
+        }
+
+        const fallbackRequester = window.LMI_SDK.createChromeRuntimeRequester();
+        return fallbackRequester(request);
+      }
+    }
   });
 }
 
