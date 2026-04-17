@@ -1,4 +1,11 @@
 (function bootstrapLiveMatchImpact() {
+  const previousCleanup = globalThis.__LMI_OVERLAY_CLEANUP__;
+  if (typeof previousCleanup === "function") {
+    try {
+      previousCleanup();
+    } catch {}
+  }
+
   const existingRoot = document.getElementById("lmi-root");
 
   if (existingRoot) {
@@ -22,6 +29,7 @@
     (globalThis.LMI_CONFIG?.backendUrl || "https://footballextension-staging.up.railway.app")
       .trim()
       .replace(/\/$/, "");
+  const EXTENSION_VERSION = chrome.runtime.getManifest().version;
   const DEFAULT_LANGUAGE = globalThis.LMI_I18N.detectBrowserLanguage();
   const BASE_POLL_INTERVAL_MS = 15000;
   const PREMATCH_MEDIUM_POLL_INTERVAL_MS = 120000;
@@ -99,10 +107,11 @@
   }
 
   function init() {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    const onRuntimeMessage = (message, _sender, sendResponse) => {
       if (message?.type === "LMI_PING") {
         sendResponse({
-          ok: true
+          ok: true,
+          version: EXTENSION_VERSION
         });
         return false;
       }
@@ -115,9 +124,10 @@
       if (message?.type === "LMI_TRACKING_STOPPED") {
         stopTracking();
       }
-    });
+    };
+    chrome.runtime.onMessage.addListener(onRuntimeMessage);
 
-    chrome.storage.onChanged.addListener((changes, area) => {
+    const onStorageChanged = (changes, area) => {
       if (area !== "sync") {
         return;
       }
@@ -140,16 +150,32 @@
       if (changes.language) {
         setLanguage(changes.language.newValue ?? DEFAULT_LANGUAGE);
       }
-    });
+    };
+    chrome.storage.onChanged.addListener(onStorageChanged);
 
-    window.addEventListener("beforeunload", flushSession);
-    window.addEventListener("focus", handleResumeRefresh);
-    window.addEventListener("online", handleResumeRefresh);
-    document.addEventListener("visibilitychange", () => {
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         handleResumeRefresh();
       }
-    });
+    };
+    window.addEventListener("beforeunload", flushSession);
+    window.addEventListener("focus", handleResumeRefresh);
+    window.addEventListener("online", handleResumeRefresh);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    globalThis.__LMI_OVERLAY_CLEANUP__ = () => {
+      clearPollTimer();
+      clearRenderTimer();
+      flushSession();
+      chrome.runtime.onMessage.removeListener(onRuntimeMessage);
+      chrome.storage.onChanged.removeListener(onStorageChanged);
+      window.removeEventListener("beforeunload", flushSession);
+      window.removeEventListener("focus", handleResumeRefresh);
+      window.removeEventListener("online", handleResumeRefresh);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      elements.root?.remove?.();
+    };
+
     syncSettings(false);
   }
 
