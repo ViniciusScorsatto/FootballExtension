@@ -6,6 +6,7 @@ import { renderMarketingPage } from "../apps/api/src/views/marketingPage.js";
 const pricing = {
   currency: "USD",
   supportEmail: "hello@example.com",
+  chromeWebStoreUrl: "https://chromewebstore.google.com/",
   plans: {
     free: {
       name: "Free",
@@ -73,4 +74,26 @@ test("marketing page includes a free vs pro matrix without implying side panel i
   assert.doesNotMatch(html, /Fallback por fixture manual/);
   assert.doesNotMatch(html, /Side panel deep-view mode/);
   assert.match(html, /Deeper pre-match and competition reading/);
+});
+
+test("marketing page includes a free install CTA to the Chrome Web Store", () => {
+  const html = renderMarketingPage({ pricing, language: "pt-BR" });
+
+  assert.match(html, /Ver na Chrome Web Store/);
+  assert.match(html, /href="https:\/\/chromewebstore\.google\.com\/"/);
+});
+
+test("marketing page footer localizes Foot Analysis channel links by language", () => {
+  const englishHtml = renderMarketingPage({ pricing });
+  const portugueseHtml = renderMarketingPage({ pricing, language: "pt-BR" });
+
+  assert.match(englishHtml, /Follow Foot Analysis/);
+  assert.match(englishHtml, /https:\/\/www\.instagram\.com\/footanalysisen\//);
+  assert.match(englishHtml, /https:\/\/www\.youtube\.com\/@FootAnalysisEN/);
+  assert.match(englishHtml, /https:\/\/www\.tiktok\.com\/@foot\.analysis\.en/);
+
+  assert.match(portugueseHtml, /Acompanhe o Foot Analysis/);
+  assert.match(portugueseHtml, /https:\/\/www\.youtube\.com\/@FootAnalysisPT/);
+  assert.match(portugueseHtml, /https:\/\/www\.tiktok\.com\/@foot\.analysis\.pt/);
+  assert.match(portugueseHtml, /https:\/\/www\.instagram\.com\/footanalysispt\//);
 });

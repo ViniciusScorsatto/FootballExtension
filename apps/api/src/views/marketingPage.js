@@ -120,7 +120,6 @@ function getMarketingCopy(locale) {
       matrixHeaderPro: "Pro",
       matrixRows: [
         ["Acesso a ligas", "Ligas em destaque", "Todas as ligas suportadas"],
-        ["Partidas acompanhadas", "1 por vez", "1 por vez"],
         ["Placar, linha dos gols e impacto principal", "Sim", "Sim"],
         ["Impacto na tabela e na competição", "Sim", "Sim"],
         ["Estatísticas finais", "Sim", "Sim"],
@@ -147,6 +146,7 @@ function getMarketingCopy(locale) {
       pricingFreeLabel: "Comece no free",
       pricingProLabel: "Para quem vive o matchday",
       pricingEarlyLabel: "Melhor oferta do beta",
+      freeInstallCta: "Ver na Chrome Web Store",
       pricePerMonth: "/mês",
       pricePerMonthForever: "/mês para sempre",
       earlyBirdCopy: "Preço Pro com desconto vitalício para os primeiros apoiadores que ajudarem a moldar o beta.",
@@ -163,6 +163,21 @@ function getMarketingCopy(locale) {
       betaRefiningBullet2: "Os melhores ganchos premium para alertas, comportamento multi-jogo e interpretação mais profunda",
       betaRefiningBullet3: "Integração de marca mais forte com os canais Foot Analysis em inglês e PT-BR",
       footerLead: "Live Match Impact está em beta no momento. Para suporte, parcerias ou acesso antecipado:",
+      footerFollowLabel: "Acompanhe o Foot Analysis",
+      footerChannels: [
+        {
+          label: "YouTube",
+          href: "https://www.youtube.com/@FootAnalysisPT"
+        },
+        {
+          label: "TikTok",
+          href: "https://www.tiktok.com/@foot.analysis.pt"
+        },
+        {
+          label: "Instagram",
+          href: "https://www.instagram.com/footanalysispt/"
+        }
+      ],
       freeLabel: "Free",
       proLabel: "Pro",
       freePrice: "Grátis"
@@ -221,7 +236,6 @@ function getMarketingCopy(locale) {
     matrixHeaderPro: "Pro",
     matrixRows: [
       ["League access", "Featured leagues", "All supported leagues"],
-      ["Tracked matches", "1 at a time", "1 at a time"],
       ["Score, scorer timeline, and core impact", "Yes", "Yes"],
       ["Table and competition impact", "Yes", "Yes"],
       ["Final stats", "Yes", "Yes"],
@@ -248,6 +262,7 @@ function getMarketingCopy(locale) {
     pricingFreeLabel: "Start free",
     pricingProLabel: "For matchday power users",
     pricingEarlyLabel: "Best beta offer",
+    freeInstallCta: "View on Chrome Web Store",
     pricePerMonth: "/month",
     pricePerMonthForever: "/month forever",
     earlyBirdCopy: "Lifetime discounted Pro pricing for early adopters who help shape the beta.",
@@ -264,6 +279,21 @@ function getMarketingCopy(locale) {
     betaRefiningBullet2: "The best premium hooks for alerts, multi-match behavior, and deeper interpretation",
     betaRefiningBullet3: "Tighter brand integration with the Foot Analysis English and PT-BR channels",
     footerLead: "Live Match Impact is currently in beta. For support, partnerships, or early access:",
+    footerFollowLabel: "Follow Foot Analysis",
+    footerChannels: [
+      {
+        label: "Instagram",
+        href: "https://www.instagram.com/footanalysisen/"
+      },
+      {
+        label: "YouTube",
+        href: "https://www.youtube.com/@FootAnalysisEN"
+      },
+      {
+        label: "TikTok",
+        href: "https://www.tiktok.com/@foot.analysis.en"
+      }
+    ],
     freeLabel: "Free",
     proLabel: "Pro",
     freePrice: "Free"
@@ -942,6 +972,33 @@ export function renderMarketingPage({ pricing, language = "en" }) {
         font-size: 14px;
       }
 
+      .footer__socials {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .footer__social-label {
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .footer__social-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
       @media (max-width: 980px) {
         .hero,
         .story-grid,
@@ -1205,6 +1262,16 @@ export function renderMarketingPage({ pricing, language = "en" }) {
               <div class="bullet-list">
                 ${localizedPlans.free.features.map((feature) => `<div class="bullet">${feature}</div>`).join("")}
               </div>
+              <div class="hero__actions" style="margin-top:16px;">
+                <a
+                  class="button button--soft"
+                  href="${pricing.chromeWebStoreUrl}"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ${copy.freeInstallCta}
+                </a>
+              </div>
             </article>
 
             <article class="pricing-card pricing-card--early">
@@ -1261,6 +1328,19 @@ export function renderMarketingPage({ pricing, language = "en" }) {
       <footer class="footer">
         ${copy.footerLead}
         <a href="mailto:${pricing.supportEmail}">${pricing.supportEmail}</a>
+        <div class="footer__socials">
+          <span class="footer__social-label">${copy.footerFollowLabel}</span>
+          ${copy.footerChannels.map((channel) => `
+            <a
+              class="footer__social-link"
+              href="${channel.href}"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ${channel.label}
+            </a>
+          `).join("")}
+        </div>
       </footer>
     </div>
   </body>

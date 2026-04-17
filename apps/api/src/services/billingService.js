@@ -113,6 +113,7 @@ export class BillingService {
       betaModeEnabled: this.env.betaModeEnabled,
       currency: pricingCurrency,
       supportEmail: this.env.supportEmail,
+      chromeWebStoreUrl: this.env.chromeWebStoreUrl,
       plans: {
         free: mapPlan(BILLING_PLANS.free, 0, pricingCurrency),
         pro: mapPlan(BILLING_PLANS.pro, proMonthlyPriceUsd, pricingCurrency)
