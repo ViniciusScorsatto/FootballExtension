@@ -112,3 +112,30 @@ test("marketing page footer localizes Foot Analysis channel links by language", 
   assert.match(portugueseHtml, /https:\/\/www\.tiktok\.com\/@foot\.analysis\.pt/);
   assert.match(portugueseHtml, /https:\/\/www\.instagram\.com\/footanalysispt\//);
 });
+
+test("marketing page renders the Foot Analysis logo in the header", () => {
+  const html = renderMarketingPage({ pricing });
+
+  assert.match(html, /class="brand__logo"/);
+  assert.match(html, /src="data:image\/png;base64,/);
+});
+
+test("marketing page upgrades the legacy support email to the current contact address", () => {
+  const html = renderMarketingPage({
+    pricing: {
+      ...pricing,
+      supportEmail: "support@footanalysis.com"
+    }
+  });
+
+  assert.match(html, /mailto:footanalysisshorts@gmail\.com/);
+  assert.match(html, />footanalysisshorts@gmail\.com</);
+  assert.doesNotMatch(html, /support@footanalysis\.com/);
+});
+
+test("marketing page includes social icons alongside footer channel links", () => {
+  const html = renderMarketingPage({ pricing });
+
+  assert.match(html, /class="footer__social-link"/);
+  assert.match(html, /<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">/);
+});

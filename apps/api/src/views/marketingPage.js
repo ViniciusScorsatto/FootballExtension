@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+
+const FOOT_ANALYSIS_LOGO_DATA_URL = loadFootAnalysisLogoDataUrl();
+
 function formatPrice(value, currency, locale) {
   if (!value) {
     return "Free";
@@ -8,6 +12,51 @@ function formatPrice(value, currency, locale) {
     currency,
     minimumFractionDigits: 2
   }).format(value);
+}
+
+function loadFootAnalysisLogoDataUrl() {
+  try {
+    const logoPath = new URL("../../../extension/assets/footanalysislogo.png", import.meta.url);
+    const base64 = readFileSync(logoPath, "base64");
+
+    return `data:image/png;base64,${base64}`;
+  } catch {
+    return "";
+  }
+}
+
+function resolveSupportEmail(rawEmail) {
+  if (!rawEmail || rawEmail === "support@footanalysis.com") {
+    return "footanalysisshorts@gmail.com";
+  }
+
+  return rawEmail;
+}
+
+function renderSocialIcon(label) {
+  const normalizedLabel = String(label || "").trim().toLowerCase();
+
+  if (normalizedLabel === "youtube") {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M23 12.2s0-3.3-.4-4.9a2.9 2.9 0 0 0-2-2C19 4.8 12 4.8 12 4.8s-7 0-8.6.5a2.9 2.9 0 0 0-2 2C1 8.9 1 12.2 1 12.2s0 3.3.4 4.9a2.9 2.9 0 0 0 2 2c1.6.5 8.6.5 8.6.5s7 0 8.6-.5a2.9 2.9 0 0 0 2-2c.4-1.6.4-4.9.4-4.9Zm-13.8 3.9v-7.8l6.8 3.9-6.8 3.9Z"/>
+      </svg>
+    `;
+  }
+
+  if (normalizedLabel === "instagram") {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 1.9A3.9 3.9 0 0 0 3.9 7.8v8.4a3.9 3.9 0 0 0 3.9 3.9h8.4a3.9 3.9 0 0 0 3.9-3.9V7.8a3.9 3.9 0 0 0-3.9-3.9H7.8Zm8.9 1.4a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.9a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 0 0 0-6.2Z"/>
+      </svg>
+    `;
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M16.6 3H7.4A4.4 4.4 0 0 0 3 7.4v9.2A4.4 4.4 0 0 0 7.4 21h9.2a4.4 4.4 0 0 0 4.4-4.4V7.4A4.4 4.4 0 0 0 16.6 3Zm-2.1 8.7a5.8 5.8 0 0 1-5.4 5.9 6.4 6.4 0 0 1-3.4-.9 4.6 4.6 0 0 0 3.4-.9 2.3 2.3 0 0 1-2.1-1.6 2.3 2.3 0 0 0 1 0 2.3 2.3 0 0 1-1.8-2.3v0a2.2 2.2 0 0 0 1 .3 2.3 2.3 0 0 1-.7-3 6.3 6.3 0 0 0 4.6 2.3 2.3 2.3 0 0 1 3.9-2 4.6 4.6 0 0 0 1.5-.6 2.3 2.3 0 0 1-1 1.3 4.6 4.6 0 0 0 1.3-.4 4.9 4.9 0 0 1-1.2 1.2Z"/>
+    </svg>
+  `;
 }
 
 function getLocalizedPlanContent(locale) {
@@ -307,6 +356,7 @@ function getMarketingCopy(locale) {
 export function renderMarketingPage({ pricing, language = "en" }) {
   const locale = language === "pt-BR" ? "pt-BR" : "en";
   const copy = getMarketingCopy(locale);
+  const supportEmail = resolveSupportEmail(pricing.supportEmail);
   const localizedPlans = getLocalizedPlanContent(locale);
   const freePlan = pricing.plans.free;
   const proPlan = pricing.plans.pro;
@@ -392,35 +442,14 @@ export function renderMarketingPage({ pricing, language = "en" }) {
         display: grid;
         place-items: center;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+        overflow: hidden;
       }
 
-      .brand__ball {
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        border: 2px solid var(--text);
-        position: relative;
-      }
-
-      .brand__ball::before,
-      .brand__ball::after {
-        content: "";
-        position: absolute;
-        inset: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 999px;
-      }
-
-      .brand__ball::before {
-        width: 14px;
-        height: 14px;
-        border: 1px solid rgba(244, 247, 254, 0.55);
-      }
-
-      .brand__ball::after {
-        width: 5px;
-        height: 5px;
-        background: var(--text);
+      .brand__logo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
 
       .brand__copy small,
@@ -1004,6 +1033,7 @@ export function renderMarketingPage({ pricing, language = "en" }) {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         min-height: 34px;
         padding: 0 12px;
         border-radius: 999px;
@@ -1012,6 +1042,13 @@ export function renderMarketingPage({ pricing, language = "en" }) {
         color: var(--muted);
         font-size: 13px;
         font-weight: 700;
+      }
+
+      .footer__social-link svg {
+        width: 15px;
+        height: 15px;
+        fill: currentColor;
+        flex: 0 0 auto;
       }
 
       @media (max-width: 980px) {
@@ -1055,7 +1092,11 @@ export function renderMarketingPage({ pricing, language = "en" }) {
     <div class="page">
       <header class="nav">
         <div class="brand">
-          <div class="brand__mark"><div class="brand__ball"></div></div>
+          <div class="brand__mark">
+            ${FOOT_ANALYSIS_LOGO_DATA_URL
+              ? `<img class="brand__logo" src="${FOOT_ANALYSIS_LOGO_DATA_URL}" alt="Foot Analysis logo" />`
+              : ""}
+          </div>
           <div class="brand__copy">
             <small>Foot Analysis</small>
             <strong>${copy.brandTitle}</strong>
@@ -1085,7 +1126,7 @@ export function renderMarketingPage({ pricing, language = "en" }) {
             >
               ${copy.heroPrimaryCta}
             </a>
-            <a class="button button--ghost" href="mailto:${pricing.supportEmail}?subject=Live%20Match%20Impact%20Beta">
+            <a class="button button--ghost" href="mailto:${supportEmail}?subject=Live%20Match%20Impact%20Beta">
               ${copy.heroSecondaryCta}
             </a>
           </div>
@@ -1363,7 +1404,7 @@ export function renderMarketingPage({ pricing, language = "en" }) {
 
       <footer class="footer">
         ${copy.footerLead}
-        <a href="mailto:${pricing.supportEmail}">${pricing.supportEmail}</a>
+        <a href="mailto:${supportEmail}">${supportEmail}</a>
         <div class="footer__socials">
           <span class="footer__social-label">${copy.footerFollowLabel}</span>
           ${copy.footerChannels.map((channel) => `
@@ -1373,6 +1414,7 @@ export function renderMarketingPage({ pricing, language = "en" }) {
               target="_blank"
               rel="noreferrer"
             >
+              ${renderSocialIcon(channel.label)}
               ${channel.label}
             </a>
           `).join("")}
