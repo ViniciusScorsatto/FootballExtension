@@ -141,7 +141,7 @@ function getMarketingCopy(locale) {
       mockupGoalImpactLine: "Gol do Saka muda a corrida imediatamente.",
       mockupTableImpact: "Impacto na tabela",
       mockupCompetitionImpact: "Impacto na competição",
-      mockupCompetitionNote: "Arsenal entra na zona de Champions League. Chelsea sai do top 4.",
+      mockupCompetitionNote: "Arsenal entra na zona de Champions League. Chelsea sai do G4.",
       mockupRoundContext: "Outros jogos da rodada",
       whyEyebrow: "Por que isso existe",
       whyTitle: "Feito para uma pergunta, não para sobrecarga de dashboard.",
@@ -154,7 +154,7 @@ function getMarketingCopy(locale) {
       story3Body: "Outros jogos da mesma rodada continuam visíveis para a história nunca perder contexto.",
       feelEyebrow: "Como a experiência funciona",
       feelTitle: "Não é um dump de estatísticas. É uma camada de leitura ao vivo do futebol.",
-      feature1Title: "Entendível em menos de dois segundos",
+      feature1Title: "Legível de relance",
       feature1Body: "O painel flutuante é feito para compreensão instantânea, não para exploração profunda.",
       feature2Title: "Lógica ao vivo focada em confiança",
       feature2Body: "Ligas de tabela única, competições em grupos e formatos especiais são tratados com fallbacks explícitos.",
@@ -194,15 +194,16 @@ function getMarketingCopy(locale) {
       pricingEyebrow: "Preços",
       pricingTitle: "Uma camada premium clara, com recompensa beta para quem chega cedo.",
       pricingBody: "O Free continua realmente útil para a leitura principal ao vivo. O Pro desbloqueia todas as ligas suportadas e o contexto mais profundo da partida que já existe hoje no produto. Usuários Early Bird travam o melhor preço para sempre.",
-      pricingFreeLabel: "Comece no free",
+      pricingFreeLabel: "Comece gratuitamente",
       pricingProLabel: "Para quem vive o matchday",
       pricingEarlyLabel: "Melhor oferta do beta",
       freeInstallCta: "Ver na Chrome Web Store",
       pricePerMonth: "/mês",
       pricePerMonthForever: "/mês para sempre",
       earlyBirdCopy: "Preço Pro com desconto vitalício para os primeiros apoiadores que ajudarem a moldar o beta.",
-      earlyBirdAvailability: "vagas disponíveis no momento de",
+      earlyBirdAvailability: "vagas disponíveis de um total de",
       claimEarlyBird: "Instalar e garantir Early Bird",
+      earlyBirdSoldOut: "Early Bird esgotado",
       betaEyebrow: "Por que o beta importa",
       betaTitle: "Estamos refinando a lógica das ligas, a qualidade dos insights ao vivo e o que os fãs realmente pagam.",
       betaUsersTitle: "O que os usuários beta recebem",
@@ -211,7 +212,7 @@ function getMarketingCopy(locale) {
       betaUsersBullet3: "Visibilidade antecipada sobre novas ligas, insights em grupos e ideias de alertas",
       betaRefiningTitle: "O que ainda estamos refinando",
       betaRefiningBullet1: "Formatos de competição com casos de borda e lógica específica de copas",
-      betaRefiningBullet2: "Os melhores ganchos premium para alertas, comportamento multi-jogo e interpretação mais profunda",
+      betaRefiningBullet2: "Os melhores recursos premium para alertas, comportamento multi-jogo e interpretação mais profunda",
       betaRefiningBullet3: "Integração de marca mais forte com os canais Foot Analysis em inglês e PT-BR",
       footerLead: "Live Match Impact está em beta no momento. Para suporte, parcerias ou acesso antecipado:",
       footerFollowLabel: "Acompanhe o Foot Analysis",
@@ -321,6 +322,7 @@ function getMarketingCopy(locale) {
     earlyBirdCopy: "Lifetime discounted Pro pricing for early adopters who help shape the beta.",
     earlyBirdAvailability: "spots currently available out of",
     claimEarlyBird: "Install and claim Early Bird",
+    earlyBirdSoldOut: "Early Bird sold out",
     betaEyebrow: "Why beta matters",
     betaTitle: "We are refining league logic, live insight quality, and what fans actually pay for.",
     betaUsersTitle: "What beta users get",
@@ -1351,19 +1353,27 @@ export function renderMarketingPage({ pricing, language = "en" }) {
                 <strong>${earlyBird.remaining}</strong> ${copy.earlyBirdAvailability}
                 <strong>${earlyBird.maxClaims}</strong>.
               </div>
-              <div class="hero__actions" style="margin-top:16px;">
-                <a
-                  class="button button--primary"
-                  href="${pricing.chromeWebStoreUrl}"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  ${copy.claimEarlyBird}
-                </a>
-              </div>
-              <div class="hero__helper-link">
-                <a href="/billing/plans">${copy.installedUpgradeCta}</a>
-              </div>
+              ${earlyBird.active
+                ? `
+                  <div class="hero__actions" style="margin-top:16px;">
+                    <a
+                      class="button button--primary"
+                      href="${pricing.chromeWebStoreUrl}"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      ${copy.claimEarlyBird}
+                    </a>
+                  </div>
+                  <div class="hero__helper-link">
+                    <a href="/billing/plans">${copy.installedUpgradeCta}</a>
+                  </div>
+                `
+                : `
+                  <div class="offer-note" style="margin-top:16px;">
+                    <strong>${copy.earlyBirdSoldOut}</strong>
+                  </div>
+                `}
             </article>
 
             <article class="pricing-card pricing-card--pro">

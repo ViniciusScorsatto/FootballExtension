@@ -614,7 +614,7 @@
       elements.summary.textContent = translate("panel.backendCredentialsFailed");
       showHeroMessage(translate("panel.providerRejectedCredentials"));
       elements.homeRow.textContent = translate("panel.backendApiKeyCheck");
-      elements.awayRow.textContent = state.backendUrl;
+      elements.awayRow.textContent = translate("panel.backendConfigIssue");
       elements.competitionList.innerHTML =
         `<div class="lmi-empty">${escapeHtml(translate("panel.backendConfigIssue"))}</div>`;
       return;
@@ -624,7 +624,11 @@
     elements.summary.textContent = translate("panel.backendConnectionFailed");
     showHeroMessage(translate("panel.backendConnectionFailed"));
     elements.homeRow.textContent = translate("panel.backendOnlineCheck");
-    elements.awayRow.textContent = state.backendUrl;
+    elements.awayRow.textContent = translate("panel.retrySoon", {
+      suffix: retryAfterSeconds
+        ? translate("panel.retryAfter", { seconds: retryAfterSeconds })
+        : ""
+    });
     elements.competitionList.innerHTML =
       `<div class="lmi-empty">${escapeHtml(translate("panel.backendOfflineDetail"))}</div>`;
   }

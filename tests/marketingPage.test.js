@@ -139,3 +139,22 @@ test("marketing page includes social icons alongside footer channel links", () =
   assert.match(html, /class="footer__social-link"/);
   assert.match(html, /<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">/);
 });
+
+test("marketing page shows a sold-out message instead of the Early Bird CTA when the offer is inactive", () => {
+  const html = renderMarketingPage({
+    pricing: {
+      ...pricing,
+      offers: {
+        ...pricing.offers,
+        early_bird_lifetime: {
+          ...pricing.offers.early_bird_lifetime,
+          active: false,
+          remaining: 0
+        }
+      }
+    }
+  });
+
+  assert.match(html, /Early Bird sold out/);
+  assert.doesNotMatch(html, /Install and claim Early Bird/);
+});

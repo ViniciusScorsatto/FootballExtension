@@ -234,6 +234,19 @@ test("goal banners fall back to backend event messages when scorer fragments are
   assert.match(sidepanelScript, /return event\.message \|\| "";/);
 });
 
+test("overlay and sidepanel error states do not expose the raw backend URL to users", async () => {
+  const contentScript = await readProjectFile("apps/extension/content.js");
+  const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
+
+  assert.doesNotMatch(contentScript, /elements\.awayRow\.textContent = state\.backendUrl;/);
+  assert.match(contentScript, /elements\.awayRow\.textContent = translate\("panel\.backendConfigIssue"\);/);
+  assert.match(contentScript, /elements\.awayRow\.textContent = translate\("panel\.retrySoon"/);
+
+  assert.doesNotMatch(sidepanelScript, /elements\.awayRow\.textContent = state\.backendUrl;/);
+  assert.match(sidepanelScript, /elements\.awayRow\.textContent = translate\("panel\.backendConfigIssue"\);/);
+  assert.match(sidepanelScript, /elements\.awayRow\.textContent = translate\("panel\.retrySoon"/);
+});
+
 test("goal timeline renders scorer history while the sidepanel summary stays focused on impact", async () => {
   const contentScript = await readProjectFile("apps/extension/content.js");
   const sidepanelScript = await readProjectFile("apps/extension/sidepanel.js");
