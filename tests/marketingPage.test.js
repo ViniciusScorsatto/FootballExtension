@@ -69,6 +69,8 @@ test("marketing page includes a free vs pro matrix without implying side panel i
   assert.match(html, /<td>League access<\/td>/);
   assert.match(html, /<td>Featured leagues<\/td>/);
   assert.match(html, /<td>All supported leagues<\/td>/);
+  assert.doesNotMatch(html, /Manual fixture fallback/);
+  assert.doesNotMatch(html, /Fallback por fixture manual/);
   assert.doesNotMatch(html, /Side panel deep-view mode/);
   assert.match(html, /Deeper pre-match and competition reading/);
 });

@@ -199,7 +199,7 @@ function getSelectedFixtureSource() {
     return "upcoming";
   }
 
-  if (fixtureIdInput.value) {
+  if (isManualFixtureTestingAvailable() && fixtureIdInput.value) {
     return "manual";
   }
 
@@ -363,7 +363,11 @@ async function pingContentScript(tabId) {
     const response = await chrome.tabs.sendMessage(tabId, {
       type: "LMI_PING"
     });
-    return Boolean(response?.ok);
+    if (!response?.ok) {
+      return false;
+    }
+
+    return response.version === chrome.runtime.getManifest().version;
   } catch {
     return false;
   }
@@ -579,7 +583,7 @@ function renderBillingCard() {
 }
 
 function updatePlanHint() {
-  if (isProPlan()) {
+  if (isManualFixtureTestingAvailable()) {
     fixtureIdInput.disabled = false;
     planHint.textContent = translate("popup.manualFixtureEnabled");
     return;
@@ -590,9 +594,9 @@ function updatePlanHint() {
 }
 
 function renderAdvancedOptions() {
-  advancedOptionsCard.hidden = !isProPlan();
+  advancedOptionsCard.hidden = !isManualFixtureTestingAvailable();
 
-  if (!isProPlan()) {
+  if (!isManualFixtureTestingAvailable()) {
     advancedOptionsExpanded = false;
     advancedContent.hidden = true;
     advancedToggleButton.setAttribute("aria-expanded", "false");
@@ -603,6 +607,10 @@ function renderAdvancedOptions() {
   advancedToggleButton.setAttribute("aria-expanded", String(advancedOptionsExpanded));
   advancedContent.hidden = !advancedOptionsExpanded;
   advancedChevron.textContent = advancedOptionsExpanded ? "−" : "+";
+}
+
+function isManualFixtureTestingAvailable() {
+  return window.LMI_CONFIG?.releaseChannel !== "production";
 }
 
 function isScenarioPreviewAvailable() {
@@ -943,7 +951,11 @@ function getSelectedFixtureId() {
     return upcomingFixtureId;
   }
 
-  if (Number.isInteger(manualFixtureId) && manualFixtureId > 0) {
+  if (
+    isManualFixtureTestingAvailable() &&
+    Number.isInteger(manualFixtureId) &&
+    manualFixtureId > 0
+  ) {
     return manualFixtureId;
   }
 
@@ -1246,8 +1258,8 @@ async function loadSettings() {
   const storedScenarioPayloadPath = String(result.scenarioPayloadPath || "");
 
   setLanguage(storedLanguage);
-  fixtureIdInput.value = storedFixtureId ?? "";
-  advancedOptionsExpanded = isProPlan() && Boolean(storedFixtureId);
+  fixtureIdInput.value = isManualFixtureTestingAvailable() ? storedFixtureId ?? "" : "";
+  advancedOptionsExpanded = isManualFixtureTestingAvailable() && Boolean(storedFixtureId);
   renderAdvancedOptions();
   scenarioPreviewEnabled = Boolean(result.scenarioModeEnabled) && isScenarioPreviewAvailable();
   currentBilling = {
@@ -1374,7 +1386,7 @@ async function handleStartTracking() {
     return;
   }
 
-  if (!isProPlan() && fixtureIdInput.value) {
+  if (!isManualFixtureTestingAvailable() && fixtureIdInput.value) {
     setStatus(translate("popup.statusUpgradeRequiredManual"), true);
     return;
   }

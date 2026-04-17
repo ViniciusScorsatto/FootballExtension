@@ -399,18 +399,21 @@ test("free plan hides pro-only prematch and format analysis in the live surfaces
   );
 });
 
-test("popup hides the advanced manual-fixture card on free and only expands it for pro", async () => {
+test("popup keeps fixture-id testing as a staging-only tool instead of a pro feature", async () => {
   const popupHtml = await readProjectFile("apps/extension/popup.html");
   const popupScript = await readProjectFile("apps/extension/popup.js");
 
   assert.match(popupHtml, /<section id="advancedOptionsCard" class="lmi-advanced-card">/);
+  assert.match(popupHtml, />Staging tools</);
   assert.match(popupScript, /const advancedOptionsCard = document\.getElementById\("advancedOptionsCard"\);/);
-  assert.match(popupScript, /advancedOptionsCard\.hidden = !isProPlan\(\);/);
+  assert.match(popupScript, /function isManualFixtureTestingAvailable\(\) \{/);
+  assert.match(popupScript, /advancedOptionsCard\.hidden = !isManualFixtureTestingAvailable\(\);/);
   assert.match(
     popupScript,
-    /if \(!isProPlan\(\)\) \{[\s\S]*advancedOptionsExpanded = false;[\s\S]*advancedContent\.hidden = true;/
+    /if \(!isManualFixtureTestingAvailable\(\)\) \{[\s\S]*advancedOptionsExpanded = false;[\s\S]*advancedContent\.hidden = true;/
   );
-  assert.match(popupScript, /advancedOptionsExpanded = isProPlan\(\) && Boolean\(storedFixtureId\);/);
+  assert.match(popupScript, /advancedOptionsExpanded = isManualFixtureTestingAvailable\(\) && Boolean\(storedFixtureId\);/);
+  assert.match(popupScript, /if \(!isManualFixtureTestingAvailable\(\) && fixtureIdInput\.value\) \{/);
   assert.match(popupScript, /renderBillingCard\(\);\s*[\r\n]+\s*updatePlanHint\(\);\s*[\r\n]+\s*renderAdvancedOptions\(\);/);
 });
 
@@ -469,7 +472,17 @@ test("popup pings existing overlay before reinjecting and relies on storage chan
   assert.doesNotMatch(popupScript, /notifyActiveTab\(\{\s*type:\s*"LMI_TRACKING_STOPPED"/);
 
   assert.match(contentScript, /if \(message\?\.type === "LMI_PING"\) \{/);
-  assert.match(contentScript, /sendResponse\(\{\s*ok:\s*true\s*\}\);/);
+  assert.match(contentScript, /version:\s*EXTENSION_VERSION/);
+  assert.match(popupScript, /response\.version === chrome\.runtime\.getManifest\(\)\.version/);
+});
+
+test("overlay bootstrap cleans up a previous injected instance before reinitializing", async () => {
+  const contentScript = await readProjectFile("apps/extension/content.js");
+
+  assert.match(contentScript, /const previousCleanup = globalThis\.__LMI_OVERLAY_CLEANUP__;/);
+  assert.match(contentScript, /globalThis\.__LMI_OVERLAY_CLEANUP__ = \(\) => \{/);
+  assert.match(contentScript, /chrome\.runtime\.onMessage\.removeListener\(onRuntimeMessage\);/);
+  assert.match(contentScript, /chrome\.storage\.onChanged\.removeListener\(onStorageChanged\);/);
 });
 
 test("starting tracking preserves sidepanel mode only when the sidepanel session is active", async () => {

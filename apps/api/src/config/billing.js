@@ -20,11 +20,10 @@ export const BILLING_PLANS = {
     tagline: "Unlock deeper match reading across every supported league.",
     features: [
       "All supported leagues",
-      "Manual fixture fallback",
       "Pre-match model outlook",
       "Lineup pitch and injuries",
       "Richer grouped, knockout, and penalty context",
-      "Side panel deep-view mode"
+      "Deeper pre-match and competition reading"
     ]
   }
 };

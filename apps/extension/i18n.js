@@ -37,7 +37,7 @@
         billingSummaryFree:
           "Featured launch leagues only. Unlock Pro for all configured leagues and premium insights.",
         billingSummaryPro:
-          "Pro is active. You can use every supported league and the manual fixture fallback.",
+          "Pro is active. You can use every supported league and the deeper match context.",
         restoreEyebrow: "Restore Pro",
         restoreTitle: "Use your billing email",
         restoreEmailLabel: "Billing email",
@@ -54,14 +54,14 @@
         restoreAction: "Send Restore Link",
         proActiveTitle: "All configured leagues unlocked",
         proActiveSummary:
-          "This browser is on Pro. You can track any configured league and use manual fixture tracking.",
+          "This browser is on Pro. You can track any configured league and unlock the deeper match context.",
         earlyBirdOffer:
           "Early Bird Pro is live: {price}/month forever for the first {remaining} users.",
         earlyBirdClosed: "Early Bird Pro is now closed.",
         checkoutPending: "Finish checkout and reopen the extension to unlock Pro automatically.",
         proUnlockedTitle: "Pro unlocked",
         proUnlockedBody:
-          "Your payment was confirmed. All configured leagues and manual fixture tracking are now active.",
+          "Your payment was confirmed. All configured leagues and the deeper match context are now active.",
         linkedNoProBody:
           "This browser is linked to the billing email, but we still did not find an active Pro subscription for it.",
         upgradeToPro: "Unlock Pro",
@@ -87,13 +87,13 @@
         allSupportedLeagues: "All configured leagues",
         liveMatches: "Live Matches",
         upcomingMatches: "Upcoming Matches",
-        advancedOptions: "Advanced options",
-        manualFixtureTitle: "Manual fixture fallback",
-        manualFixtureSummary: "Use a fixture ID only when the match does not show up in the lists.",
-        manualFixtureId: "Manual Fixture ID",
-        manualFixturePlaceholder: "Optional fallback",
-        manualFixtureEnabled: "Manual fixture fallback is available on Pro.",
-        manualFixtureLocked: "Manual fixture fallback is part of Pro.",
+        advancedOptions: "Staging tools",
+        manualFixtureTitle: "Test with fixture ID",
+        manualFixtureSummary: "Internal testing only. Load a match directly by fixture ID.",
+        manualFixtureId: "Fixture ID",
+        manualFixturePlaceholder: "Staging only",
+        manualFixtureEnabled: "Fixture ID testing is available in staging.",
+        manualFixtureLocked: "Fixture ID testing is only available in staging.",
         startTracking: "Track this match",
         stopTracking: "Stop tracking",
         openSidePanel: "Open side panel",
@@ -108,11 +108,11 @@
         noMatchesInCurrentWindow: "No live or next 12h matches",
         scoreOnlySuffix: "Live score only - no table impact",
         featuredLeaguesOnly: "Free plan: featured leagues only",
-        proUnlocksAllLeagues: "Pro unlocks all configured leagues and manual fixture tracking.",
+        proUnlocksAllLeagues: "Pro unlocks all configured leagues and deeper match context.",
         statusUpgradeRequiredLeague:
           "This league is part of Pro. Choose a featured league or upgrade.",
         statusUpgradeRequiredManual:
-          "Manual fixture tracking is part of Pro during beta.",
+          "Fixture ID testing is only available in staging.",
         statusEnterBackend: "Enter a valid backend URL.",
         statusLoadingMatches: "Loading matches...",
         statusMatchesUpdated: "Match lists updated.",
@@ -373,7 +373,7 @@
         billingSummaryFree:
           "Somente ligas em destaque. Desbloqueie o Pro para todas as ligas suportadas e insights premium.",
         billingSummaryPro:
-          "O Pro está ativo. Você pode usar todas as ligas suportadas e o fallback por fixture manual.",
+          "O Pro está ativo. Você pode usar todas as ligas suportadas e o contexto mais profundo da partida.",
         restoreEyebrow: "Restaurar Pro",
         restoreTitle: "Use o email da cobrança",
         restoreEmailLabel: "Email da cobrança",
@@ -390,14 +390,14 @@
         restoreAction: "Enviar link de restauração",
         proActiveTitle: "Todas as ligas configuradas desbloqueadas",
         proActiveSummary:
-          "Este navegador está no Pro. Você pode acompanhar qualquer liga configurada e usar o acompanhamento manual por fixture.",
+          "Este navegador está no Pro. Você pode acompanhar qualquer liga configurada e desbloquear o contexto mais profundo da partida.",
         earlyBirdOffer:
           "Early Bird Pro ativo: {price}/mês para sempre para os próximos {remaining} usuários.",
         earlyBirdClosed: "O Early Bird Pro já encerrou.",
         checkoutPending: "Conclua o checkout e reabra a extensão para desbloquear o Pro automaticamente.",
         proUnlockedTitle: "Pro desbloqueado",
         proUnlockedBody:
-          "O pagamento foi confirmado. Todas as ligas configuradas e o acompanhamento manual por fixture já estão ativos.",
+          "O pagamento foi confirmado. Todas as ligas configuradas e o contexto mais profundo da partida já estão ativos.",
         linkedNoProBody:
           "Este navegador está vinculado ao email de cobrança, mas ainda não encontramos um Pro ativo para ele.",
         upgradeToPro: "Desbloquear Pro",
@@ -424,13 +424,13 @@
         allSupportedLeagues: "Todas as ligas configuradas",
         liveMatches: "Jogos ao vivo",
         upcomingMatches: "Próximos jogos",
-        advancedOptions: "Opções avançadas",
-        manualFixtureTitle: "Fallback por fixture manual",
-        manualFixtureSummary: "Use um fixture ID apenas quando o jogo não aparecer nas listas.",
-        manualFixtureId: "Fixture ID manual",
-        manualFixturePlaceholder: "Fallback opcional",
-        manualFixtureEnabled: "O fallback por fixture manual está disponível no Pro.",
-        manualFixtureLocked: "O fallback por fixture manual faz parte do Pro.",
+        advancedOptions: "Ferramentas de staging",
+        manualFixtureTitle: "Testar com fixture ID",
+        manualFixtureSummary: "Somente para testes internos. Carregue um jogo direto pelo fixture ID.",
+        manualFixtureId: "Fixture ID",
+        manualFixturePlaceholder: "Somente staging",
+        manualFixtureEnabled: "O teste por fixture ID está disponível no staging.",
+        manualFixtureLocked: "O teste por fixture ID está disponível apenas no staging.",
         startTracking: "Acompanhar este jogo",
         stopTracking: "Parar acompanhamento",
         openSidePanel: "Abrir painel lateral",
@@ -446,11 +446,11 @@
         scoreOnlySuffix: "Somente placar ao vivo - sem impacto na tabela",
         featuredLeaguesOnly: "Plano Free: apenas ligas em destaque",
         proUnlocksAllLeagues:
-          "O Pro desbloqueia todas as ligas configuradas e o acompanhamento manual por fixture.",
+          "O Pro desbloqueia todas as ligas configuradas e o contexto mais profundo da partida.",
         statusUpgradeRequiredLeague:
           "Esta liga faz parte do Pro. Escolha uma liga em destaque ou faça upgrade.",
         statusUpgradeRequiredManual:
-          "O acompanhamento manual por fixture faz parte do Pro durante o beta.",
+          "O teste por fixture ID está disponível apenas no staging.",
         statusEnterBackend: "Informe uma URL de backend válida.",
         statusLoadingMatches: "Carregando jogos...",
         statusMatchesUpdated: "Lista de jogos atualizada.",

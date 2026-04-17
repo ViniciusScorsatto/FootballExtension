@@ -30,7 +30,6 @@ function getLocalizedPlanContent(locale) {
         tagline: "Desbloqueie uma leitura mais profunda da partida em todas as ligas suportadas.",
         features: [
           "Todas as ligas suportadas",
-          "Fallback por fixture manual",
           "Projeção pré-jogo do modelo",
           "Campo tático da escalação e lesões",
           "Contexto mais rico para grupos, mata-mata e pênaltis",
@@ -58,7 +57,6 @@ function getLocalizedPlanContent(locale) {
       tagline: "Unlock deeper match reading across every supported league.",
       features: [
         "All supported leagues",
-        "Manual fixture fallback",
         "Pre-match model outlook",
         "Lineup pitch and injuries",
         "Richer grouped, knockout, and penalty context",
@@ -126,7 +124,6 @@ function getMarketingCopy(locale) {
         ["Placar, linha dos gols e impacto principal", "Sim", "Sim"],
         ["Impacto na tabela e na competição", "Sim", "Sim"],
         ["Estatísticas finais", "Sim", "Sim"],
-        ["Fallback por fixture manual", "Não", "Sim"],
         ["Projeção pré-jogo do modelo", "Não", "Sim"],
         ["Escalações, campo tático e lesões", "Não", "Sim"],
         ["Contexto mais profundo de grupos, mata-mata e pênaltis", "Não", "Sim"]
@@ -137,7 +134,7 @@ function getMarketingCopy(locale) {
       demoCompetitionImpact: "Impacto na competição",
       demoCompetitionNote: "Arsenal entra na zona de Champions League.",
       demoWhatProAdds: "O que o Pro adiciona",
-      demoProAddsNote: "Todas as ligas suportadas, fallback por fixture manual e leitura pré-jogo e de competição mais profunda",
+      demoProAddsNote: "Todas as ligas suportadas e leitura pré-jogo e de competição mais profunda",
       demoGroupPosition: "Posição no grupo",
       demoGroupPositionNote: "America-RN está em 2º no Grupo C e sobe para 1º se o placar continuar assim.",
       demoPreMatchDepth: "Profundidade pré-jogo",
@@ -228,7 +225,6 @@ function getMarketingCopy(locale) {
       ["Score, scorer timeline, and core impact", "Yes", "Yes"],
       ["Table and competition impact", "Yes", "Yes"],
       ["Final stats", "Yes", "Yes"],
-      ["Manual fixture fallback", "No", "Yes"],
       ["Pre-match model outlook", "No", "Yes"],
       ["Lineups, lineup pitch, and injuries", "No", "Yes"],
       ["Deeper grouped, knockout, and penalty context", "No", "Yes"]
@@ -239,7 +235,7 @@ function getMarketingCopy(locale) {
     demoCompetitionImpact: "Competition Impact",
     demoCompetitionNote: "Arsenal enters the Champions League places.",
     demoWhatProAdds: "What Pro adds",
-    demoProAddsNote: "All supported leagues, manual fixture fallback, and deeper pre-match and competition reading",
+    demoProAddsNote: "All supported leagues and deeper pre-match and competition reading",
     demoGroupPosition: "Group Position",
     demoGroupPositionNote: "America-RN is 2nd in Group C and moves into 1st if scores hold.",
     demoPreMatchDepth: "Pre-match depth",

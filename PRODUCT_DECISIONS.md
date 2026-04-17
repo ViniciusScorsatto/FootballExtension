@@ -2,9 +2,12 @@
 
 This file records product decisions that should stay stable across:
 - extension behavior
+- backend/API behavior
 - landing page / website knowledge base
 - support answers
 - launch documentation
+
+Last updated: April 17, 2026
 
 ## Polling Cadence
 
@@ -92,3 +95,71 @@ When explaining the product publicly, we should describe polling in user terms:
 - the extension avoids unnecessary refreshes far from kickoff
 
 Avoid exposing overly technical wording on the website unless needed for support.
+
+## Business Positioning
+
+### Core product story
+
+The current public story should stay:
+
+- Free tells you what is happening.
+- Pro gives you the deeper match context.
+
+### Free plan boundary
+
+Free should remain useful enough to prove the core value:
+
+- score card
+- live state / freshness
+- scorer timeline
+- reliable core impact
+- final stats
+- featured leagues
+
+### Pro plan boundary
+
+Pro should be the deeper reading layer, not just the less restricted one:
+
+- all configured leagues
+- pre-match model
+- lineup pitch and lineups
+- injuries
+- deeper format / grouped / knockout context
+
+## Access And Safety
+
+### Stripe activation rule
+
+Do not activate Pro on checkout session completion alone.
+
+Current rule:
+
+- reserve/link on `checkout.session.completed`
+- activate on `invoice.paid`
+
+### Extension-origin policy
+
+Production should not implicitly trust arbitrary unpacked extensions.
+
+Current rule:
+
+- explicit extension IDs can be allowlisted
+- unpacked extension origins in production require:
+  - `ALLOW_UNPACKED_EXTENSION_ORIGINS=true`
+- CORS denials should return a real 403 instead of looking like a backend outage
+
+## Architecture Boundary
+
+Even with one developer, we keep the product split clean:
+
+- backend/API owns:
+  - football intelligence
+  - caching
+  - billing truth
+  - public contracts
+- frontend apps own:
+  - rendering
+  - UX
+  - app-local state
+
+This boundary should remain stable because it supports future clients beyond the Chrome extension.

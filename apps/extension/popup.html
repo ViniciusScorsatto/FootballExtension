@@ -158,10 +158,10 @@
       <section id="advancedOptionsCard" class="lmi-advanced-card">
         <button id="advancedToggle" class="lmi-account-card__toggle" type="button" aria-expanded="false">
           <div>
-            <div id="advancedEyebrow" class="lmi-popup__eyebrow">Advanced options</div>
-            <div id="advancedTitle" class="lmi-billing-card__title">Manual fixture fallback</div>
+            <div id="advancedEyebrow" class="lmi-popup__eyebrow">Staging tools</div>
+            <div id="advancedTitle" class="lmi-billing-card__title">Test with fixture ID</div>
             <div id="advancedSummary" class="lmi-account-card__compact-summary">
-              Use a fixture ID only when the match does not show up in the lists.
+              Internal testing only. Load a match directly by fixture ID.
             </div>
           </div>
           <div class="lmi-account-card__toggle-right">
@@ -170,13 +170,13 @@
         </button>
         <div id="advancedContent" class="lmi-account-card__content" hidden>
           <label class="lmi-field lmi-field--tight">
-            <span id="manualFixtureLabel" class="lmi-field__label">Manual Fixture ID</span>
+            <span id="manualFixtureLabel" class="lmi-field__label">Fixture ID</span>
             <input
               id="fixtureId"
               class="lmi-field__input"
               type="number"
               min="1"
-              placeholder="Optional fallback"
+              placeholder="Staging only"
             />
           </label>
           <p id="planHint" class="lmi-popup__hint"></p>
