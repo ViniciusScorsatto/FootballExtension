@@ -255,8 +255,11 @@
         dropsKnockoutPlayoffSpots: "{team} drops into the knockout play-off spots",
         dropsOutKnockoutPlayoffSpots: "{team} drops out of the knockout play-off spots",
         eliminationZone: "{team} falls into the elimination zone",
+        goesTopGroup: "{team} goes top of the group",
+        losesGroupLead: "{team} loses the group lead",
         qualificationSpots: "{team} moves into the qualification spots",
         dropsQualificationSpots: "{team} drops out of the qualification spots",
+        dropsToRank: "{team} drops to {position}",
         promotionGroupSpots: "{team} moves into the promotion group spots",
         dropsPromotionGroupSpots: "{team} drops out of the promotion group spots",
         climbsOutRelegation: "{team} climbs out of the relegation zone",
@@ -593,8 +596,11 @@
         dropsKnockoutPlayoffSpots: "{team} cai para as vagas do play-off mata-mata",
         dropsOutKnockoutPlayoffSpots: "{team} sai das vagas do play-off mata-mata",
         eliminationZone: "{team} cai para a zona de eliminação",
+        goesTopGroup: "{team} assume a liderança do grupo",
+        losesGroupLead: "{team} perde a liderança do grupo",
         qualificationSpots: "{team} entra nas vagas de classificação",
         dropsQualificationSpots: "{team} sai das vagas de classificação",
+        dropsToRank: "{team} cai para {position}",
         promotionGroupSpots: "{team} entra nas vagas dos grupos de acesso",
         dropsPromotionGroupSpots: "{team} sai das vagas dos grupos de acesso",
         climbsOutRelegation: "{team} sai da zona de rebaixamento",
@@ -905,8 +911,11 @@
       [/^(.+) drops into the knockout play-off spots$/, "impact.dropsKnockoutPlayoffSpots", ["team"]],
       [/^(.+) drops out of the knockout play-off spots$/, "impact.dropsOutKnockoutPlayoffSpots", ["team"]],
       [/^(.+) falls into the elimination zone$/, "impact.eliminationZone", ["team"]],
+      [/^(.+) goes top of the group$/, "impact.goesTopGroup", ["team"]],
+      [/^(.+) loses the group lead$/, "impact.losesGroupLead", ["team"]],
       [/^(.+) moves into the qualification spots$/, "impact.qualificationSpots", ["team"]],
       [/^(.+) drops out of the qualification spots$/, "impact.dropsQualificationSpots", ["team"]],
+      [/^(.+) drops to (\d+)(st|nd|rd|th)$/, "impact.dropsToRank", ["team", "position"]],
       [/^(.+) moves into the promotion group spots$/, "impact.promotionGroupSpots", ["team"]],
       [/^(.+) drops out of the promotion group spots$/, "impact.dropsPromotionGroupSpots", ["team"]],
       [/^(.+) climbs out of the relegation zone$/, "impact.climbsOutRelegation", ["team"]],
@@ -968,6 +977,8 @@
         values[field] =
           field === "team" || field === "homeTeam" || field === "awayTeam"
             ? translateDisplayName(language, rawValue)
+            : field === "position"
+              ? formatOrdinal(language, Number(rawValue))
             : rawValue;
       });
 

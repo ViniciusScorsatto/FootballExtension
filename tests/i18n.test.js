@@ -62,8 +62,24 @@ test("translateCompetitionMessage localizes known competition phrases", () => {
     "O impacto ao vivo na tabela começa quando a partida iniciar."
   );
   assert.equal(
+    translateCompetitionMessage("pt-BR", "Palmeiras goes top of the group"),
+    "Palmeiras assume a liderança do grupo"
+  );
+  assert.equal(
+    translateCompetitionMessage("pt-BR", "Sporting Cristal loses the group lead"),
+    "Sporting Cristal perde a liderança do grupo"
+  );
+  assert.equal(
+    translateCompetitionMessage("pt-BR", "Sporting Cristal drops to 3rd"),
+    "Sporting Cristal cai para 3º"
+  );
+  assert.equal(
     translateCompetitionMessage("en", "Chelsea drops out of the top 4"),
     "Chelsea drops out of the top 4"
+  );
+  assert.equal(
+    translateCompetitionMessage("en", "Sporting Cristal drops to 3rd"),
+    "Sporting Cristal drops to 3rd"
   );
 });
 
