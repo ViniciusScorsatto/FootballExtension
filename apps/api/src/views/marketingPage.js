@@ -81,10 +81,12 @@ function getMarketingCopy(locale) {
       heroEyebrow: "Lançamento beta para fãs de dia de jogo",
       heroTitle: "Entenda na hora o que um gol muda.",
       heroSubcopy: "Live Match Impact transforma placares em significado: pressão na briga pelo título, mudanças no G4, risco de rebaixamento, movimentação em grupos e contexto da rodada em segundos.",
-      heroPrimaryCta: "Desbloquear Early Bird Pro",
+      heroPrimaryCta: "Instalar extensão",
+      installedUpgradeCta: "Já instalou? Desbloquear Pro",
       heroSecondaryCta: "Falar com a gente",
       proofLanguages: "Inglês + português-BR",
-      proofInfra: "Extensão Chrome + cache no backend",
+      proofInfra: "Extensão Chrome",
+      proofSidebar: "Painel lateral fixo",
       proofSpeed: "Criado para significado ao vivo",
       mockupGoalImpact: "Impacto do gol",
       mockupGoalImpactLine: "Gol do Saka muda a corrida imediatamente.",
@@ -151,7 +153,7 @@ function getMarketingCopy(locale) {
       pricePerMonthForever: "/mês para sempre",
       earlyBirdCopy: "Preço Pro com desconto vitalício para os primeiros apoiadores que ajudarem a moldar o beta.",
       earlyBirdAvailability: "vagas disponíveis no momento de",
-      claimEarlyBird: "Garantir Early Bird",
+      claimEarlyBird: "Instalar e garantir Early Bird",
       betaEyebrow: "Por que o beta importa",
       betaTitle: "Estamos refinando a lógica das ligas, a qualidade dos insights ao vivo e o que os fãs realmente pagam.",
       betaUsersTitle: "O que os usuários beta recebem",
@@ -197,10 +199,12 @@ function getMarketingCopy(locale) {
     heroEyebrow: "Beta launch for matchday fans",
     heroTitle: "Instant understanding of what a goal changes.",
     heroSubcopy: "Live Match Impact turns football scores into meaning: title race pressure, top-four swings, relegation danger, group-position movement, and round context in seconds.",
-    heroPrimaryCta: "Unlock Early Bird Pro",
+    heroPrimaryCta: "Install extension",
+    installedUpgradeCta: "Already installed? Unlock Pro",
     heroSecondaryCta: "Talk to us",
     proofLanguages: "English + Portuguese-BR",
-    proofInfra: "Chrome extension + backend cache",
+    proofInfra: "Chrome extension",
+    proofSidebar: "Fixed side panel",
     proofSpeed: "Built for fast live meaning",
     mockupGoalImpact: "Goal Impact",
     mockupGoalImpactLine: "Saka goal changes the race immediately.",
@@ -267,7 +271,7 @@ function getMarketingCopy(locale) {
     pricePerMonthForever: "/month forever",
     earlyBirdCopy: "Lifetime discounted Pro pricing for early adopters who help shape the beta.",
     earlyBirdAvailability: "spots currently available out of",
-    claimEarlyBird: "Claim Early Bird",
+    claimEarlyBird: "Install and claim Early Bird",
     betaEyebrow: "Why beta matters",
     betaTitle: "We are refining league logic, live insight quality, and what fans actually pay for.",
     betaUsersTitle: "What beta users get",
@@ -560,6 +564,17 @@ export function renderMarketingPage({ pricing, language = "en" }) {
         gap: 10px;
         flex-wrap: wrap;
         margin-top: 18px;
+      }
+
+      .hero__helper-link {
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .hero__helper-link a {
+        color: var(--accent);
+        font-weight: 700;
       }
 
       .proof-pill {
@@ -1062,14 +1077,25 @@ export function renderMarketingPage({ pricing, language = "en" }) {
             ${copy.heroSubcopy}
           </p>
           <div class="hero__actions">
-            <a class="button button--primary" href="/billing/plans">${copy.heroPrimaryCta}</a>
+            <a
+              class="button button--primary"
+              href="${pricing.chromeWebStoreUrl}"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ${copy.heroPrimaryCta}
+            </a>
             <a class="button button--ghost" href="mailto:${pricing.supportEmail}?subject=Live%20Match%20Impact%20Beta">
               ${copy.heroSecondaryCta}
             </a>
           </div>
+          <div class="hero__helper-link">
+            <a href="/billing/plans">${copy.installedUpgradeCta}</a>
+          </div>
           <div class="hero__proof">
             <span class="proof-pill">${copy.proofLanguages}</span>
             <span class="proof-pill">${copy.proofInfra}</span>
+            <span class="proof-pill">${copy.proofSidebar}</span>
             <span class="proof-pill">${copy.proofSpeed}</span>
           </div>
         </div>
@@ -1285,7 +1311,17 @@ export function renderMarketingPage({ pricing, language = "en" }) {
                 <strong>${earlyBird.maxClaims}</strong>.
               </div>
               <div class="hero__actions" style="margin-top:16px;">
-                <a class="button button--primary" href="/billing/plans">${copy.claimEarlyBird}</a>
+                <a
+                  class="button button--primary"
+                  href="${pricing.chromeWebStoreUrl}"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ${copy.claimEarlyBird}
+                </a>
+              </div>
+              <div class="hero__helper-link">
+                <a href="/billing/plans">${copy.installedUpgradeCta}</a>
               </div>
             </article>
 

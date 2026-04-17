@@ -145,7 +145,7 @@ export const env = {
   earlyBirdProMonthlyPriceUsd: readNumber("EARLY_BIRD_PRO_MONTHLY_PRICE_USD", 3.99),
   earlyBirdOfferEnabled: readBoolean("EARLY_BIRD_OFFER_ENABLED", true),
   earlyBirdOfferMaxClaims: readNumber("EARLY_BIRD_OFFER_MAX_CLAIMS", 100),
-  supportEmail: process.env.SUPPORT_EMAIL ?? "support@footanalysis.com",
+  supportEmail: process.env.SUPPORT_EMAIL ?? "footanalysisshorts@gmail.com",
   marketingSiteUrl: process.env.MARKETING_SITE_URL ?? "",
   chromeWebStoreUrl:
     process.env.CHROME_WEB_STORE_URL ?? "https://chromewebstore.google.com/",

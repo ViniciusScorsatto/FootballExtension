@@ -48,7 +48,7 @@ test("marketing page renders pt-BR copy when requested", () => {
   assert.match(html, /Entenda na hora o que um gol muda\./);
   assert.doesNotMatch(html, /Preços da API/);
   assert.match(html, /Acompanhe uma partida de liga em destaque/);
-  assert.match(html, /Garantir Early Bird/);
+  assert.match(html, /Instalar e garantir Early Bird/);
 });
 
 test("marketing page features Early Bird between Free and Pro", () => {
@@ -81,6 +81,21 @@ test("marketing page includes a free install CTA to the Chrome Web Store", () =>
 
   assert.match(html, /Ver na Chrome Web Store/);
   assert.match(html, /href="https:\/\/chromewebstore\.google\.com\/"/);
+});
+
+test("marketing page uses install-first CTAs while keeping an already-installed billing path", () => {
+  const englishHtml = renderMarketingPage({ pricing });
+  const portugueseHtml = renderMarketingPage({ pricing, language: "pt-BR" });
+
+  assert.match(englishHtml, /Install extension/);
+  assert.match(englishHtml, /Install and claim Early Bird/);
+  assert.match(englishHtml, /Already installed\? Unlock Pro/);
+  assert.match(englishHtml, /href="https:\/\/chromewebstore\.google\.com\/"/);
+  assert.match(englishHtml, /href="\/billing\/plans"/);
+
+  assert.match(portugueseHtml, /Instalar extensão/);
+  assert.match(portugueseHtml, /Instalar e garantir Early Bird/);
+  assert.match(portugueseHtml, /Já instalou\? Desbloquear Pro/);
 });
 
 test("marketing page footer localizes Foot Analysis channel links by language", () => {
