@@ -21,6 +21,8 @@
   const PREMATCH_SLOW_POLL_INTERVAL_MS = 300000;
   const PREMATCH_FAR_POLL_INTERVAL_MS = 900000;
   const MAX_POLL_INTERVAL_MS = 120000;
+  const RESUME_RETRY_DELAY_MS = 2000;
+  const RESUME_GRACE_WINDOW_MS = 8000;
   const captureAnalytics = window.LMI_ANALYTICS?.capture ?? (() => {});
   const updateAnalyticsConfig = window.LMI_ANALYTICS?.updateConfig ?? (() => {});
 
@@ -51,7 +53,9 @@
     scenarioPayloadPath: "",
     pollTimer: null,
     backoffMs: BASE_POLL_INTERVAL_MS,
-    lastPayload: null
+    lastPayload: null,
+    fetchInFlight: false,
+    resumeGraceUntil: 0
   };
   let sidepanelOpenedTracked = false;
 
@@ -121,11 +125,19 @@
     });
   });
 
-  window.addEventListener("beforeunload", () => {
-    void chrome.storage.sync.set({
-      sidepanelSessionActive: false
+    window.addEventListener("beforeunload", () => {
+      void chrome.storage.sync.set({
+        sidepanelSessionActive: false
+      });
     });
-  });
+
+    window.addEventListener("focus", handleResumeRefresh);
+    window.addEventListener("online", handleResumeRefresh);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        handleResumeRefresh();
+      }
+    });
 
   function translate(key, values = {}) {
     return t(state.language, key, values);
@@ -216,6 +228,16 @@
     });
 
     void syncSettings(false);
+  }
+
+  function handleResumeRefresh() {
+    if (!state.trackingEnabled || (!state.fixtureId && !state.scenarioModeEnabled)) {
+      return;
+    }
+
+    state.resumeGraceUntil = Date.now() + RESUME_GRACE_WINDOW_MS;
+    clearPollTimer();
+    void fetchImpact();
   }
 
   async function syncSettings(fetchImmediately) {
@@ -499,9 +521,15 @@
   }
 
   async function fetchImpact() {
-    if (!state.trackingEnabled || (!state.fixtureId && !state.scenarioModeEnabled)) {
+    if (
+      !state.trackingEnabled ||
+      (!state.fixtureId && !state.scenarioModeEnabled) ||
+      state.fetchInFlight
+    ) {
       return;
     }
+
+    state.fetchInFlight = true;
 
     try {
       const payload = state.scenarioModeEnabled
@@ -511,6 +539,7 @@
           });
       state.lastPayload = payload;
       state.backoffMs = BASE_POLL_INTERVAL_MS;
+      state.resumeGraceUntil = 0;
       render(payload);
 
       if (!state.scenarioModeEnabled && payload.status?.isFinished) {
@@ -524,9 +553,20 @@
         scheduleNextPoll(getPollingIntervalMs(payload));
       }
     } catch (error) {
+      if (Date.now() < state.resumeGraceUntil) {
+        renderTrackedShell();
+        elements.phasePill.textContent = "";
+        elements.freshness.textContent = "";
+        elements.connectionStatus.textContent = translate("panel.connecting");
+        scheduleNextPoll(RESUME_RETRY_DELAY_MS);
+        return;
+      }
+
       renderErrorState(error);
       state.backoffMs = Math.min(state.backoffMs * 2, MAX_POLL_INTERVAL_MS);
       scheduleNextPoll(state.backoffMs);
+    } finally {
+      state.fetchInFlight = false;
     }
   }
 

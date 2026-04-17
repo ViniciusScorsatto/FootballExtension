@@ -30,6 +30,8 @@
   const MAX_POLL_INTERVAL_MS = 120000;
   const GOAL_MODE_DURATION_MS = 7000;
   const RENDER_DEBOUNCE_MS = 80;
+  const RESUME_RETRY_DELAY_MS = 2000;
+  const RESUME_GRACE_WINDOW_MS = 8000;
 
   const {
     normalizeLanguage,
@@ -68,7 +70,9 @@
     lastPayload: null,
     sessionStartedAt: null,
     usageTracked: false,
-    pageDismissed: false
+    pageDismissed: false,
+    fetchInFlight: false,
+    resumeGraceUntil: 0
   };
 
   const elements = createPanel();
@@ -139,7 +143,29 @@
     });
 
     window.addEventListener("beforeunload", flushSession);
+    window.addEventListener("focus", handleResumeRefresh);
+    window.addEventListener("online", handleResumeRefresh);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        handleResumeRefresh();
+      }
+    });
     syncSettings(false);
+  }
+
+  function handleResumeRefresh() {
+    if (
+      !state.trackingEnabled ||
+      (!state.fixtureId && !state.scenarioModeEnabled) ||
+      state.pageDismissed ||
+      state.activeViewMode === "sidepanel"
+    ) {
+      return;
+    }
+
+    state.resumeGraceUntil = Date.now() + RESUME_GRACE_WINDOW_MS;
+    clearPollTimer();
+    void fetchImpact();
   }
 
   function createPanel() {
@@ -566,10 +592,13 @@
     if (
       !state.trackingEnabled ||
       (!state.fixtureId && !state.scenarioModeEnabled) ||
-      state.pageDismissed
+      state.pageDismissed ||
+      state.fetchInFlight
     ) {
       return;
     }
+
+    state.fetchInFlight = true;
 
     try {
       const payload = state.scenarioModeEnabled
@@ -578,6 +607,7 @@
             fixtureId: state.fixtureId
           });
       state.backoffMs = BASE_POLL_INTERVAL_MS;
+      state.resumeGraceUntil = 0;
       handlePayload(payload);
 
       if (!state.scenarioModeEnabled && payload.status?.isFinished) {
@@ -592,12 +622,23 @@
         scheduleNextPoll(getPollingIntervalMs(payload));
       }
     } catch (error) {
+      if (Date.now() < state.resumeGraceUntil) {
+        elements.statusRow.classList.remove("is-hidden");
+        elements.headerPhase.textContent = "";
+        elements.headerFreshness.textContent = "";
+        elements.connectionStatus.textContent = translate("panel.connecting");
+        scheduleNextPoll(RESUME_RETRY_DELAY_MS);
+        return;
+      }
+
       renderErrorState(error);
       elements.lastUpdated.textContent = "";
       elements.homeMomentum.style.width = "50%";
       elements.awayMomentum.style.width = "50%";
       state.backoffMs = Math.min(state.backoffMs * 2, MAX_POLL_INTERVAL_MS);
       scheduleNextPoll(state.backoffMs);
+    } finally {
+      state.fetchInFlight = false;
     }
   }
 
