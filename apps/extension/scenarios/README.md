@@ -19,6 +19,13 @@ This folder lets the extension preview saved `match-impact` payloads without wai
   - `away-needs-two.json`
   - `penalties-live.json`
   - `penalties-finished.json`
+- `palmeiras-sporting-cristal-group-stage/`
+  - `prematch.json`
+  - `live-home-goes-top.json`
+  - `finished-home-goes-top.json`
+- `juventude-sport-relegation-fight/`
+  - `live-home-climbs-out.json`
+  - `finished-home-climbs-out.json`
 
 ## How To Use
 

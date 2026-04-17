@@ -1,0 +1,96 @@
+{
+  "fixture_id": 13002,
+  "startsAt": "2026-04-19T05:00:00.000Z",
+  "last_updated": "2026-04-19T06:55:00.000Z",
+  "league": {
+    "id": 71,
+    "name": "Serie A",
+    "country": "Brazil",
+    "season": 2026,
+    "round": "Regular Season - 8"
+  },
+  "teams": {
+    "home": { "id": 198, "name": "Juventude", "shortName": "JUV", "logo": "" },
+    "away": { "id": 127, "name": "Sport", "shortName": "SPT", "logo": "" }
+  },
+  "score": {
+    "home": 2,
+    "away": 0,
+    "fulltime": { "home": 2, "away": 0 }
+  },
+  "status": {
+    "phase": "finished",
+    "short": "FT",
+    "long": "Match Finished",
+    "minute": 90,
+    "isFinished": true
+  },
+  "event": { "type": "NONE", "message": "" },
+  "impact": {
+    "summary": "Juventude climbs out of the relegation zone",
+    "table": {
+      "home": { "position": 16, "movement": 2, "pointsDelta": 3, "projectedPoints": 8 },
+      "away": { "position": 18, "movement": -2, "pointsDelta": 0, "projectedPoints": 6 }
+    },
+    "competition": [
+      "Juventude climbs out of the relegation zone",
+      "Sport falls into the relegation zone"
+    ],
+    "biggestMovement": {
+      "team": "Juventude",
+      "movement": 2
+    },
+    "momentum": { "home": 53, "away": 47 },
+    "mode": "full"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 46, "shotsOnTarget": 5, "totalShots": 11, "corners": 5 },
+    "away": { "possession": 54, "shotsOnTarget": 2, "totalShots": 10, "corners": 4 },
+    "momentum": { "home": 53, "away": 47 },
+    "insights": []
+  },
+  "league_context": {
+    "available": true,
+    "round": "Regular Season - 8",
+    "selectionMode": "same-window",
+    "totalFixtures": 4,
+    "displayedFixtures": 4,
+    "limited": false,
+    "fixtures": [
+      {
+        "fixtureId": 13021,
+        "startsAt": "2026-04-19T05:00:00.000Z",
+        "timestamp": 1776546000,
+        "status": { "phase": "finished", "minute": 90 },
+        "teams": {
+          "home": { "name": "Bahia", "shortName": "BAH", "logo": "" },
+          "away": { "name": "Ceara", "shortName": "CEA", "logo": "" }
+        },
+        "score": { "home": 0, "away": 0 }
+      },
+      {
+        "fixtureId": 13022,
+        "startsAt": "2026-04-19T05:00:00.000Z",
+        "timestamp": 1776546000,
+        "status": { "phase": "finished", "minute": 90 },
+        "teams": {
+          "home": { "name": "Corinthians", "shortName": "COR", "logo": "" },
+          "away": { "name": "Vasco", "shortName": "VAS", "logo": "" }
+        },
+        "score": { "home": 1, "away": 1 }
+      }
+    ]
+  },
+  "metadata": {
+    "tableImpactAvailable": true,
+    "impactMode": "full",
+    "competitionFormat": "single_table_league",
+    "zoneProfile": "brasileirao",
+    "scenario": {
+      "familyId": "juventude-sport-relegation-fight",
+      "variantId": "finished-home-climbs-out",
+      "label": "Finished with home safe"
+    }
+  }
+}

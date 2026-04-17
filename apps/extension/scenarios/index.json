@@ -36,6 +36,45 @@
           "path": "scenarios/cruzeiro-vitoria-quarter-finals/penalties-finished.json"
         }
       ]
+    },
+    {
+      "id": "palmeiras-sporting-cristal-group-stage",
+      "label": "Palmeiras vs Sporting Cristal - Libertadores groups",
+      "fixtureId": 13001,
+      "variants": [
+        {
+          "id": "prematch",
+          "label": "Pre-match with lineups",
+          "path": "scenarios/palmeiras-sporting-cristal-group-stage/prematch.json"
+        },
+        {
+          "id": "live-home-goes-top",
+          "label": "Home goes top of the group",
+          "path": "scenarios/palmeiras-sporting-cristal-group-stage/live-home-goes-top.json"
+        },
+        {
+          "id": "finished-home-goes-top",
+          "label": "Finished with home top",
+          "path": "scenarios/palmeiras-sporting-cristal-group-stage/finished-home-goes-top.json"
+        }
+      ]
+    },
+    {
+      "id": "juventude-sport-relegation-fight",
+      "label": "Juventude vs Sport - Serie A relegation fight",
+      "fixtureId": 13002,
+      "variants": [
+        {
+          "id": "live-home-climbs-out",
+          "label": "Home climbs out of relegation",
+          "path": "scenarios/juventude-sport-relegation-fight/live-home-climbs-out.json"
+        },
+        {
+          "id": "finished-home-climbs-out",
+          "label": "Finished with home safe",
+          "path": "scenarios/juventude-sport-relegation-fight/finished-home-climbs-out.json"
+        }
+      ]
     }
   ]
 }

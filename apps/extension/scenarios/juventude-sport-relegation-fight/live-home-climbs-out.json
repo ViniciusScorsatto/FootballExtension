@@ -1,0 +1,99 @@
+{
+  "fixture_id": 13002,
+  "startsAt": "2026-04-19T05:00:00.000Z",
+  "last_updated": "2026-04-19T05:56:00.000Z",
+  "league": {
+    "id": 71,
+    "name": "Serie A",
+    "country": "Brazil",
+    "season": 2026,
+    "round": "Regular Season - 8"
+  },
+  "teams": {
+    "home": { "id": 198, "name": "Juventude", "shortName": "JUV", "logo": "" },
+    "away": { "id": 127, "name": "Sport", "shortName": "SPT", "logo": "" }
+  },
+  "score": { "home": 1, "away": 0 },
+  "status": {
+    "phase": "live",
+    "short": "2H",
+    "long": "Second Half",
+    "minute": 67,
+    "isFinished": false
+  },
+  "event": {
+    "type": "GOAL",
+    "message": "",
+    "teamName": "Juventude",
+    "scorer": "Gilberto",
+    "minuteLabel": "67'",
+    "typeLabel": "Goal"
+  },
+  "impact": {
+    "summary": "Juventude climbs out of the relegation zone",
+    "table": {
+      "home": { "position": 16, "movement": 2, "pointsDelta": 3, "projectedPoints": 8 },
+      "away": { "position": 18, "movement": -2, "pointsDelta": 0, "projectedPoints": 6 }
+    },
+    "competition": [
+      "Juventude climbs out of the relegation zone",
+      "Sport falls into the relegation zone"
+    ],
+    "biggestMovement": {
+      "team": "Juventude",
+      "movement": 2
+    },
+    "momentum": { "home": 57, "away": 43 },
+    "mode": "full"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 48, "shotsOnTarget": 4, "totalShots": 9, "corners": 5 },
+    "away": { "possession": 52, "shotsOnTarget": 2, "totalShots": 8, "corners": 3 },
+    "momentum": { "home": 57, "away": 43 },
+    "insights": ["Juventude is creating the better chances"]
+  },
+  "league_context": {
+    "available": true,
+    "round": "Regular Season - 8",
+    "selectionMode": "same-window",
+    "totalFixtures": 4,
+    "displayedFixtures": 4,
+    "limited": false,
+    "fixtures": [
+      {
+        "fixtureId": 13021,
+        "startsAt": "2026-04-19T05:00:00.000Z",
+        "timestamp": 1776546000,
+        "status": { "phase": "live", "minute": 69 },
+        "teams": {
+          "home": { "name": "Bahia", "shortName": "BAH", "logo": "" },
+          "away": { "name": "Ceara", "shortName": "CEA", "logo": "" }
+        },
+        "score": { "home": 0, "away": 0 }
+      },
+      {
+        "fixtureId": 13022,
+        "startsAt": "2026-04-19T05:00:00.000Z",
+        "timestamp": 1776546000,
+        "status": { "phase": "live", "minute": 70 },
+        "teams": {
+          "home": { "name": "Corinthians", "shortName": "COR", "logo": "" },
+          "away": { "name": "Vasco", "shortName": "VAS", "logo": "" }
+        },
+        "score": { "home": 1, "away": 1 }
+      }
+    ]
+  },
+  "metadata": {
+    "tableImpactAvailable": true,
+    "impactMode": "full",
+    "competitionFormat": "single_table_league",
+    "zoneProfile": "brasileirao",
+    "scenario": {
+      "familyId": "juventude-sport-relegation-fight",
+      "variantId": "live-home-climbs-out",
+      "label": "Home climbs out of relegation"
+    }
+  }
+}

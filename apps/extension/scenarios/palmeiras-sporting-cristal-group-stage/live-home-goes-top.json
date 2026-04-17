@@ -1,0 +1,92 @@
+{
+  "fixture_id": 13001,
+  "startsAt": "2026-04-18T00:30:00.000Z",
+  "last_updated": "2026-04-18T01:02:00.000Z",
+  "league": {
+    "id": 13,
+    "name": "CONMEBOL Libertadores",
+    "country": "South America",
+    "season": 2026,
+    "round": "Group Stage - Round 3"
+  },
+  "teams": {
+    "home": { "id": 121, "name": "Palmeiras", "shortName": "PAL", "logo": "" },
+    "away": { "id": 2931, "name": "Sporting Cristal", "shortName": "SCR", "logo": "" }
+  },
+  "score": { "home": 1, "away": 0 },
+  "status": {
+    "phase": "live",
+    "short": "1H",
+    "long": "First Half",
+    "minute": 28,
+    "isFinished": false
+  },
+  "event": {
+    "type": "GOAL",
+    "message": "",
+    "teamName": "Palmeiras",
+    "scorer": "Raphael Veiga",
+    "minuteLabel": "28'",
+    "typeLabel": "Goal"
+  },
+  "impact": {
+    "summary": "Palmeiras goes top of the group",
+    "table": {
+      "home": { "position": 1, "movement": 2, "pointsDelta": 3, "projectedPoints": 7 },
+      "away": { "position": 3, "movement": -2, "pointsDelta": 0, "projectedPoints": 6 }
+    },
+    "competition": [
+      "Palmeiras goes top of the group",
+      "Sporting Cristal drops to 3rd"
+    ],
+    "biggestMovement": {
+      "team": "Palmeiras",
+      "movement": 2
+    },
+    "momentum": { "home": 64, "away": 36 },
+    "mode": "group"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 62, "shotsOnTarget": 3, "totalShots": 7, "corners": 4 },
+    "away": { "possession": 38, "shotsOnTarget": 1, "totalShots": 3, "corners": 1 },
+    "momentum": { "home": 64, "away": 36 },
+    "insights": ["Palmeiras is creating the better chances"]
+  },
+  "league_context": {
+    "available": true,
+    "round": "Group Stage - Round 3",
+    "selectionMode": "group",
+    "totalFixtures": 2,
+    "displayedFixtures": 2,
+    "limited": false,
+    "fixtures": [
+      {
+        "fixtureId": 13011,
+        "startsAt": "2026-04-18T00:30:00.000Z",
+        "timestamp": 1776462600,
+        "status": { "phase": "live", "minute": 30 },
+        "teams": {
+          "home": { "name": "Bolivar", "shortName": "BOL", "logo": "" },
+          "away": { "name": "Cerro Porteno", "shortName": "CER", "logo": "" }
+        },
+        "score": { "home": 1, "away": 1 }
+      }
+    ]
+  },
+  "metadata": {
+    "tableImpactAvailable": true,
+    "impactMode": "group",
+    "competitionFormat": "group_stage",
+    "groupLabel": "Group G",
+    "teamGroupPositions": {
+      "home": { "group": "Group G", "position": 3 },
+      "away": { "group": "Group G", "position": 1 }
+    },
+    "scenario": {
+      "familyId": "palmeiras-sporting-cristal-group-stage",
+      "variantId": "live-home-goes-top",
+      "label": "Home goes top of the group"
+    }
+  }
+}

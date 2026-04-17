@@ -1,0 +1,89 @@
+{
+  "fixture_id": 13001,
+  "startsAt": "2026-04-18T00:30:00.000Z",
+  "last_updated": "2026-04-18T02:28:00.000Z",
+  "league": {
+    "id": 13,
+    "name": "CONMEBOL Libertadores",
+    "country": "South America",
+    "season": 2026,
+    "round": "Group Stage - Round 3"
+  },
+  "teams": {
+    "home": { "id": 121, "name": "Palmeiras", "shortName": "PAL", "logo": "" },
+    "away": { "id": 2931, "name": "Sporting Cristal", "shortName": "SCR", "logo": "" }
+  },
+  "score": {
+    "home": 2,
+    "away": 0,
+    "fulltime": { "home": 2, "away": 0 }
+  },
+  "status": {
+    "phase": "finished",
+    "short": "FT",
+    "long": "Match Finished",
+    "minute": 90,
+    "isFinished": true
+  },
+  "event": { "type": "NONE", "message": "" },
+  "impact": {
+    "summary": "Palmeiras goes top of the group",
+    "table": {
+      "home": { "position": 1, "movement": 2, "pointsDelta": 3, "projectedPoints": 7 },
+      "away": { "position": 3, "movement": -2, "pointsDelta": 0, "projectedPoints": 6 }
+    },
+    "competition": [
+      "Palmeiras goes top of the group",
+      "Sporting Cristal drops to 3rd"
+    ],
+    "biggestMovement": {
+      "team": "Palmeiras",
+      "movement": 2
+    },
+    "momentum": { "home": 58, "away": 42 },
+    "mode": "group"
+  },
+  "statistics": {
+    "available": true,
+    "home": { "possession": 59, "shotsOnTarget": 6, "totalShots": 14, "corners": 6 },
+    "away": { "possession": 41, "shotsOnTarget": 2, "totalShots": 7, "corners": 3 },
+    "momentum": { "home": 58, "away": 42 },
+    "insights": []
+  },
+  "league_context": {
+    "available": true,
+    "round": "Group Stage - Round 3",
+    "selectionMode": "group",
+    "totalFixtures": 2,
+    "displayedFixtures": 2,
+    "limited": false,
+    "fixtures": [
+      {
+        "fixtureId": 13011,
+        "startsAt": "2026-04-18T00:30:00.000Z",
+        "timestamp": 1776462600,
+        "status": { "phase": "finished", "minute": 90 },
+        "teams": {
+          "home": { "name": "Bolivar", "shortName": "BOL", "logo": "" },
+          "away": { "name": "Cerro Porteno", "shortName": "CER", "logo": "" }
+        },
+        "score": { "home": 1, "away": 1 }
+      }
+    ]
+  },
+  "metadata": {
+    "tableImpactAvailable": true,
+    "impactMode": "group",
+    "competitionFormat": "group_stage",
+    "groupLabel": "Group G",
+    "teamGroupPositions": {
+      "home": { "group": "Group G", "position": 3 },
+      "away": { "group": "Group G", "position": 1 }
+    },
+    "scenario": {
+      "familyId": "palmeiras-sporting-cristal-group-stage",
+      "variantId": "finished-home-goes-top",
+      "label": "Finished with home top"
+    }
+  }
+}

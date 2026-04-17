@@ -361,7 +361,15 @@ test("scenario payloads satisfy the stricter match-impact schema", async () => {
   const aggregateScenario = await readJson(
     "apps/extension/scenarios/cruzeiro-vitoria-quarter-finals/aggregate-level.json"
   );
+  const groupScenario = await readJson(
+    "apps/extension/scenarios/palmeiras-sporting-cristal-group-stage/live-home-goes-top.json"
+  );
+  const relegationScenario = await readJson(
+    "apps/extension/scenarios/juventude-sport-relegation-fight/live-home-climbs-out.json"
+  );
 
   validateAgainstSchema(prematchScenario, matchImpactSchema);
   validateAgainstSchema(aggregateScenario, matchImpactSchema);
+  validateAgainstSchema(groupScenario, matchImpactSchema);
+  validateAgainstSchema(relegationScenario, matchImpactSchema);
 });

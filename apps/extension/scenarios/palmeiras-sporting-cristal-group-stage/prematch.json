@@ -1,0 +1,145 @@
+{
+  "fixture_id": 13001,
+  "startsAt": "2026-04-18T00:30:00.000Z",
+  "last_updated": "2026-04-17T12:00:00.000Z",
+  "league": {
+    "id": 13,
+    "name": "CONMEBOL Libertadores",
+    "country": "South America",
+    "season": 2026,
+    "round": "Group Stage - Round 3"
+  },
+  "teams": {
+    "home": { "id": 121, "name": "Palmeiras", "shortName": "PAL", "logo": "" },
+    "away": { "id": 2931, "name": "Sporting Cristal", "shortName": "SCR", "logo": "" }
+  },
+  "score": { "home": 0, "away": 0 },
+  "status": {
+    "phase": "upcoming",
+    "short": "NS",
+    "long": "Not Started",
+    "minute": 0,
+    "isFinished": false
+  },
+  "event": { "type": "NONE", "message": "" },
+  "impact": {
+    "summary": "Pre-match only - live group movement starts at kickoff",
+    "table": {
+      "home": { "position": 3, "movement": 0, "pointsDelta": 0, "projectedPoints": 4 },
+      "away": { "position": 1, "movement": 0, "pointsDelta": 0, "projectedPoints": 6 }
+    },
+    "competition": [
+      "Live group impact will start once the match kicks off."
+    ],
+    "biggestMovement": null,
+    "momentum": { "home": 50, "away": 50 },
+    "mode": "group"
+  },
+  "statistics": {
+    "available": false,
+    "home": null,
+    "away": null,
+    "momentum": { "home": 50, "away": 50 },
+    "insights": []
+  },
+  "prematch": {
+    "prediction": {
+      "available": true,
+      "winnerName": "Palmeiras",
+      "winOrDraw": true,
+      "underOver": "-3.5",
+      "advice": "Palmeiras or draw and under 3.5 goals",
+      "comparison": [
+        { "key": "form", "home": "67%", "away": "33%" },
+        { "key": "att", "home": "59%", "away": "41%" },
+        { "key": "def", "home": "62%", "away": "38%" }
+      ]
+    },
+    "lineups": {
+      "available": true,
+      "home": {
+        "formation": "4-2-3-1",
+        "coach": "Abel Ferreira",
+        "colors": {
+          "playerPrimary": "0f5a30",
+          "goalkeeperPrimary": "d7f520"
+        },
+        "startXI": [
+          { "name": "Weverton", "position": "G", "grid": "1:1" },
+          { "name": "Mayke", "position": "D", "grid": "2:4" },
+          { "name": "Gomez", "position": "D", "grid": "2:3" },
+          { "name": "Murilo", "position": "D", "grid": "2:2" },
+          { "name": "Piquerez", "position": "D", "grid": "2:1" },
+          { "name": "Anibal", "position": "M", "grid": "3:2" },
+          { "name": "Richard Rios", "position": "M", "grid": "3:1" },
+          { "name": "Estevao", "position": "M", "grid": "4:3" },
+          { "name": "Raphael Veiga", "position": "M", "grid": "4:2" },
+          { "name": "Lazaro", "position": "M", "grid": "4:1" },
+          { "name": "Flaco Lopez", "position": "F", "grid": "5:1" }
+        ]
+      },
+      "away": {
+        "formation": "4-3-3",
+        "coach": "Guillermo Farré",
+        "colors": {
+          "playerPrimary": "67aaf9",
+          "goalkeeperPrimary": "f8f26c"
+        },
+        "startXI": [
+          { "name": "Enriquez", "position": "G", "grid": "1:1" },
+          { "name": "Lora", "position": "D", "grid": "2:4" },
+          { "name": "Lutiger", "position": "D", "grid": "2:3" },
+          { "name": "Araujo", "position": "D", "grid": "2:2" },
+          { "name": "Sosa", "position": "D", "grid": "2:1" },
+          { "name": "Castro", "position": "M", "grid": "3:3" },
+          { "name": "Yotun", "position": "M", "grid": "3:2" },
+          { "name": "Tavara", "position": "M", "grid": "3:1" },
+          { "name": "Gonzalez", "position": "F", "grid": "4:3" },
+          { "name": "Iberico", "position": "F", "grid": "4:2" },
+          { "name": "Santiago Gonzalez", "position": "F", "grid": "4:1" }
+        ]
+      }
+    },
+    "injuries": {
+      "available": true,
+      "home": [{ "player": "Dudu", "reason": "Knee Injury" }],
+      "away": []
+    }
+  },
+  "league_context": {
+    "available": true,
+    "round": "Group Stage - Round 3",
+    "selectionMode": "group",
+    "totalFixtures": 2,
+    "displayedFixtures": 2,
+    "limited": false,
+    "fixtures": [
+      {
+        "fixtureId": 13011,
+        "startsAt": "2026-04-18T00:30:00.000Z",
+        "timestamp": 1776462600,
+        "status": { "phase": "upcoming", "minute": 0 },
+        "teams": {
+          "home": { "name": "Bolivar", "shortName": "BOL", "logo": "" },
+          "away": { "name": "Cerro Porteno", "shortName": "CER", "logo": "" }
+        },
+        "score": { "home": 0, "away": 0 }
+      }
+    ]
+  },
+  "metadata": {
+    "tableImpactAvailable": true,
+    "impactMode": "group",
+    "competitionFormat": "group_stage",
+    "groupLabel": "Group G",
+    "teamGroupPositions": {
+      "home": { "group": "Group G", "position": 3 },
+      "away": { "group": "Group G", "position": 1 }
+    },
+    "scenario": {
+      "familyId": "palmeiras-sporting-cristal-group-stage",
+      "variantId": "prematch",
+      "label": "Pre-match with lineups"
+    }
+  }
+}
