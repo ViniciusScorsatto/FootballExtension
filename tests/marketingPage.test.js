@@ -60,3 +60,15 @@ test("marketing page features Early Bird between Free and Pro", () => {
   assert.ok(earlyBirdIndex > freeIndex, "expected Early Bird after Free");
   assert.ok(proIndex > earlyBirdIndex, "expected Pro after Early Bird");
 });
+
+test("marketing page includes a free vs pro matrix without implying side panel is pro-only", () => {
+  const html = renderMarketingPage({ pricing });
+
+  assert.match(html, /What Free includes and what Pro adds/);
+  assert.match(html, /<th>Area<\/th>/);
+  assert.match(html, /<td>League access<\/td>/);
+  assert.match(html, /<td>Featured leagues<\/td>/);
+  assert.match(html, /<td>All supported leagues<\/td>/);
+  assert.doesNotMatch(html, /Side panel deep-view mode/);
+  assert.match(html, /Deeper pre-match and competition reading/);
+});

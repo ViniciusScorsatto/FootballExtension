@@ -34,7 +34,7 @@ function getLocalizedPlanContent(locale) {
           "Projeção pré-jogo do modelo",
           "Campo tático da escalação e lesões",
           "Contexto mais rico para grupos, mata-mata e pênaltis",
-          "Modo de leitura profunda no painel lateral"
+          "Leitura pré-jogo e de competição mais profunda"
         ]
       }
     };
@@ -62,7 +62,7 @@ function getLocalizedPlanContent(locale) {
         "Pre-match model outlook",
         "Lineup pitch and injuries",
         "Richer grouped, knockout, and penalty context",
-        "Side panel deep-view mode"
+        "Deeper pre-match and competition reading"
       ]
     }
   };
@@ -109,20 +109,35 @@ function getMarketingCopy(locale) {
       feature1Body: "O painel flutuante é feito para compreensão instantânea, não para exploração profunda.",
       feature2Title: "Lógica ao vivo focada em confiança",
       feature2Body: "Ligas de tabela única, competições em grupos e formatos especiais são tratados com fallbacks explícitos.",
-      feature3Title: "Backend rápido e consciente de cache",
-      feature3Body: "O cache compartilhado mantém o produto responsivo enquanto protege o uso de chamadas da API-Football.",
-      feature4Title: "Feito para a sua mistura de audiência",
-      feature4Body: "Inglês e português-BR já saem prontos para o produto crescer com os dois canais.",
+      feature3Title: "Pré-jogo com mais contexto quando importa",
+      feature3Body: "Antes do início, o produto destaca projeção, escalações, técnicos e lesões para você chegar na partida já entendendo o cenário.",
+      feature4Title: "Multilíngue desde o início",
+      feature4Body: "O produto já funciona em inglês e português-BR, com espaço para expandir para mais idiomas depois.",
       differenceEyebrow: "Veja a diferença",
       differenceTitle: "Free explica o que está acontecendo. Pro adiciona o contexto mais profundo da partida.",
       differenceBody: "A versão gratuita entrega a leitura principal ao vivo nas ligas em destaque. O Pro mantém essa velocidade e adiciona mais ligas e mais contexto pré-jogo e de competição.",
+      matrixTitle: "O que Free inclui e o que o Pro adiciona",
+      matrixHeaderArea: "Área",
+      matrixHeaderFree: "Free",
+      matrixHeaderPro: "Pro",
+      matrixRows: [
+        ["Acesso a ligas", "Ligas em destaque", "Todas as ligas suportadas"],
+        ["Partidas acompanhadas", "1 por vez", "1 por vez"],
+        ["Placar, linha dos gols e impacto principal", "Sim", "Sim"],
+        ["Impacto na tabela e na competição", "Sim", "Sim"],
+        ["Estatísticas finais", "Sim", "Sim"],
+        ["Fallback por fixture manual", "Não", "Sim"],
+        ["Projeção pré-jogo do modelo", "Não", "Sim"],
+        ["Escalações, campo tático e lesões", "Não", "Sim"],
+        ["Contexto mais profundo de grupos, mata-mata e pênaltis", "Não", "Sim"]
+      ],
       freeTierTitle: "Significado rápido da partida nas ligas em destaque",
       proTierTitle: "Leitura mais profunda da partida em todas as ligas suportadas",
       demoTableImpact: "Impacto na tabela",
       demoCompetitionImpact: "Impacto na competição",
       demoCompetitionNote: "Arsenal entra na zona de Champions League.",
       demoWhatProAdds: "O que o Pro adiciona",
-      demoProAddsNote: "Todas as ligas suportadas, fallback por fixture manual e leitura pré-jogo mais profunda",
+      demoProAddsNote: "Todas as ligas suportadas, fallback por fixture manual e leitura pré-jogo e de competição mais profunda",
       demoGroupPosition: "Posição no grupo",
       demoGroupPositionNote: "America-RN está em 2º no Grupo C e sobe para 1º se o placar continuar assim.",
       demoPreMatchDepth: "Profundidade pré-jogo",
@@ -196,20 +211,35 @@ function getMarketingCopy(locale) {
     feature1Body: "The floating panel is built for instant comprehension, not deep exploration.",
     feature2Title: "Trust-first live logic",
     feature2Body: "Single-table leagues, grouped competitions, and special formats are handled with explicit fallbacks.",
-    feature3Title: "Fast, cache-aware backend",
-    feature3Body: "Shared caching keeps the product responsive while protecting API-Football request usage.",
-    feature4Title: "Made for your audience mix",
-    feature4Body: "English and Portuguese-BR are supported from day one so the product can grow with both channels.",
+    feature3Title: "Richer pre-match context when it matters",
+    feature3Body: "Before kickoff, the product highlights model outlook, lineups, coaches, and injuries so you already understand the setup.",
+    feature4Title: "Multilingual from day one",
+    feature4Body: "The product already supports English and Portuguese-BR, with room to expand into more languages over time.",
     differenceEyebrow: "See the difference",
     differenceTitle: "Free explains what is happening. Pro adds the deeper match context.",
     differenceBody: "The free tier gives the core live-reading experience on featured leagues. Pro keeps that speed, then adds broader league access and deeper pre-match and competition context.",
+    matrixTitle: "What Free includes and what Pro adds",
+    matrixHeaderArea: "Area",
+    matrixHeaderFree: "Free",
+    matrixHeaderPro: "Pro",
+    matrixRows: [
+      ["League access", "Featured leagues", "All supported leagues"],
+      ["Tracked matches", "1 at a time", "1 at a time"],
+      ["Score, scorer timeline, and core impact", "Yes", "Yes"],
+      ["Table and competition impact", "Yes", "Yes"],
+      ["Final stats", "Yes", "Yes"],
+      ["Manual fixture fallback", "No", "Yes"],
+      ["Pre-match model outlook", "No", "Yes"],
+      ["Lineups, lineup pitch, and injuries", "No", "Yes"],
+      ["Deeper grouped, knockout, and penalty context", "No", "Yes"]
+    ],
     freeTierTitle: "Fast match meaning on featured leagues",
     proTierTitle: "Deeper match reading across every supported league",
     demoTableImpact: "Table Impact",
     demoCompetitionImpact: "Competition Impact",
     demoCompetitionNote: "Arsenal enters the Champions League places.",
     demoWhatProAdds: "What Pro adds",
-    demoProAddsNote: "All supported leagues, manual fixture fallback, and deeper pre-match reading",
+    demoProAddsNote: "All supported leagues, manual fixture fallback, and deeper pre-match and competition reading",
     demoGroupPosition: "Group Position",
     demoGroupPositionNote: "America-RN is 2nd in Group C and moves into 1st if scores hold.",
     demoPreMatchDepth: "Pre-match depth",
@@ -652,6 +682,47 @@ export function renderMarketingPage({ pricing, language = "en" }) {
 
       .comparison-grid {
         grid-template-columns: 1fr 1fr;
+      }
+
+      .matrix-card {
+        margin-top: 18px;
+        overflow: hidden;
+      }
+
+      .plan-matrix {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .plan-matrix th,
+      .plan-matrix td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .plan-matrix th {
+        color: var(--text);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .plan-matrix td {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .plan-matrix tr:last-child td {
+        border-bottom: none;
+      }
+
+      .plan-matrix td:nth-child(2),
+      .plan-matrix td:nth-child(3) {
+        color: var(--text);
+        font-weight: 600;
       }
 
       .story-card,
@@ -1102,6 +1173,27 @@ export function renderMarketingPage({ pricing, language = "en" }) {
               </div>
             </article>
           </div>
+          <article class="demo-card matrix-card">
+            <span class="mini-label">${copy.matrixTitle}</span>
+            <table class="plan-matrix">
+              <thead>
+                <tr>
+                  <th>${copy.matrixHeaderArea}</th>
+                  <th>${copy.matrixHeaderFree}</th>
+                  <th>${copy.matrixHeaderPro}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${copy.matrixRows.map(([area, free, pro]) => `
+                  <tr>
+                    <td>${area}</td>
+                    <td>${free}</td>
+                    <td>${pro}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </article>
         </section>
 
         <section class="section">
