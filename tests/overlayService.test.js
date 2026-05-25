@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { OverlayService } from "../apps/api/src/services/overlayService.js";
 
-function standingRow({ rank, teamId, name, points, goalsDiff = 0, goalsFor = 0 }) {
+function standingRow({ rank, teamId, name, points, goalsDiff = 0, goalsFor = 0, form = "WDLWW" }) {
   return {
     rank,
     team: {
@@ -12,6 +12,7 @@ function standingRow({ rank, teamId, name, points, goalsDiff = 0, goalsFor = 0 }
       code: name.slice(0, 3).toUpperCase()
     },
     points,
+    form,
     goalsDiff,
     all: {
       played: 4,
@@ -26,15 +27,26 @@ function standingRow({ rank, teamId, name, points, goalsDiff = 0, goalsFor = 0 }
   };
 }
 
-function fixture({ id, homeId, homeName, awayId, awayName, homeGoals, awayGoals, minute = 72 }) {
+function fixture({
+  id,
+  homeId,
+  homeName,
+  awayId,
+  awayName,
+  homeGoals,
+  awayGoals,
+  minute = 72,
+  statusShort = "2H",
+  statusLong = "Second Half"
+}) {
   return {
     fixture: {
       id,
       date: "2026-05-24T05:00:00.000Z",
       timestamp: 1782277200,
       status: {
-        short: "2H",
-        long: "Second Half",
+        short: statusShort,
+        long: statusLong,
         elapsed: minute
       }
     },
@@ -96,6 +108,35 @@ test("overlay service builds a Brasileirão league snapshot from standings and l
           })
         ];
       },
+      async getFixturesByRound(leagueId, season, round) {
+        assert.equal(leagueId, 71);
+        assert.equal(season, 2026);
+        assert.equal(round, "Regular Season - 8");
+
+        return [
+          fixture({
+            id: 5001,
+            homeId: 1,
+            homeName: "Palmeiras",
+            awayId: 2,
+            awayName: "Santos",
+            homeGoals: 1,
+            awayGoals: 0
+          }),
+          fixture({
+            id: 5002,
+            homeId: 3,
+            homeName: "Botafogo",
+            awayId: 4,
+            awayName: "Flamengo",
+            homeGoals: 2,
+            awayGoals: 2,
+            minute: 90,
+            statusShort: "FT",
+            statusLong: "Match Finished"
+          })
+        ];
+      },
       async getStandings(leagueId, season) {
         assert.equal(leagueId, 71);
         assert.equal(season, 2026);
@@ -123,9 +164,12 @@ test("overlay service builds a Brasileirão league snapshot from standings and l
 
   assert.equal(snapshot.competition.slug, "brasileirao");
   assert.equal(snapshot.status.phase, "live");
-  assert.equal(snapshot.matches.length, 1);
+  assert.equal(snapshot.matches.length, 2);
+  assert.equal(snapshot.matches[1].status.phase, "finished");
   assert.equal(snapshot.standings[0].name, "Palmeiras");
   assert.equal(snapshot.standings[0].rank, 1);
   assert.equal(snapshot.standings[0].movement, 1);
+  assert.equal(snapshot.standings[0].won, 3);
+  assert.equal(snapshot.standings[0].form, "WDLWW");
   assert.equal(snapshot.events[0].title, "Palmeiras assume a liderança");
 });

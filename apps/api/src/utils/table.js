@@ -10,6 +10,7 @@ function normalizeStandingRow(row) {
     name: row.team.name,
     shortName: row.team.code || row.team.name.slice(0, 3).toUpperCase(),
     update: row.update ?? null,
+    form: row.form ?? "",
     rank: row.rank,
     liveRank: row.rank,
     played: row.all?.played ?? 0,

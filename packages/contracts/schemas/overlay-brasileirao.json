@@ -58,9 +58,13 @@
           "movement": { "type": "number" },
           "points": { "type": "number" },
           "played": { "type": "number" },
+          "won": { "type": "number" },
+          "draw": { "type": "number" },
+          "lost": { "type": "number" },
           "goalsDiff": { "type": "number" },
           "goalsFor": { "type": "number" },
           "goalsAgainst": { "type": "number" },
+          "form": { "type": "string" },
           "zone": { "type": "string" }
         },
         "additionalProperties": true

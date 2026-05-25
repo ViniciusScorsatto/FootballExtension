@@ -64,6 +64,39 @@ function sortLiveFixtures(fixtures) {
   });
 }
 
+function sortRoundFixtures(fixtures) {
+  const phaseOrder = {
+    live: 0,
+    finished: 1,
+    upcoming: 2
+  };
+
+  return [...fixtures].sort((left, right) => {
+    const leftStatus = getMatchStatus(left);
+    const rightStatus = getMatchStatus(right);
+    const leftOrder = phaseOrder[leftStatus.phase] ?? 3;
+    const rightOrder = phaseOrder[rightStatus.phase] ?? 3;
+
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder;
+    }
+
+    if (leftStatus.phase === "live" || rightStatus.phase === "live") {
+      return Number(rightStatus.minute ?? 0) - Number(leftStatus.minute ?? 0);
+    }
+
+    return Number(left.fixture?.timestamp ?? 0) - Number(right.fixture?.timestamp ?? 0);
+  });
+}
+
+function getFixtureRound(fixture) {
+  return fixture?.league?.round ?? "";
+}
+
+function findCurrentRound(liveFixtures, recentFixtures) {
+  return getFixtureRound(liveFixtures[0]) || getFixtureRound(recentFixtures[0]) || "";
+}
+
 function applyLiveFixturesToTable(officialTable, fixtures) {
   return fixtures.reduce(
     (table, fixture) => simulateTable(table, fixture, { applyResult: true }),
@@ -104,9 +137,13 @@ function buildStandingRows(officialTable, liveTable) {
       movement,
       points: row.points,
       played: row.played,
+      won: row.won,
+      draw: row.draw,
+      lost: row.lost,
       goalsDiff: row.goalsDiff,
       goalsFor: row.goalsFor,
       goalsAgainst: row.goalsAgainst,
+      form: row.form ?? "",
       zone: getZone(row)
     };
   });
@@ -191,8 +228,20 @@ export class OverlayService {
       }),
       this.apiFootballClient.getStandings(BRASILEIRAO_SERIE_A_ID, season)
     ]);
+    const recentFixtures = liveFixtures.length
+      ? []
+      : await this.apiFootballClient.getFixtures({
+          league: BRASILEIRAO_SERIE_A_ID,
+          season,
+          last: 20
+        });
+    const currentRound = findCurrentRound(liveFixtures, recentFixtures);
+    const roundFixtures = currentRound
+      ? await this.apiFootballClient.getFixturesByRound(BRASILEIRAO_SERIE_A_ID, season, currentRound)
+      : liveFixtures;
     const officialTable = normalizeStandings(standingsPayload);
     const sortedLiveFixtures = sortLiveFixtures(liveFixtures);
+    const sortedRoundFixtures = sortRoundFixtures(roundFixtures);
     const liveTable = applyLiveFixturesToTable(officialTable, sortedLiveFixtures);
     const standings = buildStandingRows(officialTable, liveTable);
     const events = buildImpactEvents(officialTable, standings);
@@ -204,19 +253,21 @@ export class OverlayService {
         name: "Brasileirão Série A",
         country: "Brazil",
         season,
-        round: sortedLiveFixtures[0]?.league?.round ?? standingsPayload?.response?.[0]?.league?.round ?? ""
+        round: currentRound || standingsPayload?.response?.[0]?.league?.round || ""
       },
       status: {
         phase: sortedLiveFixtures.length ? "live" : "idle",
         liveMatches: sortedLiveFixtures.length,
         lastUpdated: new Date().toISOString()
       },
-      matches: sortedLiveFixtures.map(mapOverlayMatch),
+      matches: sortedRoundFixtures.map(mapOverlayMatch),
       standings,
       events,
       metadata: {
         source: "api-football",
         basis: "official-standings-plus-live-fixtures",
+        liveFixtureCount: sortedLiveFixtures.length,
+        roundFixtureCount: sortedRoundFixtures.length,
         officialStandings: serializeTable(officialTable).slice(0, 20)
       }
     };

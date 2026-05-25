@@ -46,6 +46,41 @@ const demoSnapshot = {
   ]
 };
 
+function normalizeForm(form) {
+  return String(form || "")
+    .toUpperCase()
+    .replace(/[^WDLVDE]/g, "")
+    .slice(-5);
+}
+
+function formResultClass(result) {
+  if (result === "W" || result === "V") {
+    return "win";
+  }
+
+  if (result === "D" || result === "E") {
+    return "draw";
+  }
+
+  return "loss";
+}
+
+function renderForm(form) {
+  const normalized = normalizeForm(form);
+
+  if (!normalized) {
+    return `<span class="form-dots form-dots--empty">--</span>`;
+  }
+
+  return `
+    <span class="form-dots">
+      ${[...normalized]
+        .map((result) => `<i class="form-dot form-dot--${formResultClass(result)}">${result}</i>`)
+        .join("")}
+    </span>
+  `;
+}
+
 const elements = {
   competitionName: document.getElementById("competitionName"),
   roundLabel: document.getElementById("roundLabel"),
@@ -122,14 +157,18 @@ function movementLabel(movement) {
 }
 
 function renderMatches(matches = []) {
-  elements.matchCount.textContent = matches.length
-    ? `${matches.length} ao vivo`
+  const liveCount = matches.filter((match) => match.status?.phase === "live").length;
+
+  elements.matchCount.textContent = liveCount
+    ? `${liveCount} ao vivo`
+    : matches.length
+      ? `${matches.length} jogos`
     : "Sem jogos";
 
   if (!matches.length) {
     elements.matchesList.innerHTML = `
       <div class="empty-state">
-        Nenhum jogo ao vivo neste momento.
+        Nenhum jogo encontrado para a rodada.
       </div>
     `;
     return;
@@ -172,7 +211,7 @@ function renderStandings(rows = []) {
   }
 
   elements.standingsTable.innerHTML = rows
-    .slice(0, 10)
+    .slice(0, 20)
     .map((row) => {
       const movement = Number(row.movement || 0);
       const direction = movement > 0 ? "up" : movement < 0 ? "down" : "flat";
@@ -184,7 +223,9 @@ function renderStandings(rows = []) {
           <span class="standing-row__team">${row.shortName || row.name}</span>
           <span class="standing-row__points">${row.points}</span>
           <span class="standing-row__played">${row.played ?? "-"}</span>
+          <span class="standing-row__wins">${row.won ?? "-"}</span>
           <span class="standing-row__gd">${Number(row.goalsDiff ?? 0) > 0 ? "+" : ""}${row.goalsDiff ?? 0}</span>
+          <span class="standing-row__form">${renderForm(row.form)}</span>
           <span class="standing-row__movement">${movementLabel(movement)}</span>
         </div>
       `;

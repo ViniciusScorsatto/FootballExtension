@@ -151,7 +151,7 @@ h1 {
 }
 
 .hero-grid {
-  grid-template-columns: 1fr 460px;
+  grid-template-columns: minmax(0, 1fr) 620px;
 }
 
 .lower-grid {
@@ -289,6 +289,11 @@ h1 {
   gap: 12px;
 }
 
+.panel--standings {
+  grid-template-rows: auto auto 1fr;
+  gap: 8px;
+}
+
 .panel__header {
   min-height: 32px;
   display: flex;
@@ -309,7 +314,7 @@ h1 {
 .standings-heading,
 .standing-row {
   display: grid;
-  grid-template-columns: 32px 30px minmax(0, 1fr) 48px 34px 44px 28px;
+  grid-template-columns: 30px 28px minmax(0, 1fr) 48px 34px 34px 46px 116px 28px;
   align-items: center;
   gap: 8px;
 }
@@ -336,9 +341,13 @@ h1 {
   overflow: hidden;
 }
 
+.standings-table {
+  gap: 4px;
+}
+
 .standing-row {
-  min-height: 35px;
-  padding: 4px 12px;
+  min-height: 24px;
+  padding: 2px 12px;
   border-radius: 12px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.035);
@@ -360,24 +369,25 @@ h1 {
 .standing-row__rank,
 .standing-row__points,
 .standing-row__played,
+.standing-row__wins,
 .standing-row__gd {
   text-align: right;
 }
 
 .standing-row__points {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 950;
 }
 
 .standing-row__crest {
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   background: rgba(140, 255, 40, 0.16);
   color: var(--green);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 950;
 }
 
@@ -386,6 +396,47 @@ h1 {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 850;
+}
+
+.standing-row__form {
+  min-width: 0;
+}
+
+.form-dots {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+}
+
+.form-dots--empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.form-dot {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #061006;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.form-dot--win {
+  background: var(--green);
+}
+
+.form-dot--draw {
+  background: var(--yellow);
+}
+
+.form-dot--loss {
+  background: var(--red);
+  color: var(--text);
 }
 
 .standing-row__movement {
@@ -586,7 +637,7 @@ h1 {
   }
 
   .hero-grid {
-    grid-template-columns: 1fr 390px;
+    grid-template-columns: 1fr 430px;
   }
 
   .lower-grid {
