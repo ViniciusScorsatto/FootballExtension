@@ -38,7 +38,32 @@
           "startsAt": { "type": ["string", "null"] },
           "timestamp": { "type": ["number", "null"] },
           "status": { "type": "object" },
-          "teams": { "type": "object" },
+          "teams": {
+            "type": "object",
+            "properties": {
+              "home": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": ["number", "null"] },
+                  "name": { "type": "string" },
+                  "shortName": { "type": "string" },
+                  "logo": { "type": "string" }
+                },
+                "additionalProperties": true
+              },
+              "away": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": ["number", "null"] },
+                  "name": { "type": "string" },
+                  "shortName": { "type": "string" },
+                  "logo": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          },
           "score": { "type": "object" }
         },
         "additionalProperties": true
@@ -53,6 +78,7 @@
           "teamId": { "type": "number" },
           "name": { "type": "string" },
           "shortName": { "type": "string" },
+          "logo": { "type": "string" },
           "rank": { "type": "number" },
           "previousRank": { "type": "number" },
           "movement": { "type": "number" },

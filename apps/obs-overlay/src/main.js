@@ -112,7 +112,7 @@ function formatClock(snapshot) {
 
 function formatStatus(match) {
   if (match.status?.phase === "finished") {
-    return "FT";
+    return "Final";
   }
 
   if (match.status?.phase === "upcoming") {
@@ -156,6 +156,38 @@ function movementLabel(movement) {
   return "•";
 }
 
+function getMatchCardClass(match) {
+  const phase = match.status?.phase || "unknown";
+
+  return `match-card match-card--${phase}`;
+}
+
+function getMatchBadgeLabel(match) {
+  if (match.status?.phase === "live") {
+    return "Ao vivo";
+  }
+
+  return formatStatus(match);
+}
+
+function renderTeamCrest(team) {
+  if (team.logo) {
+    return `<img class="team-crest" src="${team.logo}" alt="${team.name}" loading="lazy" />`;
+  }
+
+  return `<span class="team-crest team-crest--fallback">${team.shortName.slice(0, 1)}</span>`;
+}
+
+function renderStandingCrest(row) {
+  const label = row.shortName || row.name || "?";
+
+  if (row.logo) {
+    return `<img class="standing-row__crest" src="${row.logo}" alt="${row.name}" loading="lazy" />`;
+  }
+
+  return `<span class="standing-row__crest standing-row__crest--fallback">${label.slice(0, 1)}</span>`;
+}
+
 function renderMatches(matches = []) {
   const liveCount = matches.filter((match) => match.status?.phase === "live").length;
 
@@ -176,24 +208,27 @@ function renderMatches(matches = []) {
 
   elements.matchesList.innerHTML = matches
     .map((match) => `
-      <article class="match-card">
-        <div class="match-card__side">
-          <span class="team-token">${match.teams.home.shortName}</span>
+      <article class="${getMatchCardClass(match)}">
+        <span class="match-card__rail"></span>
+        <div class="match-card__team">
+          ${renderTeamCrest(match.teams.home)}
+          <strong>${match.teams.home.shortName}</strong>
+        </div>
+        <div class="match-card__score">
           <strong>${match.score.home}</strong>
-        </div>
-        <div class="match-card__status">
-          <small>${formatStatus(match)}</small>
-        </div>
-        <div class="match-card__side match-card__side--away">
+          <span>-</span>
           <strong>${match.score.away}</strong>
-          <span class="team-token">${match.teams.away.shortName}</span>
         </div>
-        <div class="match-card__teams">
+        <div class="match-card__team match-card__team--away">
+          <strong>${match.teams.away.shortName}</strong>
+          ${renderTeamCrest(match.teams.away)}
+        </div>
+        <div class="match-card__meta">
           <span>${match.teams.home.name}</span>
           <span>${match.teams.away.name}</span>
         </div>
         <div class="match-card__badge">
-          <span>${formatStatus(match)}</span>
+          <span>${getMatchBadgeLabel(match)}</span>
         </div>
       </article>
     `)
@@ -219,7 +254,7 @@ function renderStandings(rows = []) {
       return `
         <div class="standing-row standing-row--${row.zone}" data-direction="${direction}">
           <span class="standing-row__rank">${row.rank}</span>
-          <span class="standing-row__crest">${(row.shortName || row.name || "?").slice(0, 1)}</span>
+          ${renderStandingCrest(row)}
           <span class="standing-row__team">${row.shortName || row.name}</span>
           <span class="standing-row__points">${row.points}</span>
           <span class="standing-row__played">${row.played ?? "-"}</span>

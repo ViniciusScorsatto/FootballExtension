@@ -59,8 +59,8 @@ function fixture({
       standings: true
     },
     teams: {
-      home: { id: homeId, name: homeName },
-      away: { id: awayId, name: awayName }
+      home: { id: homeId, name: homeName, logo: `https://assets.test/${homeId}.png` },
+      away: { id: awayId, name: awayName, logo: `https://assets.test/${awayId}.png` }
     },
     goals: {
       home: homeGoals,
@@ -165,8 +165,10 @@ test("overlay service builds a Brasileirão league snapshot from standings and l
   assert.equal(snapshot.competition.slug, "brasileirao");
   assert.equal(snapshot.status.phase, "live");
   assert.equal(snapshot.matches.length, 2);
+  assert.equal(snapshot.matches[0].teams.home.logo, "https://assets.test/1.png");
   assert.equal(snapshot.matches[1].status.phase, "finished");
   assert.equal(snapshot.standings[0].name, "Palmeiras");
+  assert.equal(snapshot.standings[0].logo, "https://assets.test/1.png");
   assert.equal(snapshot.standings[0].rank, 1);
   assert.equal(snapshot.standings[0].movement, 1);
   assert.equal(snapshot.standings[0].won, 3);

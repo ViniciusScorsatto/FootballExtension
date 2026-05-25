@@ -36,12 +36,14 @@ function mapOverlayMatch(fixture) {
       home: {
         id: fixture.teams?.home?.id ?? null,
         name: fixture.teams?.home?.name ?? "Home",
-        shortName: shortName(fixture.teams?.home?.name)
+        shortName: shortName(fixture.teams?.home?.name),
+        logo: fixture.teams?.home?.logo ?? ""
       },
       away: {
         id: fixture.teams?.away?.id ?? null,
         name: fixture.teams?.away?.name ?? "Away",
-        shortName: shortName(fixture.teams?.away?.name)
+        shortName: shortName(fixture.teams?.away?.name),
+        logo: fixture.teams?.away?.logo ?? ""
       }
     },
     score: {
@@ -104,6 +106,27 @@ function applyLiveFixturesToTable(officialTable, fixtures) {
   );
 }
 
+function buildTeamLogoMap(fixtures) {
+  const logos = new Map();
+
+  for (const fixture of fixtures) {
+    const homeId = fixture.teams?.home?.id;
+    const awayId = fixture.teams?.away?.id;
+    const homeLogo = fixture.teams?.home?.logo;
+    const awayLogo = fixture.teams?.away?.logo;
+
+    if (homeId && homeLogo) {
+      logos.set(Number(homeId), homeLogo);
+    }
+
+    if (awayId && awayLogo) {
+      logos.set(Number(awayId), awayLogo);
+    }
+  }
+
+  return logos;
+}
+
 function getZone(row) {
   const rank = Number(row.liveRank ?? row.rank ?? 0);
 
@@ -122,7 +145,7 @@ function getZone(row) {
   return "neutral";
 }
 
-function buildStandingRows(officialTable, liveTable) {
+function buildStandingRows(officialTable, liveTable, teamLogos = new Map()) {
   return liveTable.map((row) => {
     const officialRow = officialTable.find((entry) => entry.teamId === row.teamId);
     const previousRank = officialRow?.rank ?? row.rank;
@@ -132,6 +155,7 @@ function buildStandingRows(officialTable, liveTable) {
       teamId: row.teamId,
       name: row.name,
       shortName: row.shortName,
+      logo: teamLogos.get(Number(row.teamId)) ?? "",
       rank: row.liveRank,
       previousRank,
       movement,
@@ -242,8 +266,9 @@ export class OverlayService {
     const officialTable = normalizeStandings(standingsPayload);
     const sortedLiveFixtures = sortLiveFixtures(liveFixtures);
     const sortedRoundFixtures = sortRoundFixtures(roundFixtures);
+    const teamLogos = buildTeamLogoMap([...sortedRoundFixtures, ...sortedLiveFixtures]);
     const liveTable = applyLiveFixturesToTable(officialTable, sortedLiveFixtures);
-    const standings = buildStandingRows(officialTable, liveTable);
+    const standings = buildStandingRows(officialTable, liveTable, teamLogos);
     const events = buildImpactEvents(officialTable, standings);
 
     const snapshot = {
