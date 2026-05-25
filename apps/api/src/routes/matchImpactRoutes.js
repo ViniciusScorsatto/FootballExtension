@@ -21,6 +21,7 @@ export function createMatchImpactRouter(controller) {
   router.get("/matches/live", controller.getLiveMatches);
   router.get("/matches/upcoming", controller.getUpcomingMatches);
   router.get("/match-impact", controller.getMatchImpact);
+  router.get("/overlay/brasileirao", controller.getBrasileiraoOverlay);
   router.post("/track/usage", controller.trackUsage);
   router.post("/track/session", controller.trackSession);
   router.get("/analytics/summary", controller.getAnalyticsSummary);

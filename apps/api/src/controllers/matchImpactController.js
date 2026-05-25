@@ -81,6 +81,7 @@ function buildPublicBillingReadiness(stripeService, env) {
 export function createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
+  overlayService,
   billingService,
   accountService,
   stripeService,
@@ -352,6 +353,15 @@ export function createMatchImpactController({
           date: typeof req.query.date === "string" ? req.query.date : undefined,
           limit
         });
+        res.json(payload);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async getBrasileiraoOverlay(req, res, next) {
+      try {
+        const payload = await overlayService.getBrasileiraoOverlaySnapshot();
         res.json(payload);
       } catch (error) {
         next(error);

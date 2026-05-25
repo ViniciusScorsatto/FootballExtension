@@ -125,6 +125,16 @@ paths:
             application/json:
               schema:
                 $ref: ../schemas/match-impact.json
+  /overlay/brasileirao:
+    get:
+      operationId: getBrasileiraoOverlay
+      responses:
+        "200":
+          description: Brasileirão OBS overlay snapshot
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/overlay-brasileirao.json
   /track/usage:
     post:
       operationId: trackUsage

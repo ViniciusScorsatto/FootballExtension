@@ -182,6 +182,66 @@ function createController() {
         };
       }
     },
+    overlayService: {
+      async getBrasileiraoOverlaySnapshot() {
+        return {
+          competition: {
+            id: 71,
+            slug: "brasileirao",
+            name: "Brasileirão Série A",
+            country: "Brazil",
+            season: 2026,
+            round: "Regular Season - 5"
+          },
+          status: {
+            phase: "live",
+            liveMatches: 1,
+            lastUpdated: "2026-04-18T05:33:00.000Z"
+          },
+          matches: [
+            {
+              fixtureId: 101,
+              startsAt: "2026-04-18T05:00:00.000Z",
+              timestamp: 1776488400,
+              status: { phase: "live", minute: 33, isFinished: false },
+              teams: {
+                home: { id: 1, name: "Home", shortName: "HOM" },
+                away: { id: 2, name: "Away", shortName: "AWY" }
+              },
+              score: { home: 1, away: 0 }
+            }
+          ],
+          standings: [
+            {
+              teamId: 1,
+              name: "Home",
+              shortName: "HOM",
+              rank: 1,
+              previousRank: 2,
+              movement: 1,
+              points: 12,
+              played: 5,
+              goalsDiff: 5,
+              goalsFor: 10,
+              goalsAgainst: 5,
+              zone: "leader"
+            }
+          ],
+          events: [
+            {
+              type: "impact",
+              title: "Home assume a liderança",
+              line1: "Sobe para 1º com 12 pontos"
+            }
+          ],
+          metadata: {
+            source: "api-football",
+            basis: "official-standings-plus-live-fixtures",
+            officialStandings: []
+          }
+        };
+      }
+    },
     billingService: {
       async getPricingCatalog() {
         return {
@@ -295,6 +355,7 @@ test("OpenAPI contract lists the first stable public routes", async () => {
     "/matches/live",
     "/matches/upcoming",
     "/match-impact",
+    "/overlay/brasileirao",
     "/track/usage",
     "/track/session"
   ]) {
@@ -310,6 +371,7 @@ test("public route payloads satisfy the declared contract schemas", async () => 
   const liveMatchesSchema = await readJson("packages/contracts/schemas/live-matches.json");
   const upcomingMatchesSchema = await readJson("packages/contracts/schemas/upcoming-matches.json");
   const matchImpactSchema = await readJson("packages/contracts/schemas/match-impact.json");
+  const brasileiraoOverlaySchema = await readJson("packages/contracts/schemas/overlay-brasileirao.json");
 
   const publicConfigRes = createResponseRecorder();
   controller.getPublicConfig({}, publicConfigRes);
@@ -351,6 +413,12 @@ test("public route payloads satisfy the declared contract schemas", async () => 
     throw error;
   });
   validateAgainstSchema(matchImpactRes.body, matchImpactSchema);
+
+  const brasileiraoOverlayRes = createResponseRecorder();
+  await controller.getBrasileiraoOverlay({}, brasileiraoOverlayRes, (error) => {
+    throw error;
+  });
+  validateAgainstSchema(brasileiraoOverlayRes.body, brasileiraoOverlaySchema);
 });
 
 test("scenario payloads satisfy the stricter match-impact schema", async () => {

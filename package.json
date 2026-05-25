@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "node --watch apps/api/src/server.js",
+    "dev:obs": "npm --workspace @live-match-impact/obs-overlay run dev",
     "start": "node apps/api/src/server.js",
     "test": "node --test",
     "contracts:check": "node --test tests/contracts.test.js",

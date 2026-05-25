@@ -12,6 +12,7 @@ import { BillingService } from "./services/billingService.js";
 import { CacheService } from "./services/cacheService.js";
 import { MatchImpactService } from "./services/matchImpactService.js";
 import { MatchDiscoveryService } from "./services/matchDiscoveryService.js";
+import { OverlayService } from "./services/overlayService.js";
 import { StripeService } from "./services/stripeService.js";
 import { createAllowedOrigins, isOriginAllowed } from "./utils/origins.js";
 import { createAppError } from "./utils/errors.js";
@@ -61,9 +62,16 @@ const matchDiscoveryService = new MatchDiscoveryService({
   env
 });
 
+const overlayService = new OverlayService({
+  apiFootballClient,
+  cacheService,
+  env
+});
+
 const controller = createMatchImpactController({
   matchImpactService,
   matchDiscoveryService,
+  overlayService,
   billingService,
   accountService,
   stripeService,

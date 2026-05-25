@@ -43,6 +43,28 @@ test("sdk builds match-impact requests with query params and shared headers", as
   assert.equal(calls[0].headers["x-live-impact-plan"], "free");
 });
 
+test("sdk builds Brasileirão overlay snapshot requests", async () => {
+  const calls = [];
+  const sdk = createFootballSdk({
+    baseUrl: "https://example.com/",
+    userId: "obs-brasileirao",
+    plan: "pro",
+    requester: async (request) => {
+      calls.push(request);
+      return { competition: { slug: "brasileirao" } };
+    }
+  });
+
+  const result = await sdk.getBrasileiraoOverlay();
+
+  assert.equal(result.competition.slug, "brasileirao");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, "GET");
+  assert.equal(calls[0].url, "https://example.com/overlay/brasileirao");
+  assert.equal(calls[0].headers["x-live-impact-user"], "obs-brasileirao");
+  assert.equal(calls[0].headers["x-live-impact-plan"], "pro");
+});
+
 test("sdk sends POST bodies through the shared requester", async () => {
   const calls = [];
   const sdk = createRequesterBackedSdk({

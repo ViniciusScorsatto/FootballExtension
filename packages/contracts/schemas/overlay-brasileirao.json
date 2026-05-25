@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "overlay-brasileirao.json",
+  "title": "BrasileiraoOverlaySnapshot",
+  "type": "object",
+  "required": ["competition", "status", "matches", "standings", "events", "metadata"],
+  "properties": {
+    "competition": {
+      "type": "object",
+      "required": ["id", "slug", "name", "season"],
+      "properties": {
+        "id": { "type": "number" },
+        "slug": { "type": "string" },
+        "name": { "type": "string" },
+        "country": { "type": "string" },
+        "season": { "type": "number" },
+        "round": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "object",
+      "required": ["phase", "liveMatches", "lastUpdated"],
+      "properties": {
+        "phase": { "type": "string" },
+        "liveMatches": { "type": "number" },
+        "lastUpdated": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fixtureId", "status", "teams", "score"],
+        "properties": {
+          "fixtureId": { "type": ["number", "null"] },
+          "startsAt": { "type": ["string", "null"] },
+          "timestamp": { "type": ["number", "null"] },
+          "status": { "type": "object" },
+          "teams": { "type": "object" },
+          "score": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "standings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["teamId", "name", "rank", "points", "movement", "zone"],
+        "properties": {
+          "teamId": { "type": "number" },
+          "name": { "type": "string" },
+          "shortName": { "type": "string" },
+          "rank": { "type": "number" },
+          "previousRank": { "type": "number" },
+          "movement": { "type": "number" },
+          "points": { "type": "number" },
+          "played": { "type": "number" },
+          "goalsDiff": { "type": "number" },
+          "goalsFor": { "type": "number" },
+          "goalsAgainst": { "type": "number" },
+          "zone": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "title"],
+        "properties": {
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "line1": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["source", "basis"],
+      "properties": {
+        "source": { "type": "string" },
+        "basis": { "type": "string" },
+        "officialStandings": { "type": "array" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -170,6 +170,9 @@
           }
         });
       },
+      getBrasileiraoOverlay() {
+        return request("GET", "/overlay/brasileirao");
+      },
       trackUsage(body) {
         return request("POST", "/track/usage", {
           body

@@ -169,6 +169,9 @@ function createSdk({ baseUrl, getHeaders, requester }) {
         }
       });
     },
+    getBrasileiraoOverlay() {
+      return request("GET", "/overlay/brasileirao");
+    },
     trackUsage(body) {
       return request("POST", "/track/usage", {
         body

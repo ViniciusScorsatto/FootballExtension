@@ -243,7 +243,7 @@ test("marketing page renders html", async () => {
 
   assert.equal(res.contentType, "html");
   assert.match(res.body, /Instant understanding of what a goal means/i);
-  assert.match(res.body, /Early Bird Pro/i);
+  assert.match(res.body, /Install and claim Early Bird/i);
 });
 
 test("billing status returns the current plan snapshot", async () => {

@@ -129,6 +129,7 @@ export const env = {
   leagueContextFinishedCacheTtlSeconds: readNumber("LEAGUE_CONTEXT_FINISHED_CACHE_TTL_SECONDS", 86400),
   leagueContextMaxFixtures: readNumber("LEAGUE_CONTEXT_MAX_FIXTURES", 9),
   leagueContextSameWindowMinutes: readNumber("LEAGUE_CONTEXT_SAME_WINDOW_MINUTES", 30),
+  obsBrasileiraoSeason: readNumber("OBS_BRASILEIRAO_SEASON", new Date().getUTCFullYear()),
   lineupsPendingCacheTtlSeconds: readNumber("LINEUPS_PENDING_CACHE_TTL_SECONDS", 300),
   lineupsConfirmedCacheTtlSeconds: readNumber("LINEUPS_CONFIRMED_CACHE_TTL_SECONDS", 21600),
   prematchSlowWindowMinutes: readNumber("PREMATCH_SLOW_WINDOW_MINUTES", 360),

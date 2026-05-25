@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foot Analysis OBS Overlay</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main id="app" class="broadcast-shell" aria-live="polite">
+      <header class="broadcast-header">
+        <div class="brand">
+          <span class="brand__mark">◉</span>
+          <strong>FOOT<span>ANALYSIS</span></strong>
+        </div>
+
+        <div class="competition-lockup">
+          <span class="competition-lockup__icon">🏆</span>
+          <div>
+            <h1 id="competitionName">BRASILEIRÃO</h1>
+            <p id="roundLabel">Carregando rodada</p>
+          </div>
+        </div>
+
+        <div class="live-badge">
+          <span></span>
+          <strong id="liveStatus">Conectando</strong>
+        </div>
+      </header>
+
+      <section class="hero-grid">
+        <section class="data-stage">
+          <div class="stage-clock">
+            <strong id="primaryClock">--:--</strong>
+            <span>Dados ao vivo</span>
+          </div>
+
+          <div class="pitch-graphic" aria-hidden="true">
+            <span class="pitch-graphic__circle"></span>
+            <span class="pitch-graphic__box pitch-graphic__box--left"></span>
+            <span class="pitch-graphic__box pitch-graphic__box--right"></span>
+          </div>
+
+          <div class="stage-copy">
+            <span>Central da rodada</span>
+            <strong id="mainHeadline">Aguardando movimento da rodada</strong>
+            <p id="eventSpotlight">Quando a tabela mexer, o alerta aparece aqui.</p>
+          </div>
+        </section>
+
+        <aside class="panel panel--standings">
+          <div class="panel__header">
+            <strong>Classificação ao vivo</strong>
+            <span id="updatedAt">--:--</span>
+          </div>
+          <div class="standings-heading">
+            <span>#</span>
+            <span>Equipe</span>
+            <span>PTS</span>
+            <span>J</span>
+            <span>SG</span>
+          </div>
+          <div id="standingsTable" class="standings-table"></div>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <aside class="panel panel--matches">
+          <div class="panel__header">
+            <strong>Jogos da rodada</strong>
+            <span id="matchCount">0 ao vivo</span>
+          </div>
+          <div id="matchesList" class="match-list"></div>
+        </aside>
+
+        <section class="panel panel--impact">
+          <div class="panel__header">
+            <strong>O que está mudando</strong>
+            <span>Agora</span>
+          </div>
+          <div id="eventFeed" class="impact-feed"></div>
+        </section>
+
+        <aside class="panel panel--context">
+          <div class="panel__header">
+            <strong>Leitura da rodada</strong>
+            <span>Foot Analysis</span>
+          </div>
+          <div id="contextPanel" class="context-panel"></div>
+        </aside>
+      </section>
+
+      <footer class="ticker">
+        <span class="ticker__label">⚡</span>
+        <div id="tickerTrack" class="ticker__track">
+          <span>Conectando ao backend de inteligência ao vivo...</span>
+        </div>
+      </footer>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
