@@ -31,6 +31,10 @@ Then add this URL as an OBS Browser Source:
 http://localhost:3200/apps/obs-overlay/
 ```
 
+For the RMTV YouTube streaming MVP, this same URL is captured as a full-screen
+broadcast dashboard and sent to YouTube through RTMPS. See
+[RMTV_STREAMING.md](/Users/grfdev/projects/grflab/FootballExtension/RMTV_STREAMING.md).
+
 Useful query params:
 
 - `poll=10000` controls refresh cadence in milliseconds.
