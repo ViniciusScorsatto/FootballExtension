@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "node --watch apps/api/src/server.js",
     "dev:obs": "npm --workspace @live-match-impact/obs-overlay run dev",
+    "stream:youtube": "node scripts/stream-youtube-rtmps.mjs",
     "start": "node apps/api/src/server.js",
     "test": "node --test",
     "contracts:check": "node --test tests/contracts.test.js",
@@ -27,5 +28,6 @@
     "express": "^4.21.2",
     "redis": "^4.7.0",
     "stripe": "^18.5.0"
-  }
+  },
+  "packageManager": "pnpm@11.3.0+sha512.2c403d6594527287672b1f7056343a1f7c3634036a67ffabfcc2b3d7595d843768f8787148d1b57cf7956c90606bbd192857c363af19e96d2d0ec9ec5741d215"
 }
