@@ -9,7 +9,7 @@
   ],
   "description": "Chrome extension and Node.js backend for real-time football match consequence insights.",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "node --watch apps/api/src/server.js",
